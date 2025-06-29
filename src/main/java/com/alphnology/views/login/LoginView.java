@@ -158,6 +158,9 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver, Afte
 
     @Override
     public void afterNavigation(AfterNavigationEvent event) {
+        String script = "document.querySelectorAll('vaadin-dialog-overlay').forEach(overlay => overlay.close());";
+        getUI().ifPresent(ui -> ui.getPage().executeJs(script));
+
         Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
 
         if (params.containsKey("reset") && "true".equalsIgnoreCase(params.get("reset").getFirst())) {

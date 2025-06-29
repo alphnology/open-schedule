@@ -65,9 +65,6 @@ public class ScheduleViewDetails extends Div {
         rate.addClickListener(e -> {
             User currentUser = VaadinSession.getCurrent().getAttribute(User.class);
             if (currentUser == null) {
-                String script = "document.querySelectorAll('vaadin-dialog-overlay').forEach(overlay => overlay.close());";
-                getUI().ifPresent(ui -> ui.getPage().executeJs(script));
-
                 UI.getCurrent().navigate(LoginView.class);
                 return;
             }

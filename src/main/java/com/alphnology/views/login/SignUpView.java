@@ -22,9 +22,7 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.data.validator.EmailValidator;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.QueryParameters;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,7 +46,7 @@ import static com.alphnology.utils.EmailHelper.sentEmailChangePassword;
 @AnonymousAllowed
 @Slf4j
 @Uses(Icon.class)
-public class SignUpView extends VerticalLayout {
+public class SignUpView extends VerticalLayout  {
     private static final String REQUIRED = "This field cannot be null";
 
     private final TextField name = new TextField("Full Name");
@@ -87,10 +85,10 @@ public class SignUpView extends VerticalLayout {
         Image logo = ImageUtils.getMainImage();
         logo.setWidth(100, Unit.PIXELS);
 
-        H2 title = new H2("Create your administrator account");
+        H2 title = new H2("Create your account");
         title.getStyle().set("color", "#17222F");
 
-        Span subtitle = new Span("Enter your details to get started with your workspace.");
+        Span subtitle = new Span("Enter your details to get access.");
         subtitle.getStyle().set("color", "#1B3A4B");
 
         Binder<UserModel> binder = new Binder<>(UserModel.class);
