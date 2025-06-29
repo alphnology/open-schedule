@@ -160,4 +160,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Open Schedule is proudly developed and maintained by [Alphnology](https://alphnology.com/).
 
-![img_1.png](img_1.png)
+![image](https://github.com/user-attachments/assets/2148a45c-c922-4e51-8f96-ca492409f7c1)
