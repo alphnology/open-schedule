@@ -55,8 +55,10 @@ public class ScheduleView extends VerticalLayout {
 
         scheduleViewDetails = new ScheduleViewDetails(ratingEventBus, sessionService, sessionRatingService);
 
-        setWidthFull();
-        getStyle().set("padding", "1rem");
+        setSpacing(false);
+        setSizeFull();
+        addClassNames(LumoUtility.Padding.MEDIUM);
+
 
         Optional<Event> optionalEvent = eventService.findAll().stream().findFirst();
         if (optionalEvent.isEmpty()) {
@@ -65,6 +67,15 @@ public class ScheduleView extends VerticalLayout {
         }
 
         Event event = optionalEvent.get();
+
+        Span notice = new Span("Notice: Agenda topics are subject to change.");
+        notice.addClassNames(
+                LumoUtility.TextColor.SECONDARY,
+                LumoUtility.FontSize.SMALL,
+                LumoUtility.AlignSelf.CENTER
+        );
+
+        add(notice);
 
         TabSheet tabSheet = new TabSheet();
         tabSheet.setSizeFull();

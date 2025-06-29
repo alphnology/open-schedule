@@ -156,6 +156,15 @@ repo and create a pull request. You can also simply open an issue with the tag "
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
+## About This Project
+
+Open Schedule was born from a passion for community and technology. The idea was sparked during the organization of
+[JconfDominicana 2025](https://jconfdominicana.org/), a community-driven Java conference, where we saw a need for a
+modern, free, and open-source tool to
+manage event schedules without the complexity or cost of commercial solutions.
+
+Our mission is to provide a beautiful, easy-to-use platform that empowers event organizers and delights attendees.
+
 ## Maintained By
 
 Open Schedule is proudly developed and maintained by [Alphnology](https://alphnology.com/).
