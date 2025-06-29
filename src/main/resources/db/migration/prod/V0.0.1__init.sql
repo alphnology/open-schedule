@@ -1,0 +1,491 @@
+--   #####   #######  ######   #     #   #####   #######  #     #  ######   #######
+--  #     #     #     #     #  #     #  #     #     #     #     #  #     #  #
+--  #           #     #     #  #     #  #           #     #     #  #     #  #
+--   #####      #     ######   #     #  #           #     #     #  ######   #####
+--        #     #     #   #    #     #  #           #     #     #  #   #    #
+--  #     #     #     #    #   #     #  #     #     #     #     #  #    #   #
+--   #####      #     #     #   #####    #####      #      #####   #     #  #######
+CREATE
+EXTENSION IF NOT EXISTS unaccent;
+
+
+CREATE TABLE users
+(
+    code              bigserial    NOT NULL,
+    username          varchar(100) NOT NULL,
+    "password"        varchar(250) NOT NULL,
+    "name"            varchar(100) NOT NULL,
+    phone             varchar(30) NULL,
+    roles             varchar(255) NOT NULL,
+    favorite_sessions jsonb NULL,
+    last_login_ts     timestamptz(6) NULL,
+    "locked"          bool         NOT NULL,
+    one_log_pwd       bool         NOT NULL,
+    CONSTRAINT ukr43af9ap4edm43mmtq01oddj6 UNIQUE (username),
+    CONSTRAINT users_pkey PRIMARY KEY (code)
+);
+CREATE INDEX idxccp93091nwrdtqfofn36fxx7y ON users USING btree (username, name);
+
+
+
+CREATE TABLE tracks
+(
+    code   bigserial    NOT NULL,
+    "name" varchar(100) NOT NULL,
+    color  varchar(20) NULL,
+    CONSTRAINT tracks_pkey PRIMARY KEY (code),
+    CONSTRAINT uk2q4x1t51xpqqquojnnti17s68 UNIQUE (name)
+);
+CREATE INDEX idx2q4x1t51xpqqquojnnti17s68 ON tracks USING btree (name);
+
+
+
+CREATE TABLE tags
+(
+    code   bigserial    NOT NULL,
+    "name" varchar(100) NOT NULL,
+    color  varchar(20) NULL,
+    CONSTRAINT tags_pkey PRIMARY KEY (code),
+    CONSTRAINT ukt48xdq560gs3gap9g7jg36kgc UNIQUE (name)
+);
+CREATE INDEX idxt48xdq560gs3gap9g7jg36kgc ON tags USING btree (name);
+
+
+
+CREATE TABLE sponsor_categories
+(
+    code   bigserial    NOT NULL,
+    "name" varchar(100) NOT NULL,
+    CONSTRAINT sponsor_categories_pkey PRIMARY KEY (code),
+    CONSTRAINT uk5n0u1y20ekv9ocq09alsm7ove UNIQUE (name)
+);
+CREATE INDEX idx5n0u1y20ekv9ocq09alsm7ove ON sponsor_categories USING btree (name);
+
+
+
+CREATE TABLE sponsors
+(
+    code        bigserial     NOT NULL,
+    "name"      varchar(100)  NOT NULL,
+    description varchar(3000) NOT NULL,
+    category    int8          NOT NULL,
+    photo_url   varchar(200) NULL,
+    CONSTRAINT sponsors_pkey PRIMARY KEY (code)
+);
+CREATE INDEX idxnsgh4yktbhfbenpbelafihec6 ON sponsors USING btree (name);
+ALTER TABLE sponsors
+    ADD CONSTRAINT fka77nnm0lafahy0ymwcn8k4thm FOREIGN KEY (category) REFERENCES sponsor_categories (code);
+
+
+
+CREATE TABLE speakers
+(
+    code       bigserial    NOT NULL,
+    "name"     varchar(100) NOT NULL,
+    title      varchar(100) NOT NULL,
+    company    varchar(100) NULL,
+    country    varchar(5) NULL,
+    bio        varchar(3000) NULL,
+    networking jsonb NULL,
+    photo_url  varchar(200) NULL,
+    CONSTRAINT speakers_pkey PRIMARY KEY (code)
+);
+CREATE INDEX idxnl722pbt2jls8awi56cyqwlud ON speakers USING btree (name);
+
+
+CREATE TABLE events
+(
+    code       bigserial    NOT NULL,
+    "name"     varchar(100) NOT NULL,
+    start_date date         NOT NULL,
+    end_date   date         NOT NULL,
+    "location" varchar(100) NULL,
+    time_zone  varchar(50)  NOT NULL,
+    CONSTRAINT events_pkey PRIMARY KEY (code),
+    CONSTRAINT ukfn2r8jg0sm5v6vhoa7yqw55vy UNIQUE (name)
+);
+CREATE INDEX idxfn2r8jg0sm5v6vhoa7yqw55vy ON events USING btree (name);
+
+
+
+CREATE TABLE rooms
+(
+    code     bigserial    NOT NULL,
+    "name"   varchar(100) NOT NULL,
+    capacity int4         NOT NULL,
+    color    varchar(20) NULL,
+    CONSTRAINT rooms_pkey PRIMARY KEY (code),
+    CONSTRAINT uk1kuqhbfxed2e8t571uo82n545 UNIQUE (name)
+);
+CREATE INDEX idx1kuqhbfxed2e8t571uo82n545 ON rooms USING btree (name);
+
+
+
+CREATE TABLE sessions
+(
+    code        bigserial     NOT NULL,
+    title       varchar(100)  NOT NULL,
+    description varchar(3000) NOT NULL,
+    start_time  timestamp(6)  NOT NULL,
+    end_time    timestamp(6)  NOT NULL,
+    "level"     varchar(2) NULL,
+    "language"  varchar(5) NULL,
+    "type"      varchar(2)    NOT NULL,
+    room        int8 NULL,
+    track       int8 NULL,
+    CONSTRAINT sessions_pkey PRIMARY KEY (code)
+);
+CREATE INDEX idx254bj2iqk8arcr891edstd5k ON sessions USING btree (start_time, end_time);
+CREATE INDEX idx44bg08b0ggr467wmxxxdckyc7 ON sessions USING btree (type);
+CREATE INDEX idxbowi71siaa5iqdaiknpv3fnq5 ON sessions USING btree (title);
+ALTER TABLE sessions
+    ADD CONSTRAINT fk5djlw6klbg25geb2y0r562uvd FOREIGN KEY (track) REFERENCES tracks (code);
+ALTER TABLE sessions
+    ADD CONSTRAINT fkay9shqjwddnubjdettme2u7ar FOREIGN KEY (room) REFERENCES rooms (code);
+
+
+
+CREATE TABLE session_speaker
+(
+    session_code int8 NOT NULL,
+    speaker_id   int8 NOT NULL,
+    CONSTRAINT session_speaker_pkey PRIMARY KEY (session_code, speaker_id)
+);
+ALTER TABLE session_speaker
+    ADD CONSTRAINT fk68r1f8thwy0vuwtx38hth6d9c FOREIGN KEY (session_code) REFERENCES sessions (code);
+ALTER TABLE session_speaker
+    ADD CONSTRAINT fknfg2ijll5eq0r3c9gxxi2attk FOREIGN KEY (speaker_id) REFERENCES speakers (code);
+
+
+CREATE TABLE session_tag
+(
+    session_code int8 NOT NULL,
+    tag_id       int8 NOT NULL,
+    CONSTRAINT session_tag_pkey PRIMARY KEY (session_code, tag_id)
+);
+ALTER TABLE session_tag
+    ADD CONSTRAINT fk1umft5bpqh48csjyy3d38cw6b FOREIGN KEY (session_code) REFERENCES sessions (code);
+ALTER TABLE session_tag
+    ADD CONSTRAINT fkklpct7fbayvns51maq0uoyplw FOREIGN KEY (tag_id) REFERENCES tags (code);
+
+
+CREATE TABLE session_ratings
+(
+    code      bigserial NOT NULL,
+    "session" int8      NOT NULL,
+    users     int8      NOT NULL,
+    score     int4      NOT NULL,
+    "comment" varchar(200) NULL,
+    CONSTRAINT session_ratings_pkey PRIMARY KEY (code),
+    CONSTRAINT session_ratings_score_check CHECK (((score <= 5) AND (score >= 1))),
+    CONSTRAINT ukr2339nx57a8nvwxxgmkq4n2m6 UNIQUE (session, users)
+);
+CREATE INDEX idxr2339nx57a8nvwxxgmkq4n2m6 ON session_ratings USING btree (session, users);
+ALTER TABLE session_ratings
+    ADD CONSTRAINT fk4ahrf4so3uxserlagyqs5592y FOREIGN KEY (users) REFERENCES users (code);
+ALTER TABLE session_ratings
+    ADD CONSTRAINT fk9h0tiop6s3tmwbt2i1hm44vlo FOREIGN KEY ("session") REFERENCES sessions (code);
+
+
+
+--
+-- -- --  ######      #     #######     #
+-- -- --  #     #    # #       #       # #
+-- -- --  #     #   #   #      #      #   #
+-- -- --  #     #  #     #     #     #     #
+-- -- --  #     #  #######     #     #######
+-- -- --  #     #  #     #     #     #     #
+-- -- --  ######   #     #     #     #     #
+--
+
+INSERT INTO users (username, "password", "name", roles, phone, last_login_ts, locked, one_log_pwd)
+VALUES ('me@fredpena.dev', '$2a$10$5iKop40Zw8srnTmvap0tXuiVSHgg6N4Jbgjy6LNmfsMBZq2ETT3HO',
+        'Freddy Pena', 'ADMIN', '(829) 820 2626', NULL, FALSE, FALSE),
+       ('team@jconfdominicana.org', '$2a$10$5iKop40Zw8srnTmvap0tXuiVSHgg6N4Jbgjy6LNmfsMBZq2ETT3HO',
+        'JConf Dominicana', 'ADMIN', '(809) 452-4632', NULL, FALSE, TRUE);
+
+INSERT INTO events (name, start_date, end_date, "location", time_zone)
+VALUES ('JConf Dominicana', '2025-07-18', '2025-07-19', 'Santo Domingo, Dominican Re',
+        'America/Santo_Domingo (UTC-04:00)');
+
+INSERT INTO rooms (name, capacity, color)
+VALUES ('Theater', 200, '#0088DC'),
+       ('FCSI-401', 50, '#FF6347'),
+       ('FCSI-402 ', 50, '#FF1A1A'),
+       ('FCSI-403', 50, '#59910F'),
+       ('FCSI-504', 50, '#9995DB'),
+       ('AO-01 ', 50, '#FF6347'),
+       ('AO-03 ', 50, '#616469'),
+       ('AO-04', 50, '#0C7478');
+
+
+INSERT INTO tracks (name, color)
+VALUES ('Java Platform', '#0088DC'),
+       ('Java / AI', '#0088DC'),
+       ('Tech Leadership / Agile ', '#0088DC'),
+       ('Server Side / Frameworks ', '#0088DC'),
+       ('Server Side / Mobile ', '#0088DC'),
+       ('Databases / Tools', '#0088DC');
+
+INSERT INTO tags (name, color)
+VALUES ('Java', '#0088DC'),
+       ('Database', '#F7D15F'),
+       ('DCM', '#846C96'),
+       ('DevOps', '#FF1A1A'),
+       ('CI/CD', '#59910F'),
+       ('Flyway', '#9995DB'),
+       ('Liquibase', '#639A8E');
+
+
+INSERT INTO speakers (name, title, company, country, bio, networking, photo_url)
+VALUES ('Heather VanCura ', 'Director & Chairperson', 'Orcacle', 'US', 'Heather VanCura is a Vice President, Community Engagement at Oracle, leading the Java Community Process (JCP) program and MySQL Community Outreach team. With 20+ years of experience at Oracle and Sun Microsystems, she actively engages with the developer community as an international speaker, event organizer, and mentor. She has visited six continents and over fifty countries meeting developers and helping them to engage in standards-related and open source projects. Heather is passionate about promoting diversity in technology and volunteers with organizations like Women Who Code and IEEE Women in Engineering. Her extensive involvement includes serving on the boards of Dress for Success and FIRST LEGO League NorCal. Heather''s dedication to empowering developers and advocating for diversity makes her a respected leader in the industry.
+
+', '[
+  "https://x.com/heathervc",
+  "https://www.linkedin.com/in/heather-vancura-400395/"
+]',
+        'https://jconfdominicana.org/img/speakers/heather-vancura.jpeg'),
+       ('Ivar Grimstad ', 'Developer Advocate', 'Eclipse Foundation', 'SE', 'Ivar Grimstad is the Jakarta EE Developer Advocate at Eclipse Foundation. He is a Java Champion and JUG Leader based in Sweden. Besides advocating the Jakarta EE technologies, Ivar is contributing to the Jakarta EE specifications as well as being the PMC Lead for Eclipse Enterprise for Java (EE4J). He is also one of the specification leads for Jakarta MVC and represents Eclipse Foundation on the JCP Executive Committee. Ivar is also involved in various other open-source projects and communities. He is a frequent speaker at International developer conferences.
+
+', '[
+         "http://www.agilejava.eu/",
+         "https://twitter.com/ivar_grimstad"
+       ]',
+        'https://jconfdominicana.org/img/speakers/ivar-grimstad.jpg'),
+       ('Dr. Venkat Subramaniam ', 'Founder', 'Agile Developer, Inc', 'US', 'Dr. Venkat Subramaniam is an internationally renowned speaker, award-winning author, founder of Agile Developer, Inc., and an instructional professor at the University of Houston. With a career spanning decades, he has delivered talks on software development, programming languages, and sustainable agile practices, inspiring tens of thousands of developers across the globe.
+
+Venkat has authored multiple best-selling books, including Functional Programming in Java, Programming Kotlin, and Rediscovering JavaScript. His engaging style, deep insights, and practical advice have made him one of the most sought-after educators in the tech industry.',
+        '[
+          "https://x.com/venkat_s",
+          "https://www.linkedin.com/in/vsubramaniam/",
+          "https://agiledeveloper.com/"
+        ]',
+        'https://jconfdominicana.org/img/speakers/venkat-subramaniam.jpg'),
+       ('Enrique Zamudio ', 'Principal Engineer', 'Bitso', 'MX', 'Enrique Zamudio is a professional programmer since 1994, based in Mexico City. He has specialized in server-side development with Java since 2000, focusing on backend applications, such as transactional switches for e-commerce and payment platforms. He is the author of the open source projects jAlarms, j8583 and ScalaSQL. Enrique joined the Ceylon Language development core team on January 2012, where he''s contributed to the language module, the web IDE and the JVM compiler, and is the lead developer of the Ceylon-to-JavaScript compiler.
+He''s currently Principal Engineer at Bitso.',
+        '[
+          "https://twitter.com/chochosmx",
+          "http://www.javamexico.org/blogs/ezamudio"
+        ]',
+        'https://jconfdominicana.org/img/speakers/enrique-zamudio.jpg'),
+       ('Sandon Jacobs ', 'Senior Developer Advocate', 'Confluent', 'US',
+        'Sandon Jacobs is a Senior Developer Advocate at Confluent based in North Carolina. Sandon has built microservices and event streaming applications in several industries - including television media, energy, mobile advertising, rail freight logistics, and healthcare. This experience spans multiple JVM languages - Java, Scala, Kotlin, Groovy - with smatterings of Python and JavaScript along the way.Sandon lives in Raleigh, NC, with his wife and 2 daughters. He is an enrolled citizen of the Waccamaw-Siouan Tribe of North Carolina, and can frequently be found at powwows around North America as a singer and speaker. Sandon is the Chairman of the Board of the Commissioners for the North Carolina American Indian Heritage Commission. Fun fact: an avid golfer since the age of 5, he was once mistaken for Tiger Woods at a teen golf event in the early 1990s. Check out his writings at https://medium.com/indigitech-blog and https://dev.to/sandonjacobs.',
+        '[
+          "https://medium.com/indigitech-blog"
+        ]', 'https://jconfdominicana.org/img/speakers/sandon-jacobs.jpeg'),
+       ('Freddy Peña ', 'Co-Founder', 'Alphnology', 'DO', 'Founder of Alphnology, Technical Consultant, and a passionate Software Engineer with over 12 years of expertise in Java development and 8+ years of experience managing and implementing SAP B1 projects. Holding a Master''s degree in Web Engineering, I am also a dedicated educator currently teaching at PUCMM and an active member of the Dominican Java Community. I am skilled in designing, developing, and deploying high-performance, scalable applications using Java and various modern frameworks like Spring Boot, Vaadin Flow, Quarkus, Jakarta EE, Vert.x, and Hibernate. I am also an enthusiast of open-source projects.
+
+With proven experience in integrating enterprise-level software, providing expert technical consulting, and managing end-to-end development lifecycles, I focus on code quality, system optimization, and scalability.
+
+My approach spans from developing enterprise applications to implementing cloud solutions, always adhering to best practices and maintaining high code quality. I am always learning about the latest emerging technologies and staying up-to-date with new trends in the software development world.',
+        '[
+          "https://twitter.com/fred_pena",
+          "https://alphnology.com/",
+          "https://www.linkedin.com/in/fantpena/",
+          "https://github.com/fredpena"
+        ]',
+        'https://jconfdominicana.org/img/speakers/freddy-pena.jpg'),
+       ('Jesús Aguirre ', 'Sr System Engineer', 'Indra Minsait', 'PA',
+        'Professional passionate about creating and growing through collaborative tech communities, with a focus on optimizing developer experience and scaling platforms. Actively involved in the CNCF ecosystem and committed to driving innovation through practical solutions in the cloud-native space.',
+        '[
+          "https://linkedin.com/in/info-aguirre-jesus"
+        ]', 'https://jconfdominicana.org/img/speakers/jesus-aguirre.jpg'),
+       ('Isaac Ruiz Guerra ', 'Solution Architect', 'JavaMexico', 'MX', 'Isaac is a graduate of the Technological Institute of the Isthmus in Oaxaca, México.
+
+He began to use Java in its 1.2 version (2000) when doing his professional practices in the artificial intelligence laboratory of the Center for Research in Computing (CIC), of the National Polytechnic Institute in Mexico.
+He is a software consultant since 2003, is specialized in applications Integration and has participated in projects related mainly to the financial sector.
+
+For more than 10 years he has worked with different application servers for the java world and now he is trying to adapt this knowledge to the new deployment architectures.
+
+Isaac is a promoter of the java language and has participated in different communities such as javaHispano and javaMéxico.
+As part of the staff of the javaMexico community, Isaac promotes the use of Java and Java-related technologies by writing on his blog and as a speaker at JUG events.
+
+Isaac has published several articles about the java ecosystem on different websites, including OTN and is frequent Speaker at LAOUC/ORAMEX events.
+He was recently named part of the Neo4j Ninja program: https://neo4j.com/ninjas-program/',
+        '[
+          "https://www.linkedin.com/newsletters/6931281718834335744/",
+          "https://twitter.com/rugi"
+        ]',
+        'https://jconfdominicana.org/img/speakers/isaac-ruiz.jpg'),
+       ('José Díaz ', 'Software Architect', 'JoeDayz', 'PE', 'Computer Engineer graduated from Pontificia Universidad Católica del Perú. Software Architect with extensive experience in analysis, design and implementation of SOA and Microservices solutions under Java EE architecture, using agile methodologies and frameworks such as Scrum. Experience in logistics projects, pharmaceuticals, telecommunications for over 25 years in Peru, Mexico and USA. Founder of JoeDayz.pe company recognized in the Peruvian market for its training courses in front-end, backend and mobile software development.Since September 2024, he has been working as a Cloud Architect at Oracle.
+
+JUG Leader of PERU JUG.', '[
+         "https://twitter.com/jamdiazdiaz",
+         "http://blog.joedayz.pe/"
+       ]',
+        'https://jconfdominicana.org/img/speakers/josediaz.jpg'),
+       ('David Joa ', 'Co-Founder', 'Techcode', 'DO',
+        'For over 20 years, David has been in the software development field. He has worked in organizations in the telecommunications and financial sector, for companies such as Claro, Banco Popular and APAP. He has taught for over 20 years at INTEC. He recently founded a software development company, and an academy to teach Agile and software best practices.',
+        '[
+          "https://www.linkedin.com/in/david-joa-062250180"
+        ]',
+        'https://jconfdominicana.org/img/speakers/david-joa.jpg');
+INSERT INTO speakers (name, title, company, country, bio, networking, photo_url)
+VALUES ('David Parry ', 'Developer Advocate', 'Qodo', 'US', 'David Parry is an accomplished Director of Architecture with over 20 years of experience in Java development. It all began in 1996 when he discovered the fascinating world of programming, with a particular focus on Java applets.
+Throughout his illustrious career, David Parry has been involved in various noteworthy projects. He has successfully built and implemented content management systems for a wide range of clients, including the esteemed Johny Walker and its renowned keepwalking.com. Additionally, as a consultant at a Big 4 firm, David played a pivotal role in solving critical issues for numerous customers, demonstrating his expertise in handling complex and high-traffic web platforms.
+Never one to shy away from innovation, David Parry has expanded his skills to work on cutting-edge technologies such as mobile and embedded Android TV systems. Leveraging his expertise, he has delivered top-notch streaming services to customers, ensuring they have an exceptional viewing experience.
+Currently, David holds the position of Developer Advocate and Consultant overseeing strategic planning and execution of architectural designs for customers. With a deep understanding of software development principles and extensive experience in Java programming, he excels at providing valuable insights and guidance to his team.
+Having witnessed the evolution of Java development from its early days to its current state, David Parry''s wealth of experience and strategic perspective, combined with his consulting work at a Big 4 firm, make him an invaluable asset in any project or organization he is a part of.',
+        '[
+          "https://twitter.com/daviddryparry"
+        ]', 'https://jconfdominicana.org/img/speakers/david-parry.jpeg'),
+       ('Jorge L. Morla ', 'Senior Software Engineer', 'Applaudo', 'DO', 'I am Jorge Morla a 26 year old engineer graduated from O&M Dominicana with more than 8 years of experience in Java. My passion for programming is reflected in my enthusiasm to face challenges that test my skills and push me to find innovative solutions.
+
+I have a strong background in software development, I have worked on various projects ranging from enterprise applications to industry specific solutions.
+
+My experience has allowed me to not only hone my technical skills in Java, but also develop a hands-on approach to tackling software development challenges.I am passionate about exploring new technologies and taking innovative approaches to software design and implementation. Problem solving and creating practical solutions are at the core of my approach, and I am always eager to learn and apply new ideas in my projects.',
+        '[
+          "https://www.linkedin.com/in/jorge-l-morla",
+          "https://twitter.com/unreachablehost",
+          "https://github.com/jmorla"
+        ]',
+        'https://jconfdominicana.org/img/speakers/jorge-morla.jpeg'),
+       ('Mirna De Jesus Cambero', 'Senior Java Developer', 'Independent Consultant', 'DO', 'Mirna is a software engineer with over a decade of experience in backend development, specializing in Java technologies. Throughout her career, she has worked in industries such as telecommunications, healthcare, financial technology and more recently in the public sector, building scalable and reliable systems while fostering a culture of effective collaboration.
+
+One of her most notable achievements was her contribution in building a stock market from scratch at the Long Term Stock Exchange (LTSE), where she designed and maintained critical microservices, optimized system performance with low latency strategies and integrated the platform with key financial entities such as DTCC and SIPs.
+
+Early in her career, Mirna was recognized multiple times for her achievements as a young developer in the Dominican Re Through her work, she seeks to make a positive impact on society and inspire more women to get into technology. She graduated as a Software Development Technologist from ITLA and holds a degree in Information Systems Engineering from UNAPEC.',
+        '[
+          "https://www.linkedin.com/in/mirnadejesus",
+          "https://code-like-a-woman.hashnode.dev/"
+        ]',
+        'https://jconfdominicana.org/img/speakers/mirna-de-jesus-cambero.jpg'),
+       ('Aneudy Vargas ', 'Sr. Android Developer', 'Independent Consultant', 'DO',
+        'I am a software enthusiast and I like to share my experience and as over the years I have been able to see in different projects, always present best practices and an optimistic focus, but outside of software I am a person who likes music , I play guitar, I like traveling and meeting new places, good food 😅, meeting new people and learning from them.',
+        '[
+          "https://www.linkedin.com/in/aneudyvargas/"
+        ]', 'https://jconfdominicana.org/img/speakers/aneudy-vargas.jpeg'),
+       ('José Rafael Almonte Cabrera', 'Software Engineer', 'Franklin Covey', 'DO',
+        'I am a Telematics Engineer, with a Master''s degree in Data Science, and I currently work as a Software Engineer specializing in backend development. I am passionate about building innovative solutions that connect complex systems and create real impact, working with languages such as Java, Kotlin, Node.js, and Python, along with other complementary technologies. I am currently delving deeper into the fields of Artificial Intelligence and Sports Analytics, applying data analysis and the development of predictive models to generate practical, high-impact solutions. Beyond the world of technology, I’m a big fan of sports (mainly soccer, basketball, and baseball) and music. I''m passionate about the piano —though I''m still learning to play— and I enjoy exploring new ways to connect creativity with engineering.',
+        '[]', 'https://jconfdominicana.org/img/speakers/rafael-almonte.jpg'),
+       ('Brayan Muñoz V ', 'Software Engineer', 'Dominican Republic JUG', 'DO',
+        'I''m a Software Engineer and Data Scientist with an MSc in Data Science (UCJC) and a degree in Telematics Engineering (PUCMM). With over 5 years of software development experience and 2 years focused on AI and Data Science, I’m also a board member of the Dominican Republic Java User Group (@JavaDominicano), where I speak on topics like Java and Machine Learning. Additionally, I teach at PUCMM in areas such as Programming and AI, and actively contribute to open-source projects.',
+        '[
+          "https://www.linkedin.com/in/brayanmnz",
+          "https://github.com/brayanmnz",
+          "https://twitter.com/Brayanmnz_"
+        ]',
+        'https://jconfdominicana.org/img/speakers/brayan-munoz.jpeg'),
+       ('Alfonso Valdez Altamirano', 'Senior Java Software Developer', 'Payara', 'MX',
+        'I''m a Senior Java Software Developer with 20 years of experience on the market, currently working with Payara to provide a very good tool for enterprise development. Also I''m a member of Jakarta and microprofile working groups where I work actively to contribute with the latest versions of the specifications.',
+        '[
+          "https://twitter.com/breakponchito",
+          "https://www.linkedin.com/in/alfonso-valdez-altamirano-dev/"
+        ]',
+        'https://jconfdominicana.org/img/speakers/alfonso-valdez.jpeg');
+
+
+
+INSERT INTO sessions (title, description, start_time, end_time, "level", "language", "type", room, track)
+VALUES ('Database Change Management for Java Developers',
+        'Domina la gestión de cambios en bases de datos con Flyway. Aprende a versionar esquemas, aplicar rollbacks y automatizar migraciones en pipelines CI/CD. Asegura despliegues controlados, minimiza riesgos y mantén la integridad de tus datos en entornos empresariales.',
+        '2025-07-18 14:00:00', '2025-07-18 18:00:00', 'I', 'DO', 'W', 3, 6),
+       ('Optimizing LLM Responses with Retrieval-Augmented Generation (RAG) in Java',
+        'Large Language Models (LLMs) are powerful, but they struggle with real-time knowledge and hallucinate answers. In this hands-on workshop, learn how to supercharge your LLM-powered chatbot with Retrieval-Augmented Generation (RAG) using Java, and SpringAI.',
+        '2025-07-18 14:00:00', '2025-07-18 18:00:00', 'I', 'DO', 'W', 5, 2),
+       ('Check-in', 'Check-in', '2025-07-19 07:30:00', '2025-07-19 09:00:00', NULL, NULL, 'OS', NULL, NULL),
+       ('Warm-Up Session', 'Warm-Up Session', '2025-07-19 09:00:00', '2025-07-19 09:40:00', NULL, NULL, 'OS', 1, NULL),
+       ('AI: It AI-n''t What You Think!',
+        'Innovations have transformed human lives, in ways that we can''t imagine how people survived before. Yet, we do not embrace innovations readily and we shouldn''t in most cases. Our time in this world is juxtaposed with yet another major innovation in our field. Is AI going to take over the world, our jobs, our way of life...and more are questions that are asked frequently these days. Come to this keynote to learn how to ride the new wave instead of being swept under.',
+        '2025-07-19 09:40:00', '2025-07-19 10:25:00', 'A', 'US', 'K', 1, 2),
+       ('Java: This Ain''t Your Parent''s Java',
+        'Java was once a language that dragged along at snail''s pace. Thankfully, that''s no longer the case. In the recent years the pace of development has accelerated, both in language features and in the JDK improvements. Come along to dive into some of the recent changes of Java that are both fun and powerful to use, to learn how you can benefit from these, and we''ll also discuss where the language is heading in the near future',
+        '2025-07-19 14:00:00', '2025-07-19 14:45:00', 'I', 'US', 'K', 1, 1),
+       ('At Long Last, Queues for Apache Kafka - Unpacking Shared Groups (KIP-932)',
+        'Shared groups (KIP-932) brings \"queues\" to the Apache KafkaⓇ ecosystem. The guarantees of durability, scalability, and high throughput we’ve always touted in Kafka, all while scaling consumption beyond the partition count and better support for transactional workloads. Let’s unpack it together.',
+        '2025-07-19 15:05:00', '2025-07-19 15:50:00', 'I', 'US', 'T', 1, 1),
+       ('Java y grafos. Iniciemos con Neo4j', 'Los NoSQL ya son el día a día de nuestras aplicaciones, de entre los distintos tipos, existe uno que a veces no exploramos para nuestras soluciones: las orientadas a grafos.
+En esta charla veremos por qué son importantes y cómo podemos usarlas en nuestros proyectos con Java.',
+        '2025-07-19 10:45:00', '2025-07-19 11:30:00', 'A', 'DO', 'T', 6, 6),
+       ('Check-in workshop', 'Check-in workshop', '2025-07-18 13:00:00', '2025-07-18 14:00:00', NULL, NULL, 'OS', NULL,
+        NULL),
+       ('Coffee Break', 'Coffee Break', '2025-07-19 10:25:00', '2025-07-19 10:45:00', NULL, NULL, 'CB', NULL, NULL);
+INSERT INTO sessions (title, description, start_time, end_time, "level", "language", "type", room, track)
+VALUES ('Coffee Break', 'Coffee Break', '2025-07-19 11:30:00', '2025-07-19 11:45:00', NULL, NULL, 'CB', NULL, NULL),
+       ('Helidon 4 en Kubernetes: Lecciones Reales, Retos y Casos de Uso en Producción',
+        'Descubre cómo llevar Helidon 4 a producción en Kubernetes. Exploraremos lecciones aprendidas, retos enfrentados y casos de uso reales con Eclipse MicroProfile, bases de datos y servicios externos. Una charla con insights clave para optimizar distintas cargas de trabajo en el mundo real.',
+        '2025-07-19 10:45:00', '2025-07-19 11:30:00', 'I', 'DO', 'T', 7, 4),
+       ('De las Trincheras a Producción: Dominando GraalVM con Spring Boot',
+        'Sumérgete en experiencias reales con GraalVM y Spring Boot. Aprende a reducir uso de memoria, CPU y tiempos de arranque, creando contenedores más pequeños y manejando altas cargas. Esta charla ofrece soluciones prácticas para builds nativos, configuración de plugins y automation con github action.',
+        '2025-07-19 11:45:00', '2025-07-19 12:30:00', 'I', 'DO', 'T', 6, 4),
+       ('30 years programming: Lessons learned', 'I have been programming for 30 years now. During this time I have learned many lessons about work, code, software, tech in general that I''d like to share with you.
+I want to talk about cyclic patterns I''ve noticed throughout all these years, in the hopes we can stop making the same mistakes',
+        '2025-07-19 11:45:00', '2025-07-19 12:30:00', 'I', 'DO', 'T', 1, 3),
+       ('Getting Groovy: AI-Powered Spock Testing',
+        'Spock is a powerful testing framework for Java and Groovy, offering an expressive, efficient way to write tests. Imagine combining Spock with AI to supercharge your testing process. In this talk, see live coding that demonstrates how AI enhances test creation!',
+        '2025-07-19 15:55:00', '2025-07-19 16:40:00', 'A', 'US', 'T', 1, 2),
+       ('Agilidad para Desarrolladores: Creando Software de Calidad de Forma Continua',
+        'La agilidad no es solo seguir marcos de trabajo, sino desarrollar software de calidad de forma continua y sostenible. En esta charla, aprenderás cómo aplicar Agilidad para entregar valor, construir buen software y usar Scrum, Kanban y XP para un flujo eficiente sin comprometer la calidad.',
+        '2025-07-19 11:45:00', '2025-07-19 12:30:00', 'A', 'DO', 'T', 7, 3),
+       ('Lunch Break', 'Lunch Break', '2025-07-19 12:30:00', '2025-07-19 14:00:00', NULL, NULL, 'L', NULL, NULL),
+       ('How and why to participate in the future of the Java Platform',
+        'Learn about how to participate in the evolution and how to grow and build the next generation of Java developers, how we are working to advance of adoption of new versions of Java in the ecosystem. Also how we are evolving Java to be the platform of choice for AI workloads',
+        '2025-07-19 17:00:00', '2025-07-19 17:45:00', 'A', 'US', 'K', 1, 1),
+       ('Destripando la JVM: Instrumentación y Bytecode de Java',
+        '¿Te gustaría saber cómo frameworks como Mockito, Spring y Hibernate modifican clases en tiempo de ejecución? Aprende a interceptar y redefinir código sin tocar el fuente usando Java Agents e instrumentación. Desde profiling hasta auditoría, descubre cómo estas técnicas se aplican en el mundo real.',
+        '2025-07-19 15:05:00', '2025-07-19 15:50:00', 'I', 'DO', 'T', 6, 1),
+       ('Trabajando de Manera Sostenible en un Mundo Acelerado',
+        'El equilibrio entre el rendimiento profesional y el bienestar es clave para una carrera sostenible en tecnología. Esta charla aportará herramientas prácticas para que los desarrolladores puedan trabajar con mayor enfoque, salud y motivación a largo plazo.',
+        '2025-07-19 15:05:00', '2025-07-19 15:50:00', 'A', 'DO', 'T', 7, 3);
+INSERT INTO sessions (title, description, start_time, end_time, "level", "language", "type", room, track)
+VALUES ('Kotlin Coroutines: Más Allá del async/await',
+        'La concurrencia en Kotlin es poderosa, pero usar coroutines de manera eficiente puede ser un reto. En esta charla veremos cómo manejarlas correctamente, ejecutar tareas en paralelo y aprovecharlas para procesamiento asíncrono, además de compartir errores comunes y mejores prácticas.',
+        '2025-07-19 15:55:00', '2025-07-19 16:40:00', 'I', 'DO', 'T', 6, 5),
+       ('Jakarta EE Meets AI',
+        'Why learn new languages? Java has all you need for integrating Large Language Models (LLMs) into enterprise apps. Join me for live demos with LangChain4J, Spring AI, and Jakarta EE, and see how easily Java can be used for AI in your applications!',
+        '2025-07-19 10:45:00', '2025-07-19 11:30:00', 'A', 'US', 'T', 1, 2),
+       ('After Party', 'After Party', '2025-07-19 18:00:00', '2025-07-19 23:00:00', NULL, NULL, 'OS', NULL, NULL),
+       ('Raffles and More', 'Raffles and More', '2025-07-19 17:45:00', '2025-07-19 18:00:00', NULL, NULL, 'OS', 1,
+        NULL),
+       ('How to use Jakarta 11 with Payara 7',
+        'The intention of this workshop will be to review how to use Payara 7 and how Payara 7 is supporting Jakarta 11',
+        '2025-07-18 14:00:00', '2025-07-18 18:00:00', 'I', 'US', 'W', 2, 1),
+       ('OpenTelemetry para todos', 'OpenTelemetry es un proyecto de la CNCF(Cloud Native Computing Foundation), en concreto es un framework para implementar observabilidad.
+
+El hecho de que sea: Vendor- and tool- agnostic a veces en lugar de ayudar a adoptarlo confunde y crea cierta resistencia innecesaria a su difusión.
+
+Está formado por varios componentes, y la intención de este taller es mostrar un repaso didáctico de todos estos componentes.
+', '2025-07-18 14:00:00', '2025-07-18 18:00:00', 'B', 'DO', 'W', 4, 1),
+       ('Coffee Break ', 'Coffee Break ', '2025-07-18 15:45:00', '2025-07-18 16:00:00', NULL, NULL, 'CB', NULL, NULL),
+       ('Coffee Break', 'Coffee Break', '2025-07-19 14:45:00', '2025-07-19 15:05:00', NULL, NULL, 'CB', NULL, NULL),
+       ('Movement Time ', 'Movement Time ', '2025-07-19 15:50:00', '2025-07-19 15:55:00', NULL, NULL, 'OS', NULL, NULL),
+       ('Coffee Break', 'Coffee Break', '2025-07-19 16:40:00', '2025-07-19 17:00:00', NULL, NULL, 'CB', NULL, NULL);
+
+
+INSERT INTO session_speaker (session_code, speaker_id)
+VALUES (1, 6),
+       (2, 15),
+       (2, 16),
+       (5, 3),
+       (6, 3),
+       (7, 5),
+       (8, 8),
+       (12, 7),
+       (13, 9),
+       (14, 4);
+INSERT INTO session_speaker (session_code, speaker_id)
+VALUES (15, 11),
+       (16, 10),
+       (18, 1),
+       (19, 12),
+       (20, 13),
+       (21, 14),
+       (22, 2),
+       (25, 2),
+       (25, 17),
+       (26, 8);
+
+
+INSERT INTO session_tag (session_code, tag_id)
+VALUES (1, 1),
+       (1, 2),
+       (1, 3),
+       (1, 4),
+       (1, 5),
+       (1, 6),
+       (1, 7);
+
+
+
+
+

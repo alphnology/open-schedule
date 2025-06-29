@@ -1,4 +1,4 @@
 FROM eclipse-temurin:21-jre
-COPY target/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+COPY target/open-schedule.jar open-schedule.jar
+EXPOSE 51675
+ENTRYPOINT ["java", "-jar", "/open-schedule.jar"]

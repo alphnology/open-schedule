@@ -4,6 +4,14 @@
 .settings
 .project
 .classpath
+.npmrc
+package.json
+pnpm-lock.yaml
+tsconfig.json
+types.d.ts
+vite.config.ts
+
+.env
 
 *.iml
 .DS_Store
@@ -11,6 +19,7 @@
 # The following files are generated/updated by vaadin-maven-plugin
 node_modules/
 src/main/frontend/generated/
+src/main/bundles/
 pnpmfile.js
 vite.generated.ts
 

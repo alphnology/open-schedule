@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:15
+    volumes:
+      - db_postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=open-schedule
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d open-schedule" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: always
+    ports:
+      - 1025:1025
+      - 8025:8025
+
+  app-open-schedule:
+    image: alphnology/open-schedule:latest
+    ports:
+      - "51675:51675"
+    environment:
+      - DB_HOST=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=open-schedule
+      - EVENT_WEBSITE=https://jconfdominicana.org
+    volumes:
+      - ./assets:/assets
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  db_postgres:

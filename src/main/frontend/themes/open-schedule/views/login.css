@@ -1,0 +1,117 @@
+vaadin-login-overlay-wrapper::part(overlay),
+.singup-view {
+    background-image: url("/images/login-bg.png");
+    -webkit-background-size: cover; /* For WebKit */
+    -moz-background-size: cover; /* Mozilla */
+    -o-background-size: cover; /* Opera */
+    background-size: cover; /* Generic */
+}
+
+
+vaadin-login-form-wrapper {
+    background: white !important;
+    align-items: center;
+}
+
+vaadin-login-form-wrapper vaadin-button {
+    width: calc(var(--lumo-size-xl) * 5);
+    margin: var(--lumo-space-s) auto;
+    align-content: center;
+}
+
+vaadin-login-form-wrapper vaadin-text-field,
+vaadin-login-form-wrapper vaadin-password-field {
+    --lumo-text-field-size: var(--lumo-size-m);
+}
+
+vaadin-login-overlay-wrapper::part(card) {
+    background: white !important;
+    display: block;
+    align-content: center;
+    width: calc(var(--lumo-size-xl) * 12);
+    border-radius: 0;
+    height: 100%;
+    padding: var(--lumo-size-xl);
+    margin: 0;
+}
+
+vaadin-login-overlay-wrapper::part(brand) {
+    background: white !important;
+}
+
+vaadin-login-overlay-wrapper::part(description) {
+    display: none;
+}
+
+vaadin-login-overlay-wrapper::part(content) {
+    justify-content: end;
+}
+
+.login-image {
+    width: 400px;
+}
+
+@media only screen and (max-height: 1024px) {
+    .login-image {
+        width: 230px;
+    }
+
+}
+
+@media only screen and (max-width: 1024px) and  (max-height: 1366px) {
+    vaadin-login-overlay-wrapper::part(card) {
+        width: 100%;
+    }
+
+    vaadin-login-form vaadin-button[theme~="submit"] {
+        width: 100%;
+    }
+}
+
+@media only screen and  (max-width: 768px) {
+    vaadin-login-overlay-wrapper::part(card) {
+        padding: .2rem;
+    }
+
+    .login-image {
+        width: 350px;
+    }
+
+}
+
+@media only screen and  (max-width: 500px) {
+    .login-image {
+        width: 150px;
+    }
+}
+
+@media only screen and  (max-width: 450px) and (max-height: 750px) {
+    vaadin-login-overlay-wrapper::part(card) {
+        padding: 1.2rem;
+    }
+
+    vaadin-login-form-wrapper vaadin-password-field,
+    vaadin-login-form-wrapper vaadin-text-field {
+        padding: 0.5rem 0.1rem 0.1rem;
+        font-size: var(--lumo-font-size-s);
+        --lumo-text-field-size: var(--lumo-size-s);
+    }
+
+    .login-image {
+        width: 100px;
+    }
+}
+
+vaadin-login-overlay-wrapper::part(brand) {
+    padding: 0 !important;
+}
+
+vaadin-login-overlay-wrapper::part(description) {
+    margin: 10px !important;
+}
+
+vaadin-login-form-wrapper::part(footer) {
+    font-weight: 600;
+}
+
+

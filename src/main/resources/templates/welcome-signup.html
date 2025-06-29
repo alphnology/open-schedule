@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Open Schedule</title>
+    <style>
+        :root {
+            --base-color: #F8F9FA;
+            --text-color: #2A2E35;
+            --heading-color: #2A2E35;
+            --primary-text-color: #0056b3;
+            --button-bg: #007BFF;
+            --button-text: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --border-radius: 0.5rem;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--base-color);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 0 10px rgba(23, 34, 47, 0.1);
+            padding: 40px;
+        }
+
+        h2 {
+            color: var(--heading-color);
+        }
+
+        p, li {
+            line-height: 1.6;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 40px;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Welcome, <span th:text="${name}">User</span>!</h2>
+
+    <p>Thank you for signing up with <strong>Open Schedule</strong>. We're thrilled to have your HVAC business on board.</p>
+
+    <p>Your account has been created with the following details:</p>
+    <ul>
+        <li><strong>Email:</strong> <span th:text="${username}">you@example.com</span></li>
+    </ul>
+
+    <p>To get started, log in to your dashboard and complete your company registration.</p>
+
+    <a th:href="@{${appUrl}}" class="btn">Access to Open Schedule</a>
+
+    <p>If you have any questions, feel free to reach out to our support team.</p>
+
+    <div class="footer">
+        &copy; <span th:text="${T(java.time.Year).now()}"></span> Open Schedule. All rights reserved.
+    </div>
+</div>
+</body>
+</html>

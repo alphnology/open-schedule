@@ -1,0 +1,83 @@
+services:
+
+  traefik:
+    image: "traefik:v3.4"
+    container_name: "traefik"
+    restart: unless-stopped
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=info@alphnology.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - alphnology-traefik
+    labels:
+      - "traefik.http.routers.api.rule=Host(`traefik.openschedule.alphnology.com`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$your_hash_here$$"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - # htpasswd echo $(htpasswd -nb admin "your_password")
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    volumes:
+      - ./db_postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=p@ssw0rd
+      - POSTGRES_DB=open-schedule
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d open-schedule" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alphnology-traefik
+
+  app-open-schedule:
+    image: alphnology/open-schedule:latest
+    restart: unless-stopped
+    ports:
+      - "51675:51675"
+    environment:
+      - DB_HOST=postgres
+      - DB_PASSWORD=p@ssw0rd
+      - DB_NAME=open-schedule
+      - EVENT_WEBSITE=https://jconfdominicana.org
+    volumes:
+      - ./assets:/assets
+    networks:
+      - alphnology-traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openschedule.rule=Host(`openschedule.alphnology.com`)"
+      - "traefik.http.routers.openschedule.service=openschedule-service"
+      - "traefik.http.routers.openschedule.entrypoints=websecure"
+      - "traefik.http.services.openschedule-service.loadbalancer.server.port=51675" # Puerto interno que usa la app
+      - "traefik.http.routers.openschedule.tls.certresolver=letsencrypt"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  alphnology-traefik:
+    driver: bridge

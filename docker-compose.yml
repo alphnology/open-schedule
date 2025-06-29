@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:15
+    volumes:
+      - db_postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=open-schedule
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d open-schedule" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: always
+    ports:
+      - 1025:1025
+      - 8025:8025
+
+volumes:
+  db_postgres:

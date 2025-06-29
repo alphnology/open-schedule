@@ -1,80 +1,209 @@
 package com.alphnology.views.speakers;
 
-import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Main;
-import com.vaadin.flow.component.html.OrderedList;
-import com.vaadin.flow.component.html.Paragraph;
+import com.alphnology.data.Country;
+import com.alphnology.data.Speaker;
+import com.alphnology.services.SessionRatingService;
+import com.alphnology.services.SessionService;
+import com.alphnology.services.SpeakerService;
+import com.alphnology.utils.CountryUtils;
+import com.alphnology.views.rate.RatingEventBus;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility.AlignItems;
-import com.vaadin.flow.theme.lumo.LumoUtility.Display;
-import com.vaadin.flow.theme.lumo.LumoUtility.FontSize;
-import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import com.vaadin.flow.theme.lumo.LumoUtility.JustifyContent;
-import com.vaadin.flow.theme.lumo.LumoUtility.ListStyleType;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
-import com.vaadin.flow.theme.lumo.LumoUtility.MaxWidth;
-import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
-import com.vaadin.flow.theme.lumo.LumoUtility.TextColor;
+import com.vaadin.flow.theme.lumo.LumoIcon;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.jpa.domain.Specification;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static com.alphnology.utils.PredicateUtils.createPredicateForSelectedItems;
+import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
+
 @PageTitle("Speakers")
-@Route("speakers")
+@Route("speaker")
 @Menu(order = 1, icon = LineAwesomeIconUrl.USERS_SOLID)
 @AnonymousAllowed
-public class SpeakersView extends Main implements HasComponents, HasStyle {
+public class SpeakersView extends VerticalLayout {
 
-    private OrderedList imageContainer;
+private static final String SEARCH_PLACEHOLDER = "Search...";
 
-    public SpeakersView() {
-        constructUI();
+    private final transient SpeakerService speakerService;
 
-        imageContainer.add(new SpeakersViewCard("Snow mountains under stars",
-                "https://images.unsplash.com/photo-1519681393784-d120267933ba?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80"));
-        imageContainer.add(new SpeakersViewCard("Snow covered mountain",
-                "https://images.unsplash.com/photo-1512273222628-4daea6e55abb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80"));
-        imageContainer.add(new SpeakersViewCard("River between mountains",
-                "https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=375&q=80"));
-        imageContainer.add(new SpeakersViewCard("Milky way on mountains",
-                "https://images.unsplash.com/photo-1515705576963-95cad62945b6?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=750&q=80"));
-        imageContainer.add(new SpeakersViewCard("Mountain with fog",
-                "https://images.unsplash.com/photo-1513147122760-ad1d5bf68cdb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80"));
-        imageContainer.add(new SpeakersViewCard("Mountain at night",
-                "https://images.unsplash.com/photo-1562832135-14a35d25edef?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=815&q=80"));
+    private final OrderedList imageContainer = new OrderedList();
+    private final TextField searchField = new TextField(SEARCH_PLACEHOLDER);
+    private final MultiSelectComboBox<String> filterTitle = new MultiSelectComboBox<>("Title");
+    private final MultiSelectComboBox<Country> filterCountry = new MultiSelectComboBox<>("Country");
+    private final MultiSelectComboBox<String> filterCompany = new MultiSelectComboBox<>("Company");
+    private final ComboBox<String> orderBy = new ComboBox<>("Order by");
+    private final SpeakersViewDetails speakersViewDetails;
+
+
+
+    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, RatingEventBus ratingEventBus) {
+        this.speakerService = speakerService;
+        addClassNames("speakers-view");
+        setSizeFull();
+        setAlignItems(FlexComponent.Alignment.STRETCH);
+        addClassNames(LumoUtility.MaxWidth.SCREEN_XLARGE, LumoUtility.Margin.Horizontal.AUTO, LumoUtility.Padding.Bottom.LARGE, LumoUtility.Padding.Horizontal.LARGE);
+
+        speakersViewDetails = new SpeakersViewDetails(ratingEventBus, sessionService, sessionRatingService);
+
+        HorizontalLayout container = new HorizontalLayout();
+        container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);
+
+        VerticalLayout headerContainer = new VerticalLayout();
+        headerContainer.addClassNames(LumoUtility.Padding.Horizontal.NONE);
+
+        H2 headerTitle = new H2("Lineup of speakers");
+        headerTitle.getStyle().set("color", "#17222F");
+        headerTitle.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.XSMALL, LumoUtility.FontSize.XXXLARGE, LumoUtility.Padding.NONE);
+
+        headerContainer.add(headerTitle);
+
+        Header header = new Header();
+        header.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.AlignItems.CENTER,
+                LumoUtility.Padding.MEDIUM,
+                LumoUtility.BorderRadius.NONE,
+                LumoUtility.BoxShadow.NONE);
+
+        initComponents();
+
+        Div headerOption = new Div(searchField, filterTitle, filterCompany, filterCountry, orderBy);
+        headerOption.addClassNames(LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.ROW,
+                LumoUtility.AlignItems.CENTER,
+                LumoUtility.Width.FULL,
+                LumoUtility.Padding.Horizontal.NONE,
+                LumoUtility.Gap.Column.LARGE,
+                "flex-wrap-layout");
+
+
+        header.add(headerContainer, headerOption);
+        add(header);
+
+        imageContainer.addClassNames(LumoUtility.Gap.MEDIUM, LumoUtility.Display.GRID, LumoUtility.ListStyleType.NONE, LumoUtility.Margin.NONE, LumoUtility.Padding.NONE);
+
+        refreshAll();
+
+
+        Section imageContainerSection = new Section(imageContainer);
+        imageContainerSection.setWidthFull();
+        imageContainerSection.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.BorderRadius.NONE, LumoUtility.BoxShadow.NONE);
+
+        Scroller scroller = new Scroller(imageContainerSection);
+        scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
+
+        add(scroller);
 
     }
 
-    private void constructUI() {
-        addClassNames("speakers-view");
-        addClassNames(MaxWidth.SCREEN_LARGE, Margin.Horizontal.AUTO, Padding.Bottom.LARGE, Padding.Horizontal.LARGE);
 
-        HorizontalLayout container = new HorizontalLayout();
-        container.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN);
+    private void initComponents() {
+        searchField.focus();
+        searchField.addClassNames(LumoUtility.Flex.GROW, LumoUtility.MinWidth.NONE);
+        searchField.setAriaLabel(SEARCH_PLACEHOLDER);
+        searchField.setClearButtonVisible(true);
+        searchField.setWidthFull();
+        searchField.setPlaceholder(SEARCH_PLACEHOLDER);
+        searchField.setPrefixComponent(LumoIcon.SEARCH.create());
+        searchField.setValueChangeMode(ValueChangeMode.EAGER);
 
-        VerticalLayout headerContainer = new VerticalLayout();
-        H2 header = new H2("Beautiful photos");
-        header.addClassNames(Margin.Bottom.NONE, Margin.Top.XLARGE, FontSize.XXXLARGE);
-        Paragraph description = new Paragraph("Royalty free photos and pictures, courtesy of Unsplash");
-        description.addClassNames(Margin.Bottom.XLARGE, Margin.Top.NONE, TextColor.SECONDARY);
-        headerContainer.add(header, description);
+        orderBy.setItems(List.of("Name", "Company", "Title", "Country"));
+        orderBy.setValue("Name");
 
-        Select<String> sortBy = new Select<>();
-        sortBy.setLabel("Sort by");
-        sortBy.setItems("Popularity", "Newest first", "Oldest first");
-        sortBy.setValue("Popularity");
+        searchField.addValueChangeListener(e -> refreshAll());
+        filterTitle.addValueChangeListener(e -> refreshAll());
+        filterCompany.addValueChangeListener(e -> refreshAll());
+        filterCountry.addValueChangeListener(e -> refreshAll());
+        orderBy.addValueChangeListener(e -> refreshAll());
 
-        imageContainer = new OrderedList();
-        imageContainer.addClassNames(Gap.MEDIUM, Display.GRID, ListStyleType.NONE, Margin.NONE, Padding.NONE);
+        searchField.setClearButtonVisible(true);
+        filterTitle.setClearButtonVisible(true);
+        filterCompany.setClearButtonVisible(true);
+        filterCountry.setClearButtonVisible(true);
 
-        container.add(headerContainer, sortBy);
-        add(container, imageContainer);
+        filterTitle.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
+        filterCompany.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
+        filterCountry.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
 
+        List<Speaker> speakers = speakerService.findAll();
+
+        Map<String, List<Speaker>> byTitle = groupByField(speakers, Speaker::getTitle);
+        Map<String, List<Speaker>> byCompany = groupByField(speakers, Speaker::getCompany);
+        Map<String, List<Speaker>> byCountry = groupByField(speakers, Speaker::getCountry);
+
+        List<Country> listCountries = CountryUtils.getCountryNamesWithCodes()
+                .stream().filter(p -> byCountry.keySet().stream().anyMatch(m -> m.equalsIgnoreCase(p.getCode()))).toList();
+
+        filterTitle.setItems(byTitle.keySet());
+        filterCountry.setItems(listCountries);
+        filterCompany.setItems(byCompany.keySet());
+
+        filterTitle.setPlaceholder("Choose a Title");
+        filterCountry.setPlaceholder("Choose a country");
+        filterCompany.setPlaceholder("Choose a company");
+    }
+
+    private static <K> Map<K, List<Speaker>> groupByField(List<Speaker> speakers, Function<Speaker, K> classifier) {
+        return speakers.stream().collect(Collectors.groupingBy(classifier));
+    }
+
+    private Specification<Speaker> createFilterSpecification() {
+        return (root, query, builder) -> {
+
+            final String search = searchField.getValue().toLowerCase().trim();
+
+            Order order = builder.asc(root.get(orderBy.getValue().toLowerCase()));
+            assert query != null;
+            query.orderBy(order);
+            query.distinct(true);
+
+            Predicate predicateName = predicateUnaccentLike(root, builder, "name", search);
+            Predicate predicateTitle = predicateUnaccentLike(root, builder, "title", search);
+            Predicate predicateCompany = predicateUnaccentLike(root, builder, "company", search);
+            Predicate predicateCountry = predicateUnaccentLike(root, builder, "country", search);
+            Predicate predicateBio = predicateUnaccentLike(root, builder, "bio", search);
+
+            final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateName, predicateTitle, predicateCompany, predicateCountry, predicateBio));
+
+            Predicate orPredicate = orPredicates.isEmpty() ? builder.conjunction() : builder.or(orPredicates.toArray(Predicate[]::new));
+
+            Predicate predicateSelectTitle = createPredicateForSelectedItems(Optional.ofNullable(filterTitle.getSelectedItems()), items -> root.get("title").in(items), builder);
+
+            Predicate predicateSelectCompany = createPredicateForSelectedItems(Optional.ofNullable(filterCompany.getSelectedItems()), items -> root.get("company").in(items), builder);
+
+            Predicate predicateSelectCountry = createPredicateForSelectedItems(Optional.of(filterCountry.getSelectedItems().stream().map(Country::getCode).toList()), items -> root.get("country").in(items), builder);
+
+            return builder.and(orPredicate, predicateSelectTitle, predicateSelectCompany, predicateSelectCountry);
+
+        };
+    }
+
+    private void refreshAll() {
+        imageContainer.removeAll();
+
+        speakerService.findAll(createFilterSpecification())
+                .forEach(s -> imageContainer.add(new SpeakersViewCard(s, speakersViewDetails::showSpeaker)));
     }
 }

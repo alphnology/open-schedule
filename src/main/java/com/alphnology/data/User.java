@@ -1,60 +1,93 @@
 package com.alphnology.data;
 
+import com.alphnology.data.enums.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
-import java.util.Set;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.type.SqlTypes;
 
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.*;
+
+@Getter
+@Setter
 @Entity
-@Table(name = "application_user")
-public class User extends AbstractEntity {
+@ToString
+@Table(
+        name = "users",
+        indexes = {
+                @Index(columnList = "username, name")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"username"})
+        }
+)
+public class User implements Serializable {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long code;
+
+    @Email
+    @NotNull
+    @Size(min = 1, max = 100)
+    @Column(unique = true, updatable = false)
     private String username;
-    private String name;
-    @JsonIgnore
-    private String hashedPassword;
-    @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.EAGER)
-    private Set<Role> roles;
-    @Lob
-    @Column(length = 1000000)
-    private byte[] profilePicture;
 
-    public String getUsername() {
-        return username;
+    @NotNull
+    @JsonIgnore
+    @Size(min = 1, max = 250)
+    private String password;
+
+    @NotNull
+    @Size(min = 1, max = 100)
+    private String name;
+
+    @Size(max = 30)
+    private String phone;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private Role roles;
+
+    @ToString.Exclude
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "users")
+    private List<SessionRating> ratings = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "favoriteSessions")
+    private Set<Session> favoriteSessions = new HashSet<>();
+
+    private Instant lastLoginTs;
+
+    private boolean oneLogPwd;
+
+    private boolean locked;
+
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        User that = (User) o;
+        return Objects.equals(getCode(), that.getCode());
     }
-    public void setUsername(String username) {
-        this.username = username;
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getHashedPassword() {
-        return hashedPassword;
-    }
-    public void setHashedPassword(String hashedPassword) {
-        this.hashedPassword = hashedPassword;
-    }
-    public Set<Role> getRoles() {
-        return roles;
-    }
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-    public byte[] getProfilePicture() {
-        return profilePicture;
-    }
-    public void setProfilePicture(byte[] profilePicture) {
-        this.profilePicture = profilePicture;
-    }
+
 
 }

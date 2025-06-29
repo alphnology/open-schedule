@@ -1,2 +1,82 @@
 @import url('./main-layout.css');
-@import url('./views/speakers-view.css');
+@import url('./views/login.css');
+@import url('./views/change-password.css');
+@import url('./views/speakers-schedule-view.css');
+@import url('./components/vaadin-checkbox.css');
+
+
+html {
+    /* Open Schedule - Theme */
+
+    /* Base & Text */
+    --lumo-base-color: #F8F9FA; /* light background */
+    --lumo-body-text-color: #2A2E35;
+    --lumo-heading-text-color: #2A2E35;
+    --lumo-secondary-text-color: #495057;
+    --lumo-tertiary-text-color: #6C757D;
+    --lumo-disabled-text-color: #6C757D66;
+
+    /* Primary (Blue) */
+    --lumo-primary-color: #007BFF;
+    --lumo-primary-color-10pct: #007bff1a;
+    --lumo-primary-color-50pct: #007bff80;
+    --lumo-primary-contrast-color: #ffffff;
+    --lumo-primary-text-color: #0056b3;
+    --lumo-dark-primary-color: #1976d2;
+
+    /* Success (Green) */
+    --lumo-success-color: #28A745;
+    --lumo-success-color-10pct: #28a7451a;
+    --lumo-success-color-50pct: #28a74580;
+    --lumo-success-contrast-color: #ffffff;
+    --lumo-success-text-color: #1e7e34;
+
+    /* Warning */
+    --lumo-warning-color: #FFC107;
+    --lumo-warning-color-10pct: #ffc10733;
+    --lumo-warning-text-color: #856404;
+    --lumo-warning-contrast-color: #ffffff;
+
+    /* Error */
+    --lumo-error-color: #DC3545;
+    --lumo-error-color-10pct: #dc35451a;
+    --lumo-error-color-50pct: #dc354580;
+    --lumo-error-contrast-color: #ffffff;
+    --lumo-error-text-color: #721c24;
+
+    /* Contrast for borders and dividers */
+    --lumo-contrast: #343A40;
+    --lumo-contrast-5pct: #343a400d;
+    --lumo-contrast-10pct: #343a401a;
+    --lumo-contrast-20pct: #343a4029;
+    --lumo-contrast-30pct: #343a4042;
+    --lumo-contrast-40pct: #343a4061;
+    --lumo-contrast-50pct: #343a4080;
+    --lumo-contrast-60pct: #343a4099;
+    --lumo-contrast-70pct: #343a40b3;
+    --lumo-contrast-80pct: #343a40d1;
+    --lumo-contrast-90pct: #343a40f0;
+
+    /* UI Elements */
+    --vaadin-input-field-background: #FFFFFF;
+    --vaadin-input-field-hover-highlight: var(--lumo-contrast-20pct);
+    --vaadin-input-field-border-width: 1px;
+    --vaadin-input-field-border-color: var(--lumo-contrast-30pct);
+    --vaadin-button-background: #ffffff;
+    --vaadin-button-border: 1px solid var(--lumo-primary-color-50pct);
+
+    /* Layout spacing and rounding */
+    --lumo-border-radius-s: 0.25rem;
+    --lumo-border-radius-m: 0.5rem;
+    --lumo-border-radius-l: 1rem;
+    --lumo-space-xxl: 48px;
+
+    /* Custom */
+    --light-background-color: #FFFFFF;
+    --lumo-user-holiday: #FF1A1A;
+
+}
+
+[theme~="dark"] {
+
+}

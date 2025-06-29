@@ -2,23 +2,31 @@ package com.alphnology.services;
 
 import com.alphnology.data.User;
 import com.alphnology.data.UserRepository;
-import java.util.Optional;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
+@Getter
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository repository;
 
-    public UserService(UserRepository repository) {
-        this.repository = repository;
-    }
 
     public Optional<User> get(Long id) {
+        if (id == null) return Optional.empty();
+
         return repository.findById(id);
+    }
+
+    public Optional<User> findByUsername(String username) {
+        return repository.findByUsername(username);
     }
 
     public User save(User entity) {
@@ -37,8 +45,8 @@ public class UserService {
         return repository.findAll(filter, pageable);
     }
 
-    public int count() {
-        return (int) repository.count();
+    public boolean isThisUserNotAlreadyRegistered(String userCode) {
+        return repository.findByUsername(userCode).isEmpty();
     }
 
 }
