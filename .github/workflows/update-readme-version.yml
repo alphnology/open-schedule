@@ -1,6 +1,7 @@
 name: Update README Version Badge
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
