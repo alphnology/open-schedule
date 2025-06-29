@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
   <img src="https://img.shields.io/badge/version-1.0.3-brightgreen.svg" alt="Version">
   <!-- TODO: Add a GitHub Actions build status badge once CI is set up -->
-  <!-- <img src="https://github.com/your-username/open-schedule/actions/workflows/build.yml/badge.svg" alt="Build Status"> -->
+  <img src="https://github.com/alphnology/open-schedule/actions/workflows/.github/workflows/update-readme-version.yml/badge.svg" alt="Build Status">
 </p>
 
 A modern, open-source conference and event schedule management application. Built with LOVE in Java, Spring Boot, and
@@ -51,6 +51,9 @@ We are always looking to improve! Here are some features we're thinking about, a
 welcome contributions:
 
 * **Personalized Schedules:** Allow attendees to "star" or "favorite" sessions to build their own custom agenda.
+* **Comprehensive Testing:** Implement a robust testing suite, including:
+  *   **Unit Tests** to ensure individual components work correctly.
+  *   **End-to-End (E2E) Tests** to validate user flows from start to finish.
 * **Internationalization (i18n) Support:** Add the ability to translate the UI into multiple languages.
 * **Multi-Event Support:** Manage multiple events from a single instance of the application.
 * **Sponsor Management:** A dedicated section to showcase event sponsors.
