@@ -30,7 +30,7 @@ services:
       - DB_HOST=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=open-schedule
-      - EVENT_WEBSITE=https://jconfdominicana.org
+      - EVENT_WEBSITE=https://alphnology.com/
     volumes:
       - ./assets:/assets
     depends_on:

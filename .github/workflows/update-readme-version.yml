@@ -1,0 +1,45 @@
+name: Update README Version Badge
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'pom.xml'
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from pom.xml
+        id: project
+        run: |
+          # Use xmllint for robust XML parsing to avoid regex issues
+          # This extracts the content of the <version> tag inside <project>
+          VERSION=$(xmllint --xpath "string(//*[local-name()='project']/*[local-name()='version'])" pom.xml)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update README.md version badge
+        run: |
+          # Use 'sed' to find and replace the version in the badge URL
+          # This pattern is safe and won't accidentally replace other text
+          sed -i "s|\(https://img.shields.io/badge/version-\)[0-9A-Za-z.-]*\(-brightgreen.svg\)|\1${{ steps.project.outputs.version }}\2|" README.md
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          # Check if there are any changes to commit
+          if ! git diff --staged --quiet; then
+            git commit -m "docs: Update README version to ${{ steps.project.outputs.version }} [skip ci]"
+            git push
+          else
+            echo "No changes to README.md. Nothing to commit."
+          fi

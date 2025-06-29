@@ -1,67 +1,163 @@
 # Open Schedule
 
-This project can be used as a starting point to create your own Vaadin application with Spring Boot.
-It contains all the necessary configuration and some placeholder files to get you started.
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  <img src="https://img.shields.io/badge/version-1.0.0-brightgreen.svg" alt="Version">
+  <!-- TODO: Add a GitHub Actions build status badge once CI is set up -->
+  <!-- <img src="https://github.com/your-username/open-schedule/actions/workflows/build.yml/badge.svg" alt="Build Status"> -->
+</p>
 
-## Running the application
+A modern, open-source conference and event schedule management application. Built with LOVE in Java, Spring Boot, and
+Vaadin, Open Schedule provides a seamless experience for both event organizers and attendees.
 
-Open the project in an IDE. You can download the [IntelliJ community edition](https://www.jetbrains.com/idea/download) if you do not have a suitable IDE already.
-Once opened in the IDE, locate the `Application` class and run the main method using "Debug".
+<!-- TODO: Add a screenshot or GIF of the application in action -->
+<!-- <p align="center">
+  <img src="assets/app-screenshot.png" alt="Application Screenshot" width="700"/>
+</p> -->
 
-For more information on installing in various IDEs, see [how to import Vaadin projects to different IDEs](https://vaadin.com/docs/latest/getting-started/import).
+## About The Project
 
-If you install the Vaadin plugin for IntelliJ, you should instead launch the `Application` class using "Debug using HotswapAgent" to see updates in the Java code immediately reflected in the browser.
+Open Schedule was created to provide a free, robust, and easy-to-deploy solution for managing event agendas. Whether
+you're running a small meetup or a multi-track conference, this tool helps you organize sessions, speakers, and rooms,
+while offering attendees a clean and interactive interface to explore the schedule and rate sessions.
 
-## Deploying to Production
+**Built With:**
 
-The project is a standard Maven project. To create a production build, call 
+* Java & Spring Boot
+* Vaadin Flow
+* PostgreSQL
+* Flyway for database migrations
+* Docker & Docker Compose
+* Traefik as a reverse proxy
 
+## Features
+
+### Current Features
+
+* **Admin Dashboard:** A secure area for event organizers to manage all aspects of the event.
+* **Session Management:** Full CRUD (Create, Read, Update, Delete) functionality for event sessions.
+* **Speaker Profiles:** Manage speaker information, including bios, photos, and assigned sessions.
+* **Room & Track Organization:** Easily assign sessions to specific rooms and thematic tracks.
+* **Tagging System:** Use tags to categorize sessions for better filtering and discovery.
+* **Interactive Public Schedule:** A clean, user-friendly view for attendees to browse the agenda.
+* **Live Session Rating:** Attendees can rate sessions in real-time, providing valuable feedback.
+* **Dockerized Deployment:** Comes with docker-compose files for easy setup in both development and production
+  environments.
+* **PWA (Progressive Web App):** Enhanced mobile experience.
+
+### Future Roadmap & Potential Features
+
+We are always looking to improve! Here are some features we're thinking about, and we
+welcome contributions:
+
+* **Personalized Schedules:** Allow attendees to "star" or "favorite" sessions to build their own custom agenda.
+* **Internationalization (i18n) Support:** Add the ability to translate the UI into multiple languages.
+* **Multi-Event Support:** Manage multiple events from a single instance of the application.
+* **Sponsor Management:** A dedicated section to showcase event sponsors.
+* **Enhanced Analytics:** A dashboard for admins to view session popularity, ratings, and other key metrics.
+
+## Getting Started
+
+Getting a local instance of Open Schedule running is straightforward.
+
+### Prerequisites
+
+* Java 21 or later
+* Apache Maven
+* Docker and Docker Compose
+
+### Development Setup (Recommended)
+
+Getting started is simple thanks to the provided `Makefile`, but it's important to understand the two main workflows for
+an optimal development experience.
+
+This guide explains the two main workflows for an optimal development experience.
+
+**1. Clone the repository:**
+
+```shell
+git clone https://github.com/your-username/open-schedule.git
+cd open-schedule
 ```
-./mvnw clean package -Pproduction
+
+**2. First-Time Setup**
+
+The `make restart` command is the recommended way to start the project for the first time. It's a "one-shot" command
+that handles everything for you:
+
+* Builds the application's Docker image.
+* Launches the complete environment (application, database, and mail server) using Docker Compose.
+
+```shell
+# This command builds the image and starts all services
+make restart 
 ```
 
-If you have Maven globally installed, you can replace `./mvnw` with `mvn`.
+After this, you can access the application and services:
 
-This will build a JAR file with all the dependencies and front-end resources,ready to be run. The file can be found in the `target` folder after the build completes.
-You then launch the application using 
-```
-java -jar target/open-schedule-1.0-SNAPSHOT.jar
-```
+* Application: http://localhost:51675
+* MailHog (Email Catcher): http://localhost:8025
 
-## Project structure
+**3. Day-to-Day Development (Faster Workflow)**
 
-- `MainLayout.java` in `src/main/java` contains the navigation setup (i.e., the
-  side/top bar and the main menu). This setup uses
-  [App Layout](https://vaadin.com/docs/components/app-layout).
-- `views` package in `src/main/java` contains the server-side Java views of your application.
-- `views` folder in `src/main/frontend` contains the client-side JavaScript views of your application.
-- `themes` folder in `src/main/frontend` contains the custom CSS styles.
+After the initial setup, you can take advantage of Vaadin's hot-reloading features for a much faster development cycle.
+This involves running the application directly from your IDE (like IntelliJ or VSCode) and using Docker only for the
+background services.
 
-## Useful links
+* **Ensure background services are running:** If you've stopped everything, you can start just the database and mail
+  server with:
 
-- Read the documentation at [vaadin.com/docs](https://vaadin.com/docs).
-- Follow the tutorial at [vaadin.com/docs/latest/tutorial/overview](https://vaadin.com/docs/latest/tutorial/overview).
-- Create new projects at [start.vaadin.com](https://start.vaadin.com/).
-- Search UI components and their usage examples at [vaadin.com/docs/latest/components](https://vaadin.com/docs/latest/components).
-- View use case applications that demonstrate Vaadin capabilities at [vaadin.com/examples-and-demos](https://vaadin.com/examples-and-demos).
-- Build any UI without custom CSS by discovering Vaadin's set of [CSS utility classes](https://vaadin.com/docs/styling/lumo/utility-classes). 
-- Find a collection of solutions to common use cases at [cookbook.vaadin.com](https://cookbook.vaadin.com/).
-- Find add-ons at [vaadin.com/directory](https://vaadin.com/directory).
-- Ask questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/vaadin) or join our [Forum](https://vaadin.com/forum).
-- Report issues, create pull requests in [GitHub](https://github.com/vaadin).
-
-
-## Deploying using Docker
-
-To build the Dockerized version of the project, run
-
-```
-mvn clean package -Pproduction
-docker build . -t open-schedule:latest
+```shell
+    docker compose up -d postgres mailhog
 ```
 
-Once the Docker image is correctly built, you can test it locally using
+* **Run the application from your IDE:** Open the project in your favorite IDE and run the `main` method in the
+  `Application.java` class. The application will start much faster and will automatically connect to the services
+  running in Docker. Any changes you make to the frontend or backend code will be reflected almost instantly without
+  needing to rebuild the Docker image.
 
-```
-docker run -p 8080:8080 open-schedule:latest
-```
+## Configuration & Branding
+
+You can easily customize the application for your event.
+
+### Event Website Link
+
+To link to your event's official website from the main menu, set the following environment variable in your
+`docker-compose.ym`l or deployment environment:
+
+```yml
+environment:
+  - EVENT_WEBSITE=https://your-event-website.com
+  ```
+
+### Event Logo
+
+Event LogoTo display your event's logo in the application header:
+
+1. Create a logo file named `logo.png`
+2. .Place it inside the `assets/` directory at the root of the project.
+3. This directory is mounted as a volume in the Docker container, and the application will automatically pick it up.
+
+## Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any
+contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the
+repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+
+1. **Fork** the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Maintained By
+
+Open Schedule is proudly developed and maintained by [Alphnology](https://alphnology.com/).
+
+![img_1.png](img_1.png)
