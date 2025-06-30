@@ -43,7 +43,7 @@ import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 @AnonymousAllowed
 public class SpeakersView extends VerticalLayout {
 
-private static final String SEARCH_PLACEHOLDER = "Search...";
+    private static final String SEARCH_PLACEHOLDER = "Search...";
 
     private final transient SpeakerService speakerService;
 
@@ -54,7 +54,6 @@ private static final String SEARCH_PLACEHOLDER = "Search...";
     private final MultiSelectComboBox<String> filterCompany = new MultiSelectComboBox<>("Company");
     private final ComboBox<String> orderBy = new ComboBox<>("Order by");
     private final SpeakersViewDetails speakersViewDetails;
-
 
 
     public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, RatingEventBus ratingEventBus) {
@@ -70,11 +69,11 @@ private static final String SEARCH_PLACEHOLDER = "Search...";
         container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);
 
         VerticalLayout headerContainer = new VerticalLayout();
-        headerContainer.addClassNames(LumoUtility.Padding.Horizontal.NONE);
+        headerContainer.addClassNames(LumoUtility.Padding.NONE);
 
-        H2 headerTitle = new H2("Lineup of speakers");
+        H2 headerTitle = new H2("Speakers");
         headerTitle.getStyle().set("color", "#17222F");
-        headerTitle.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.XSMALL, LumoUtility.FontSize.XXXLARGE, LumoUtility.Padding.NONE);
+        headerTitle.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.FontSize.XXXLARGE, LumoUtility.Padding.NONE);
 
         headerContainer.add(headerTitle);
 
@@ -83,7 +82,7 @@ private static final String SEARCH_PLACEHOLDER = "Search...";
                 LumoUtility.Display.FLEX,
                 LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.AlignItems.CENTER,
-                LumoUtility.Padding.MEDIUM,
+                LumoUtility.Padding.NONE,
                 LumoUtility.BorderRadius.NONE,
                 LumoUtility.BoxShadow.NONE);
 
@@ -106,16 +105,14 @@ private static final String SEARCH_PLACEHOLDER = "Search...";
 
         refreshAll();
 
-
         Section imageContainerSection = new Section(imageContainer);
         imageContainerSection.setWidthFull();
-        imageContainerSection.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.BorderRadius.NONE, LumoUtility.BoxShadow.NONE);
+        imageContainerSection.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE, LumoUtility.BorderRadius.NONE, LumoUtility.BoxShadow.NONE);
 
         Scroller scroller = new Scroller(imageContainerSection);
         scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
 
         add(scroller);
-
     }
 
 
@@ -146,6 +143,7 @@ private static final String SEARCH_PLACEHOLDER = "Search...";
         filterTitle.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
         filterCompany.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
         filterCountry.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
+        orderBy.addClassNames(LumoUtility.Display.HIDDEN, LumoUtility.Display.Breakpoint.Large.FLEX);
 
         List<Speaker> speakers = speakerService.findAll();
 

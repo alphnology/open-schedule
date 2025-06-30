@@ -13,7 +13,7 @@ public class SpeakersViewCard extends ListItem {
 
 
     public SpeakersViewCard(Speaker speaker, Consumer<Speaker> callback) {
-        addClassNames(Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN, AlignItems.START, Padding.MEDIUM,
+        addClassNames(Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN, AlignItems.START, Padding.NONE,
                 BorderRadius.LARGE);
 
         getStyle().setCursor("pointer");
