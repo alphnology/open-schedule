@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/badge/version-1.0.6-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.7-brightgreen.svg" alt="Version">
   <!-- TODO: Add a GitHub Actions build status badge once CI is set up -->
   <img src="https://github.com/alphnology/open-schedule/actions/workflows/.github/workflows/update-readme-version.yml/badge.svg" alt="Build Status">
 </p>
