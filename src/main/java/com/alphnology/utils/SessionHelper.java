@@ -44,49 +44,46 @@ public class SessionHelper {
     }
 
     public static Div getLevel(Session session) {
-        Div levelDiv = new Div();
-        levelDiv.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.FlexDirection.ROW,
-                LumoUtility.FlexDirection.Breakpoint.Small.COLUMN,
-                LumoUtility.Gap.Column.SMALL
-        );
-
-        if (session.getLevel() != null) {
-            Span nameSpan = new Span();
-            nameSpan.addClassNames(LumoUtility.FontWeight.MEDIUM);
-            nameSpan.setText("Level:");
-
-            Span displaySpan = new Span();
-            displaySpan.addClassNames(LumoUtility.FontWeight.BOLD);
-            displaySpan.setText(session.getLevel().getDisplay());
-
-            levelDiv.add(nameSpan, displaySpan);
+        if (session.getLevel() == null) {
+            return new Div();
         }
-        return levelDiv;
+        return getDisplay("Level:", session.getLevel().getDisplay());
     }
 
     public static Div getTrack(Session session) {
-        Div trackDiv = new Div();
-        trackDiv.addClassNames(
+        if (session.getTrack() == null) {
+            return new Div();
+        }
+        return getDisplay("Track:", session.getTrack().getName());
+    }
+
+    public static Div getRoom(Session session) {
+        if (session.getRoom() == null) {
+            return new Div();
+        }
+        return getDisplay("Room:", session.getRoom().getName());
+    }
+
+    private static Div getDisplay(String label, String display) {
+        Div div = new Div();
+        div.addClassNames(
                 LumoUtility.Display.FLEX,
                 LumoUtility.FlexDirection.ROW,
-                LumoUtility.FlexDirection.Breakpoint.Small.COLUMN,
+//                LumoUtility.FlexDirection.Breakpoint.Small.ROW,
                 LumoUtility.Gap.Column.SMALL
         );
 
-        if (session.getTrack() != null) {
-            Span nameSpan = new Span();
-            nameSpan.addClassNames(LumoUtility.FontWeight.MEDIUM);
-            nameSpan.setText("Track:");
+        Span nameSpan = new Span();
+        nameSpan.addClassNames(LumoUtility.FontWeight.MEDIUM);
+        nameSpan.setText(label);
 
-            Span displaySpan = new Span();
-            displaySpan.addClassNames(LumoUtility.FontWeight.EXTRABOLD);
-            displaySpan.setText(session.getTrack().getName());
+        Span displaySpan = new Span();
+        displaySpan.addClassNames(LumoUtility.FontWeight.EXTRABOLD);
+        displaySpan.setText(display);
 
-            trackDiv.add(nameSpan, displaySpan);
-        }
-        return trackDiv;
+        div.add(nameSpan, displaySpan);
+
+        return div;
     }
 
     public static Div createRatingDisplay(double averageRating) {

@@ -223,7 +223,10 @@ public class ScheduleViewDetails extends Div {
 
         Div trackDiv = getTrack(session);
 
-        Div detailsContainer = new Div(headerLayout, description, sessionDate, levelDiv, trackDiv, footer);
+        Div roomDiv = getRoom(session);
+        roomDiv.addClassNames(LumoUtility.Display.BLOCK, LumoUtility.Display.Breakpoint.Large.HIDDEN);
+
+        Div detailsContainer = new Div(headerLayout, description, sessionDate, levelDiv, trackDiv, roomDiv, footer);
         detailsContainer.setWidthFull();
         detailsContainer.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.Row.MEDIUM);
         container.add(detailsContainer);

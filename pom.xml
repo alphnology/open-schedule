@@ -7,7 +7,7 @@
     <groupId>com.alphnology</groupId>
     <artifactId>open-schedule</artifactId>
     <name>open-schedule</name>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <description>Open Schedule</description>
     <packaging>jar</packaging>
 
