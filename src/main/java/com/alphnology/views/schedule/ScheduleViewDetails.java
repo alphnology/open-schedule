@@ -5,6 +5,7 @@ import com.alphnology.data.User;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.UserService;
+import com.alphnology.utils.Broadcaster;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.alphnology.utils.SpeakerHelper;
@@ -22,6 +23,7 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
+import static com.alphnology.utils.Broadcaster.RATE_SESSION;
 import static com.alphnology.utils.SessionHelper.*;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 

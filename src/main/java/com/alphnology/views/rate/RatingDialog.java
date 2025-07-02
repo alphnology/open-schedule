@@ -4,6 +4,7 @@ import com.alphnology.data.Session;
 import com.alphnology.data.SessionRating;
 import com.alphnology.data.User;
 import com.alphnology.services.SessionRatingService;
+import com.alphnology.utils.Broadcaster;
 import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.button.Button;
@@ -23,6 +24,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.alphnology.utils.Broadcaster.RATE_SESSION;
 
 /**
  * @author me@fredpena.dev
@@ -159,6 +162,7 @@ public class RatingDialog extends Dialog {
 
             sessionRatingService.save(sessionRating);
 
+            Broadcaster.broadcast(RATE_SESSION);
             NotificationUtils.success("Rating saved!");
 
             if (callback != null) {
