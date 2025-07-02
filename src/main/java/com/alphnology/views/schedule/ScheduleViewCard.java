@@ -41,8 +41,19 @@ public class ScheduleViewCard extends Div {
             addClickListener(event -> sessionService.get(session.getCode()).ifPresent(callback));
 
             double averageRating = session.getAverageRating();
-            Div ratingDiv = new Div(createRatingDisplay(averageRating));
-            ratingDiv.addClassNames(Margin.Left.AUTO);
+            int ratingCount = session.getRatingCount();
+
+            Span ratingDetailsSpan;
+            if (ratingCount > 0) {
+                String plural = ratingCount == 1 ? "Rate" : "Rates";
+                ratingDetailsSpan = new Span(String.format("%.2f / %d %s", averageRating, ratingCount, plural));
+            } else {
+                ratingDetailsSpan = new Span("(Not rating yet)");
+            }
+            ratingDetailsSpan.addClassNames(FontSize.SMALL);
+
+            Div ratingDiv = new Div(createRatingDisplay(averageRating), ratingDetailsSpan);
+            ratingDiv.addClassNames(Margin.Left.AUTO, Display.FLEX, FlexDirection.ROW, Gap.Column.MEDIUM);
 
             Tooltip.forComponent(ratingDiv)
                     .withText(averageRating > 0 ? "Rating: " + String.format("%.2f", averageRating) : "Not rating yet")

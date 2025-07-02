@@ -21,7 +21,6 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
-
 import static com.alphnology.utils.SessionHelper.*;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
@@ -97,7 +96,21 @@ public class ScheduleViewDetails extends Div {
         ratingDiv.removeAll();
 
         double averageRating = session.getAverageRating();
-        ratingDiv.add(createRatingDisplay(averageRating));
+
+        int ratingCount = session.getRatingCount();
+
+        Span ratingDetailsSpan;
+        if (ratingCount > 0) {
+            String plural = ratingCount == 1 ? "Rate" : "Rates";
+            ratingDetailsSpan = new Span(String.format("%.2f / %d %s", averageRating, ratingCount, plural));
+        } else {
+            ratingDetailsSpan = new Span("(Not rating yet)");
+        }
+        ratingDetailsSpan.addClassNames(LumoUtility.FontSize.SMALL);
+
+        ratingDiv.add(createRatingDisplay(averageRating), ratingDetailsSpan);
+        ratingDiv.getStyle().set("justify-items", "center");
+
         Tooltip.forComponent(ratingDiv)
                 .withText(averageRating > 0 ? "Rating: " + String.format("%.2f", averageRating) : "Not rating yet")
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);

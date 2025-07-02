@@ -102,6 +102,10 @@ public class Session implements Serializable {
         return ratings.stream().mapToInt(SessionRating::getScore).average().orElse(0.0);
     }
 
+    public int getRatingCount() {
+        return ratings.size();
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;

@@ -7,8 +7,6 @@ import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
@@ -49,33 +47,30 @@ public class SpeakerHelper {
         return socialLinksLayout;
     }
 
-    public static HorizontalLayout createSpeakerRenderer(Session session) {
-        HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    public static Div createSpeakerRenderer(Session session) {
+        Div layout = new Div();
+        layout.addClassNames(LumoUtility.Display.FLEX, LumoUtility.AlignItems.CENTER);
 
         AvatarGroup avatarGroup = new AvatarGroup();
-        avatarGroup.addClassNames(LumoUtility.Width.AUTO);
-
-        Div speakerContainer = new Div();
-        speakerContainer.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.FlexDirection.COLUMN,
-                LumoUtility.Width.AUTO
-        );
+        avatarGroup.setMaxItemsVisible(session.getSpeakers().size());
+        if (session.getSpeakers().size() <= 2) {
+            avatarGroup.addClassNames(LumoUtility.Width.AUTO);
+            layout.addClassNames(LumoUtility.FlexDirection.ROW, LumoUtility.Gap.Column.SMALL);
+        } else {
+            layout.addClassNames(LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.Row.SMALL);
+        }
 
         session.getSpeakers().forEach(speaker -> {
             AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName(), speaker.getPhotoUrl());
             avatarGroup.add(avatar);
-
-            Span speakerSpan = new Span();
-            speakerSpan.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD);
-            speakerSpan.setText(speaker.getName());
-            speakerContainer.add(speakerSpan);
         });
 
+        Span speakerSpan = new Span();
+        speakerSpan.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD);
+        speakerSpan.setText(RendererUtils.getSessionSpeakers(session.getSpeakers()));
 
-        horizontalLayout.add(avatarGroup, speakerContainer);
+        layout.add(avatarGroup, speakerSpan);
 
-        return horizontalLayout;
+        return layout;
     }
 }

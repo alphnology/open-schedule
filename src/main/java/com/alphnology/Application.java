@@ -2,6 +2,7 @@ package com.alphnology;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.AppShellSettings;
+import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @Theme(value = "open-schedule")
+@PWA(name = "Open Schedule", shortName = "OS", offlineResources = {"images/offline.png"})
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {
