@@ -33,7 +33,7 @@ public class ScheduleViewCard extends Div {
             broadcasterRegistration.remove();
         }
 
-        broadcasterRegistration = Broadcaster.register(RATE_SESSION, object ->
+        broadcasterRegistration = Broadcaster.register(RATE_SESSION.formatted(session.getCode()), object ->
                 getUI().ifPresent(ui -> ui.access(() -> sessionService.get(session.getCode())
                         .ifPresent(this::ratingDiv))));
 

@@ -162,7 +162,7 @@ public class RatingDialog extends Dialog {
 
             sessionRatingService.save(sessionRating);
 
-            Broadcaster.broadcast(RATE_SESSION);
+            Broadcaster.broadcast(RATE_SESSION.formatted(sessionRating.getSession().getCode()));
             NotificationUtils.success("Rating saved!");
 
             if (callback != null) {

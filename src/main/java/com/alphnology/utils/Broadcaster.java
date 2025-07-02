@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  */
 public final class Broadcaster {
 
-    public static final String RATE_SESSION = "RATE_SESSION";
+    public static final String RATE_SESSION = "RATE_SESSION_%s";
 
     private Broadcaster() {
     }
