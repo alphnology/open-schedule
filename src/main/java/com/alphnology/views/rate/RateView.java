@@ -5,8 +5,13 @@ import com.alphnology.data.SessionRating;
 import com.alphnology.data.User;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
+import com.alphnology.views.login.LoginView;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -15,8 +20,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import jakarta.annotation.security.PermitAll;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.util.ArrayList;
@@ -26,11 +31,11 @@ import java.util.List;
 @PageTitle("Rate")
 @Route("rate")
 @Menu(order = 2, icon = LineAwesomeIconUrl.STAR)
-@PermitAll
+@AnonymousAllowed
 public class RateView extends VerticalLayout implements AfterNavigationObserver {
 
     private final transient SessionService sessionService;
-    private final  transient SessionRatingService sessionRatingService;
+    private final transient SessionRatingService sessionRatingService;
 
     private final VerticalLayout unratedLayout = new VerticalLayout();
     private final VerticalLayout ratedLayout = new VerticalLayout();
@@ -49,6 +54,11 @@ public class RateView extends VerticalLayout implements AfterNavigationObserver 
         this.sessionRatingService = sessionRatingService;
 
         currentUser = VaadinSession.getCurrent().getAttribute(User.class);
+
+        if (currentUser == null) {
+            add(createEmptyStateLayout());
+            return;
+        }
 
         configureUI();
 
@@ -139,6 +149,26 @@ public class RateView extends VerticalLayout implements AfterNavigationObserver 
         } else {
             ratedSessions.forEach(rating -> ratedLayout.add(new RatedSessionCard(sessionRatingService, rating, () -> populateRatings(currentUser))));
         }
+    }
+
+    private VerticalLayout createEmptyStateLayout() {
+        Icon icon = VaadinIcon.STAR_O.create();
+        icon.setSize("4em");
+        icon.addClassName(LumoUtility.TextColor.TERTIARY);
+
+        Span message = new Span("Login to rate your favorite sessions.");
+        message.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.LARGE);
+
+        Button actionButton = new Button("Login", e -> UI.getCurrent().navigate(LoginView.class));
+
+        actionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+
+        VerticalLayout emptyLayout = new VerticalLayout(icon, message, actionButton);
+        emptyLayout.setAlignItems(VerticalLayout.Alignment.CENTER);
+        emptyLayout.setSpacing(true);
+        emptyLayout.addClassNames(LumoUtility.Padding.Vertical.LARGE, LumoUtility.Border.ALL, LumoUtility.BorderColor.CONTRAST_10, LumoUtility.BorderRadius.LARGE);
+
+        return emptyLayout;
     }
 
     @Override

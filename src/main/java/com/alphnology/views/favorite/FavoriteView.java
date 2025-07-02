@@ -36,18 +36,19 @@ import java.util.Optional;
 @AnonymousAllowed
 public class FavoriteView extends Div {
 
-    private final ScheduleViewDetails scheduleViewDetails;
+    private ScheduleViewDetails scheduleViewDetails;
 
     public FavoriteView(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
         addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.CENTER, LumoUtility.Padding.MEDIUM);
 
         User currentUser = VaadinSession.getCurrent().getAttribute(User.class);
-        this.scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
 
         if (currentUser == null) {
             add(createEmptyStateLayout(true));
             return;
         }
+
+        this.scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
 
         buildLayout(currentUser, sessionService);
     }
