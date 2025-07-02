@@ -15,7 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @Theme(value = "open-schedule")
-@PWA(name = "Open Schedule", shortName = "OS", offlineResources = {"images/offline.png"})
+@PWA(name = "Open Schedule", shortName = "Open Schedule", offlineResources = {"images/offline.png"})
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {
