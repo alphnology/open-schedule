@@ -18,7 +18,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
  */
 public class RatedSessionCard extends VerticalLayout {
 
-    public RatedSessionCard(SessionRatingService sessionRatingService, SessionRating rating, RatingEventBus ratingEventBus, Runnable callback) {
+    public RatedSessionCard(SessionRatingService sessionRatingService, SessionRating rating, Runnable callback) {
         String starDate = rating.getSession().getStartTime().format(DateTimeFormatterUtils.dateTimeFormatter);
 
         var titleDisplay = "%s %s".formatted(rating.getSession().getTitle(), rating.getSession().getRoom() == null ? " (" + starDate + ")" : "");
@@ -36,7 +36,7 @@ public class RatedSessionCard extends VerticalLayout {
         rateButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         rateButton.addClickListener(e -> {
             // Pass the RatingEventBus to the RatingDialog
-            RatingDialog dialog = new RatingDialog(sessionRatingService, rating.getSession(), rating, ratingEventBus, callback);
+            RatingDialog dialog = new RatingDialog(sessionRatingService, rating.getSession(), rating, callback);
             dialog.open();
         });
 

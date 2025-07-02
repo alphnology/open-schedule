@@ -26,7 +26,7 @@ public final class NotificationUtils {
         final Notification notification = new Notification();
         notification.addThemeVariants(themeVariant);
         notification.setDuration(DURATION);
-        notification.setPosition(Notification.Position.BOTTOM_START);
+        notification.setPosition(Notification.Position.TOP_END);
 
         final Div text = new Div(new Text(msg));
         text.addClassNames(LumoUtility.Margin.End.AUTO);

@@ -5,8 +5,8 @@ import com.alphnology.data.Speaker;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.SpeakerService;
+import com.alphnology.services.UserService;
 import com.alphnology.utils.CountryUtils;
-import com.alphnology.views.rate.RatingEventBus;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.*;
@@ -56,14 +56,14 @@ public class SpeakersView extends VerticalLayout {
     private final SpeakersViewDetails speakersViewDetails;
 
 
-    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, RatingEventBus ratingEventBus) {
+    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
         this.speakerService = speakerService;
         addClassNames("speakers-view");
         setSizeFull();
         setAlignItems(FlexComponent.Alignment.STRETCH);
         addClassNames(LumoUtility.MaxWidth.SCREEN_XLARGE, LumoUtility.Margin.Horizontal.AUTO, LumoUtility.Padding.Bottom.LARGE, LumoUtility.Padding.Horizontal.LARGE);
 
-        speakersViewDetails = new SpeakersViewDetails(ratingEventBus, sessionService, sessionRatingService);
+        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, userService);
 
         HorizontalLayout container = new HorizontalLayout();
         container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);

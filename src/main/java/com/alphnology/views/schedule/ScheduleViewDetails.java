@@ -4,11 +4,12 @@ import com.alphnology.data.Session;
 import com.alphnology.data.User;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
+import com.alphnology.services.UserService;
 import com.alphnology.utils.DateTimeFormatterUtils;
+import com.alphnology.utils.NotificationUtils;
 import com.alphnology.utils.SpeakerHelper;
 import com.alphnology.views.login.LoginView;
 import com.alphnology.views.rate.RatingDialog;
-import com.alphnology.views.rate.RatingEventBus;
 import com.alphnology.views.speakers.SpeakersViewDetails;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -26,16 +27,19 @@ import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
 public class ScheduleViewDetails extends Div {
 
-    private final RatingEventBus ratingEventBus;
     private final transient SessionService sessionService;
     private final transient SessionRatingService sessionRatingService;
+    private final transient UserService userService;
 
     private final Div ratingDiv = new Div();
+    private final User currentUser;
 
-    public ScheduleViewDetails(RatingEventBus ratingEventBus, SessionService sessionService, SessionRatingService sessionRatingService) {
-        this.ratingEventBus = ratingEventBus;
+
+    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
+        this.userService = userService;
+        this.currentUser = VaadinSession.getCurrent().getAttribute(User.class);
     }
 
     public void showSession(Session session) {
@@ -57,38 +61,110 @@ public class ScheduleViewDetails extends Div {
         close.setTooltipText("Close this session information");
         close.addClickListener(event -> dialog.close());
 
-        Button rate = new Button("Rate - Login Required", VaadinIcon.STAR.create());
-        rate.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
-        rate.setTooltipText("Rate this session information");
+        Button rate = new Button();
+        rate.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
+        updateRateButtonState(rate, session);
 
-        rate.addClickListener(e -> {
-            User currentUser = VaadinSession.getCurrent().getAttribute(User.class);
+        Button favorite = new Button();
+        favorite.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
+        updateFavoriteButtonState(favorite, session);
+
+        favorite.addClickListener(e -> {
             if (currentUser == null) {
                 UI.getCurrent().navigate(LoginView.class);
                 return;
             }
 
+            boolean isCurrentlyFavorite = currentUser.getFavoriteSessions() != null && currentUser.getFavoriteSessions().contains(session.getCode());
 
-            // Pass the injected RatingEventBus to the RatingDialog
+            if (isCurrentlyFavorite) {
+                currentUser.removeFromFavorite(session.getCode());
+                userService.save(currentUser);
+                NotificationUtils.info("Removed from favorites");
+            } else {
+                currentUser.addToFavorite(session.getCode());
+                userService.save(currentUser);
+                NotificationUtils.success("Added to favorites!");
+            }
+
+            updateFavoriteButtonState(favorite, session);
+        });
+
+        rate.addClickListener(e -> {
+            if (currentUser == null) {
+                UI.getCurrent().navigate(LoginView.class);
+                return;
+            }
+
             sessionRatingService.findByUsersAndSession(currentUser, session)
                     .ifPresentOrElse(sessionRating -> {
-                        RatingDialog ratingDialog = new RatingDialog(sessionRatingService, session, sessionRating, ratingEventBus, () -> sessionService.get(session.getCode())
-                                .ifPresent(this::calculateAverageRating));
+                        RatingDialog ratingDialog = new RatingDialog(sessionRatingService, session, sessionRating, () -> {
+                            sessionService.get(session.getCode()).ifPresent(this::calculateAverageRating);
+                            updateRateButtonState(rate, session);
+                        });
                         ratingDialog.open();
                     }, () -> {
-                        RatingDialog ratingDialog = new RatingDialog(sessionRatingService, session, null, ratingEventBus, () -> sessionService.get(session.getCode())
-                                .ifPresent(this::calculateAverageRating));
+                        RatingDialog ratingDialog = new RatingDialog(sessionRatingService, session, null, () -> {
+                            sessionService.get(session.getCode()).ifPresent(this::calculateAverageRating);
+                            updateRateButtonState(rate, session);
+                        });
                         ratingDialog.open();
                     });
+
         });
 
         dialog.getHeader().add(header);
-        dialog.getFooter().add(rate, close);
+        dialog.getFooter().add(favorite, rate, close);
 
         dialog.add(container(session));
         dialog.add(new Hr());
         dialog.add(sessionContainer(session));
 
+    }
+
+    private void updateFavoriteButtonState(Button favoriteButton, Session session) {
+        if (currentUser != null) {
+            if (currentUser.getFavoriteSessions() != null && currentUser.getFavoriteSessions().contains(session.getCode())) {
+                favoriteButton.setText("In Favorites");
+                favoriteButton.setIcon(VaadinIcon.HEART.create());
+                favoriteButton.setTooltipText("Remove from your favorites");
+                favoriteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                favoriteButton.removeThemeVariants(ButtonVariant.LUMO_CONTRAST);
+            } else {
+                favoriteButton.setText("Add to Favorites");
+                favoriteButton.setIcon(VaadinIcon.HEART_O.create());
+                favoriteButton.setTooltipText("Add this session to your favorites");
+                favoriteButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+                favoriteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            }
+        } else {
+            favoriteButton.setText("Favorite - Login Required");
+            favoriteButton.setTooltipText("Login to add favorites");
+        }
+    }
+
+    private void updateRateButtonState(Button rateButton, Session session) {
+        if (currentUser != null) {
+            userService.get(currentUser.getCode())
+                    .ifPresent(user -> {
+                        if (user.hasRate(session)) {
+                            rateButton.setText("Rated");
+                            rateButton.setIcon(VaadinIcon.STAR.create());
+                            rateButton.setTooltipText("This session is rated");
+                            rateButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+                            rateButton.removeThemeVariants(ButtonVariant.LUMO_CONTRAST);
+                        } else {
+                            rateButton.setText("Rate");
+                            rateButton.setIcon(VaadinIcon.STAR_O.create());
+                            rateButton.setTooltipText("Rate this session");
+                            rateButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+                            rateButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                        }
+                    });
+        } else {
+            rateButton.setText("Rate - Login Required");
+            rateButton.setTooltipText("Login to rate session");
+        }
     }
 
 
@@ -176,7 +252,7 @@ public class ScheduleViewDetails extends Div {
                     LumoUtility.Gap.Column.LARGE,
                     "transition-card"
             );
-            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(ratingEventBus, sessionService, sessionRatingService).showSpeaker(speaker));
+            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, userService).showSpeaker(speaker));
 
             containerSpeakers.add(containerSpeaker);
         });

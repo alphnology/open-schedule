@@ -64,13 +64,30 @@ public class User implements Serializable {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "favoriteSessions")
-    private Set<Session> favoriteSessions = new HashSet<>();
+    private Set<Long> favoriteSessions = new HashSet<>();
 
     private Instant lastLoginTs;
 
     private boolean oneLogPwd;
 
     private boolean locked;
+
+    public void addToFavorite(Long session) {
+        if (favoriteSessions == null) {
+            favoriteSessions = new HashSet<>();
+        }
+        favoriteSessions.add(session);
+    }
+
+    public void removeFromFavorite(Long session) {
+        if (favoriteSessions != null) {
+            this.favoriteSessions.remove(session);
+        }
+    }
+
+    public boolean hasRate(Session session) {
+        return ratings.stream().anyMatch(p -> p.getSession().equals(session));
+    }
 
 
     @Override

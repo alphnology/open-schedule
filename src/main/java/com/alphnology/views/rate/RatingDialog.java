@@ -43,15 +43,13 @@ public class RatingDialog extends Dialog {
     private int currentRating = 0;
 
     private final SessionRatingService sessionRatingService;
-    private final RatingEventBus ratingEventBus;
     private final Runnable callback;
 
     /**
      * Constructs a RatingDialog.
      */
 
-    public RatingDialog(SessionRatingService sessionRatingService, Session session, SessionRating existingRating, RatingEventBus ratingEventBus, Runnable callback) {
-        this.ratingEventBus = ratingEventBus;
+    public RatingDialog(SessionRatingService sessionRatingService, Session session, SessionRating existingRating, Runnable callback) {
         this.sessionRatingService = sessionRatingService;
         this.callback = callback;
         this.sessionRating = (existingRating != null) ? existingRating : new SessionRating();
@@ -161,7 +159,6 @@ public class RatingDialog extends Dialog {
 
             sessionRatingService.save(sessionRating);
 
-            ratingEventBus.publish(new RatingSavedEvent(sessionRating));
             NotificationUtils.success("Rating saved!");
 
             if (callback != null) {

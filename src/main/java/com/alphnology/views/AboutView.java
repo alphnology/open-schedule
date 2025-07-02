@@ -18,7 +18,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
  */
 @PageTitle("About")
 @Route(value = "about")
-@Menu(order = 3, icon = LineAwesomeIconUrl.INFO_SOLID)
+@Menu(order = 4, icon = LineAwesomeIconUrl.INFO_SOLID)
 @AnonymousAllowed
 public class AboutView extends VerticalLayout {
 

@@ -3,9 +3,9 @@ package com.alphnology.views.speakers;
 import com.alphnology.data.Speaker;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
+import com.alphnology.services.UserService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.SpeakerHelper;
-import com.alphnology.views.rate.RatingEventBus;
 import com.alphnology.views.schedule.ScheduleViewDetails;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,14 +21,14 @@ import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
 public class SpeakersViewDetails extends Div {
 
-    private final RatingEventBus ratingEventBus;
     private final transient SessionRatingService sessionRatingService;
     private final transient SessionService sessionService;
+    private final transient UserService userService;
 
-    public SpeakersViewDetails(RatingEventBus ratingEventBus, SessionService sessionService, SessionRatingService sessionRatingService) {
-        this.ratingEventBus = ratingEventBus;
+    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
+        this.userService = userService;
     }
 
 
@@ -93,7 +93,7 @@ public class SpeakersViewDetails extends Div {
             );
             containerSession.addClickListener(event -> {
 
-                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(ratingEventBus, sessionService, sessionRatingService);
+                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
                 sessionService.get(session.getCode())
                         .ifPresent(scheduleViewDetails::showSession);
             });

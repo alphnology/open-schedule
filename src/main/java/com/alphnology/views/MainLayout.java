@@ -4,8 +4,9 @@ import com.alphnology.data.User;
 import com.alphnology.security.AuthenticatedUser;
 import com.alphnology.utils.ImageUtils;
 import com.alphnology.views.login.LogoutView;
-import com.alphnology.views.rate.RatingEventBus;
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -32,7 +33,6 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.server.menu.MenuEntry;
-import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,19 +56,15 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
 
     private AuthenticatedUser authenticatedUser;
 
-    private final RatingEventBus ratingEventBus;
     private final String eventWebsite;
     private final String appVersion;
-    private Registration ratingEventRegistration;
 
     public MainLayout(
             AuthenticatedUser authenticatedUser,
-            RatingEventBus ratingEventBus,
             @Value("${event.website}") String eventWebsite,
             @Value("${application.version}") String appVersion
     ) {
         this.authenticatedUser = authenticatedUser;
-        this.ratingEventBus = ratingEventBus;
         this.eventWebsite = eventWebsite;
         this.appVersion = appVersion;
 
@@ -97,24 +93,6 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         layout.add(createUserInfo());
 
         addToNavbar(true, layout);
-    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent) {
-        super.onAttach(attachEvent);
-
-        ratingEventRegistration = ratingEventBus.subscribe(event -> {
-        });
-    }
-
-    @Override
-    protected void onDetach(DetachEvent detachEvent) {
-        super.onDetach(detachEvent);
-        // Unsubscribe to prevent memory leaks when the view is detached
-        if (ratingEventRegistration != null) {
-            ratingEventRegistration.remove();
-            ratingEventRegistration = null;
-        }
     }
 
     private void addDrawerContent() {

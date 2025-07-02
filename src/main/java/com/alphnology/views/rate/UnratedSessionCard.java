@@ -23,7 +23,7 @@ public class UnratedSessionCard extends VerticalLayout {
     private final Session session;
 
 
-    public UnratedSessionCard(SessionRatingService sessionRatingService, Session session, RatingEventBus ratingEventBus, Runnable callback) {
+    public UnratedSessionCard(SessionRatingService sessionRatingService, Session session, Runnable callback) {
         this.session = session;
 
         String starDate = session.getStartTime().format(DateTimeFormatterUtils.dateTimeFormatter);
@@ -38,7 +38,7 @@ public class UnratedSessionCard extends VerticalLayout {
         rateButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
         rateButton.addClickListener(e -> {
             // Pass the RatingEventBus to the RatingDialog
-            RatingDialog dialog = new RatingDialog(sessionRatingService, session, null, ratingEventBus, callback);
+            RatingDialog dialog = new RatingDialog(sessionRatingService, session, null, callback);
             dialog.open();
         });
 

@@ -6,9 +6,9 @@ import com.alphnology.data.Session;
 import com.alphnology.services.EventService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
+import com.alphnology.services.UserService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
-import com.alphnology.views.rate.RatingEventBus;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
@@ -50,10 +50,10 @@ public class ScheduleView extends VerticalLayout {
     private final ScheduleViewDetails scheduleViewDetails;
 
 
-    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, RatingEventBus ratingEventBus) {
+    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
         this.sessionService = sessionService;
 
-        scheduleViewDetails = new ScheduleViewDetails(ratingEventBus, sessionService, sessionRatingService);
+        scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
 
         setSpacing(false);
         setSizeFull();

@@ -31,7 +31,6 @@ public class RateView extends VerticalLayout implements AfterNavigationObserver 
 
     private final transient SessionService sessionService;
     private final  transient SessionRatingService sessionRatingService;
-    private final RatingEventBus ratingEventBus;
 
     private final VerticalLayout unratedLayout = new VerticalLayout();
     private final VerticalLayout ratedLayout = new VerticalLayout();
@@ -45,10 +44,9 @@ public class RateView extends VerticalLayout implements AfterNavigationObserver 
     private Span unratedCountBadge;
     private Span ratedCountBadge;
 
-    public RateView(SessionService sessionService, SessionRatingService sessionRatingService, RatingEventBus ratingEventBus) {
+    public RateView(SessionService sessionService, SessionRatingService sessionRatingService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
-        this.ratingEventBus = ratingEventBus;
 
         currentUser = VaadinSession.getCurrent().getAttribute(User.class);
 
@@ -125,7 +123,7 @@ public class RateView extends VerticalLayout implements AfterNavigationObserver 
             unratedLayout.add(new Paragraph("You have rated all your sessions. Great job!"));
         } else {
             unratedSessions.forEach(session -> {
-                UnratedSessionCard card = new UnratedSessionCard(sessionRatingService, session, ratingEventBus, () -> populateRatings(currentUser));
+                UnratedSessionCard card = new UnratedSessionCard(sessionRatingService, session, () -> populateRatings(currentUser));
                 unratedLayout.add(card);
                 unratedCards.add(card);
             });
@@ -139,7 +137,7 @@ public class RateView extends VerticalLayout implements AfterNavigationObserver 
         if (ratedSessions.isEmpty()) {
             ratedLayout.add(new Paragraph("You haven't rated any sessions yet."));
         } else {
-            ratedSessions.forEach(rating -> ratedLayout.add(new RatedSessionCard(sessionRatingService, rating, ratingEventBus, () -> populateRatings(currentUser))));
+            ratedSessions.forEach(rating -> ratedLayout.add(new RatedSessionCard(sessionRatingService, rating, () -> populateRatings(currentUser))));
         }
     }
 
