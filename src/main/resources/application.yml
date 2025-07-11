@@ -90,6 +90,12 @@ application:
       username: ${EMAIL_SMTP_USERNAME:}
       password: ${EMAIL_SMTP_PASSWORD:}
 
+
+github:
+  api:
+    token: ${GIT_HUB_API_TOKEN:ghp_YourSecretTokenHere}
+  repository:
+    name: ${GIT_HUB_REPOSITORY_NAME:alphnology/open-schedule}
 ---
 spring:
   config:

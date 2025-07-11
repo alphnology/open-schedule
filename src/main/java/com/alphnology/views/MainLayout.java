@@ -159,10 +159,10 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         eventLink.addClassName("external");
         nav.addItem(eventLink);
 
-        SideNavItem bug = new SideNavItem("Report bug", "https://github.com/alphnology/open-schedule/issues", LineAwesomeIcon.BUG_SOLID.create());
-        bug.setOpenInNewBrowserTab(true);
-        bug.addClassName("external");
-        nav.addItem(bug);
+//        SideNavItem bug = new SideNavItem("Report bug", "https://github.com/alphnology/open-schedule/issues", LineAwesomeIcon.BUG_SOLID.create());
+//        bug.setOpenInNewBrowserTab(true);
+//        bug.addClassName("external");
+//        nav.addItem(bug);
 
         SideNavItem contribute = new SideNavItem("Contribute", "https://github.com/alphnology/open-schedule", LineAwesomeIcon.GITHUB.create());
         contribute.setOpenInNewBrowserTab(true);
@@ -342,28 +342,4 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         }
     }
 
-//    public record MenuEntry(
-//            String path,
-//            String title,
-//            Double order,
-//            String icon,
-//            Class<? extends Component> menuClass,
-//            String parent
-//    ) implements Serializable {
-//        /**
-//         * Convenience constructor for mapping from Vaadin's MenuEntry.
-//         *
-//         * @param menuEntry Vaadin's original MenuEntry.
-//         */
-//        public MenuEntry(com.vaadin.flow.server.menu.MenuEntry menuEntry) {
-//            this(
-//                    menuEntry.path(),
-//                    menuEntry.title(),
-//                    menuEntry.order(),
-//                    menuEntry.icon(),
-//                    menuEntry.menuClass(),
-//                    null
-//            );
-//        }
-//    }
 }

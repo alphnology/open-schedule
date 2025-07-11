@@ -7,7 +7,7 @@
     <groupId>com.alphnology</groupId>
     <artifactId>open-schedule</artifactId>
     <name>open-schedule</name>
-    <version>1.0.9</version>
+    <version>1.0.10</version>
     <description>Open Schedule</description>
     <packaging>jar</packaging>
 
@@ -129,6 +129,12 @@
             <groupId>com.github.appreciated</groupId>
             <artifactId>apexcharts</artifactId>
             <version>24.0.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>github-api</artifactId>
+            <version>1.327</version>
         </dependency>
 
         <dependency>
