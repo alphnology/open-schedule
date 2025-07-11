@@ -6,7 +6,6 @@ import com.alphnology.services.SessionService;
 import com.alphnology.utils.Broadcaster;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.shared.Registration;
@@ -49,7 +48,7 @@ public class ScheduleViewCard extends Div {
         Div roomDiv = getRoom(session);
         roomDiv.addClassNames(Display.BLOCK, Display.Breakpoint.Large.HIDDEN);
 
-        Footer footer = new Footer();
+        Div footer = new Div();
         footer.addClassNames(JustifyContent.START, AlignItems.CENTER);
         footer.add(createSpeakerRenderer(session));
 

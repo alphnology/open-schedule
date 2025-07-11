@@ -1,11 +1,12 @@
 package com.alphnology.views.schedule;
 
+import com.alphnology.data.Event;
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.UserService;
-import com.alphnology.utils.Broadcaster;
+import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.alphnology.utils.SpeakerHelper;
@@ -19,11 +20,17 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.vaadin.lineawesome.LineAwesomeIcon;
 
-import static com.alphnology.utils.Broadcaster.RATE_SESSION;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import static com.alphnology.utils.SessionHelper.*;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
@@ -116,7 +123,31 @@ public class ScheduleViewDetails extends Div {
         });
 
         dialog.getHeader().add(header);
-        dialog.getFooter().add(favorite, rate, close);
+
+        Event event = VaadinSession.getCurrent().getAttribute(Event.class);
+
+        String sessionName = session.getTitle();
+        String room = session.getRoom().getName();
+        LocalDateTime sessionDate = session.getStartTime();
+        String eventUrl = CommonUtils.getBaseUrl();
+
+        Button attendingButton = new Button("Share", VaadinIcon.SHARE.create());
+        attendingButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_CONTRAST);
+        attendingButton.setTooltipText("Share that you're attending this session");
+
+        attendingButton.addClickListener(e -> {
+            String message = """
+                    Looking forward to the "%s" session at #%s%s. 
+                    
+                    See you in the %s room!
+                    
+                    Check out the full schedule: %s
+                    """.formatted(sessionName, event.getName().replace(" ", ""), sessionDate.getYear() , room, eventUrl);
+            showShareDialog(message, session, sessionName);
+        });
+
+        dialog.getFooter().add(attendingButton, favorite, rate, close);
+
 
         dialog.add(container(session));
         dialog.add(new Hr());
@@ -160,7 +191,7 @@ public class ScheduleViewDetails extends Div {
                             rateButton.setIcon(VaadinIcon.STAR_O.create());
                             rateButton.setTooltipText("Rate this session");
                             rateButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-                            rateButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                            rateButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
                         }
                     });
         } else {
@@ -324,6 +355,67 @@ public class ScheduleViewDetails extends Div {
 
         return container;
 
+    }
+
+    private void showShareDialog(String message, Session session, String sessionName) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Share Session");
+        dialog.setDraggable(true);
+
+        TextArea textArea = new TextArea("Message to share");
+        textArea.setValue(message);
+        textArea.setReadOnly(true);
+        textArea.setWidthFull();
+
+        Button copyButton = new Button("Copy", VaadinIcon.COPY_O.create());
+        copyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        copyButton.setTooltipText("Copy message to clipboard");
+        copyButton.addClickListener(e -> {
+            UI.getCurrent().getPage().executeJs("navigator.clipboard.writeText($0)", message);
+            NotificationUtils.info("Message copied to clipboard");
+        });
+
+        Button twitterButton = new Button("Share on X", VaadinIcon.TWITTER.create());
+        twitterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        twitterButton.setTooltipText("Share on X (formerly Twitter)");
+        twitterButton.addClickListener(e -> {
+            String tweetUrl = "https://twitter.com/intent/tweet?text=" + URLEncoder.encode(message, StandardCharsets.UTF_8);
+            UI.getCurrent().getPage().executeJs("window.open($0, '_blank')", tweetUrl);
+        });
+
+        Button linkedinButton = new Button("Share on LinkedIn", LineAwesomeIcon.LINKEDIN.create());
+        linkedinButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        linkedinButton.getStyle().set("--lumo-primary-color", "#0077B5");
+        linkedinButton.getStyle().set("--lumo-primary-text-color", "#FFFFFF");
+        linkedinButton.setTooltipText("Share on LinkedIn");
+        linkedinButton.addClickListener(e -> {
+            String url = "%s/share/%s".formatted(CommonUtils.getBaseUrl(), session.getCode());
+            String linkedInUrl = "https://www.linkedin.com/shareArticle?mini=true"
+                              + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8);
+            UI.getCurrent().getPage().executeJs("window.open($0, '_blank')", linkedInUrl);
+        });
+
+        Button emailButton = new Button(VaadinIcon.ENVELOPE_O.create());
+        emailButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        emailButton.setTooltipText("Share via your default email client");
+        emailButton.addClickListener(e -> {
+            String subject = "Check out this session: " + sessionName;
+            String mailtoUrl = "mailto:?subject=" + URLEncoder.encode(subject, StandardCharsets.UTF_8)
+                               + "&body=" + URLEncoder.encode(message, StandardCharsets.UTF_8);
+            UI.getCurrent().getPage().executeJs("window.open($0, '_self')", mailtoUrl);
+        });
+
+        Div socialButtons = new Div(twitterButton, linkedinButton);
+        socialButtons.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Gap.SMALL, LumoUtility.FlexWrap.WRAP);
+
+        Div utilityButtons = new Div(emailButton, copyButton);
+        utilityButtons.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Gap.SMALL);
+
+        Div bottomBar = new Div(utilityButtons, socialButtons);
+        bottomBar.addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.BETWEEN, LumoUtility.AlignItems.CENTER, LumoUtility.Width.FULL);
+
+        dialog.add(textArea, bottomBar);
+        dialog.open();
     }
 
 

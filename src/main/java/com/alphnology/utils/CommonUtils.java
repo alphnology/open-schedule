@@ -3,6 +3,9 @@ package com.alphnology.utils;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.text.Normalizer;
 import java.util.function.BiPredicate;
@@ -36,6 +39,16 @@ public final class CommonUtils {
 
     public static <C> ComboBox.ItemFilter<C> comboBoxItemFilter(Function<C, String> propertyExtractor, BiPredicate<String, String> filterLogic) {
         return (item, filterText) -> filterLogic.test(normalizeText(propertyExtractor.apply(item)), normalizeText(filterText));
+    }
+
+    public static String getBaseUrl() {
+        HttpServletRequest request = ((VaadinServletRequest) VaadinRequest.getCurrent()).getHttpServletRequest();
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+
+        String portPart = (serverPort == 80 || serverPort == 443) ? "" : ":" + serverPort;
+        return scheme + "://" + serverName + portPart;
     }
 
 }

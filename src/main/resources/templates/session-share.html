@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${title}">Open Schedule</title>
+
+  <!-- Open Graph Tags -->
+  <meta property="og:title" th:content="${title}" />
+  <meta property="og:description" th:content="${description}" />
+  <meta property="og:url" th:content="${pageUrl}" />
+</head>
+<body>
+<h1 th:text="${title}">Título</h1>
+<p th:text="${description}">Descripción</p>
+</body>
+</html>

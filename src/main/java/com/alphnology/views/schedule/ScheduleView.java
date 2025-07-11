@@ -21,6 +21,7 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.persistence.criteria.Order;
@@ -67,6 +68,8 @@ public class ScheduleView extends VerticalLayout {
         }
 
         Event event = optionalEvent.get();
+
+        VaadinSession.getCurrent().setAttribute(Event.class, event);
 
         Span notice = new Span("Notice: Agenda topics are subject to change.");
         notice.addClassNames(
