@@ -56,6 +56,7 @@ spring:
 
 event:
   website: ${EVENT_WEBSITE:https://alphnology.com}
+  schedule: ${EVENT_SCHEDULE:https://alphnology.com}
 #Varaible Formatter.
 application:
   url: ${APP_URL:https://alphnology.com}
