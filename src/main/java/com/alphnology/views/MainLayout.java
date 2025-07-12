@@ -33,6 +33,8 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.server.menu.MenuEntry;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.FileDownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -159,11 +161,6 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         eventLink.addClassName("external");
         nav.addItem(eventLink);
 
-//        SideNavItem bug = new SideNavItem("Report bug", "https://github.com/alphnology/open-schedule/issues", LineAwesomeIcon.BUG_SOLID.create());
-//        bug.setOpenInNewBrowserTab(true);
-//        bug.addClassName("external");
-//        nav.addItem(bug);
-
         SideNavItem contribute = new SideNavItem("Contribute", "https://github.com/alphnology/open-schedule", LineAwesomeIcon.GITHUB.create());
         contribute.setOpenInNewBrowserTab(true);
         contribute.addClassName("external");
@@ -200,10 +197,10 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         if (maybeUser.isPresent()) {
             User user = maybeUser.get();
 
-            StreamResource resource = new StreamResource("profile-pic", () -> new ByteArrayInputStream(new byte[]{}));
+//            StreamResource resource = new StreamResource("profile-pic", () -> new ByteArrayInputStream(new byte[]{}));
 
             Avatar avatar = new Avatar(user.getName());
-            avatar.setImageResource(resource);
+//            avatar.setImageResource(resource);
             avatar.getStyle().set("display", "block");
             avatar.getStyle().set("cursor", "pointer");
             avatar.getElement().setAttribute("tabindex", "-1");
@@ -226,7 +223,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
             userInfo.addClassNames(LumoUtility.Gap.SMALL);
 
             Avatar userAvatar = new Avatar(user.getName());
-            userAvatar.setImageResource(resource);
+//            userAvatar.setImageResource(resource);
             userAvatar.getElement().setAttribute("tabindex", "-1");
             userAvatar.addThemeVariants(AvatarVariant.LUMO_LARGE);
 

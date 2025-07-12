@@ -7,20 +7,20 @@
     <groupId>com.alphnology</groupId>
     <artifactId>open-schedule</artifactId>
     <name>open-schedule</name>
-    <version>1.0.10</version>
+    <version>1.0.11</version>
     <description>Open Schedule</description>
     <packaging>jar</packaging>
 
     <properties>
         <java.version>21</java.version>
-        <vaadin.version>24.7.6</vaadin.version>
-        <hibernate.version>6.6.18.Final</hibernate.version>
+        <vaadin.version>24.8.3</vaadin.version>
+        <hibernate.version>6.6.20.Final</hibernate.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.6</version>
+        <version>3.5.3</version>
     </parent>
 
     <repositories>

@@ -1,11 +1,10 @@
 package com.alphnology.utils;
 
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.FileDownloadHandler;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,16 +27,11 @@ public class ImageUtils {
 
         if (Files.exists(headerImage)) {
             log.info("Header image found at: {}", headerImage.toAbsolutePath());
-            StreamResource resource = new StreamResource("header.png", () -> {
-                try {
-                    return new FileInputStream(headerImage.toFile());
-                } catch (FileNotFoundException e) {
-                    return null;
-                }
-            });
 
+            FileDownloadHandler downloadHandler = DownloadHandler.forFile(headerImage.toFile());
             log.info("Using external image as header {}", headerImage.toAbsolutePath());
-            drawerImage = new Image(resource, "Logo");
+            drawerImage = new Image(downloadHandler, "Logo");
+
         }
 
         if (drawerImage == null) {

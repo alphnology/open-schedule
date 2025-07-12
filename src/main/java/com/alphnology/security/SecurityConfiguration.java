@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @EnableWebSecurity
 @Configuration
@@ -23,10 +22,10 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     protected void configure(HttpSecurity http) throws Exception {
 
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(new AntPathRequestMatcher("/images/*.png")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/icons/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/share/**")).anonymous()
-                .requestMatchers(new AntPathRequestMatcher("/line-awesome/**/*.svg")).permitAll());
+                .requestMatchers("/images/*.png", "/icons/**", "/line-awesome/**/*.svg")
+                .permitAll()
+                .requestMatchers("/share/**")
+                .anonymous());
 
 
         super.configure(http);
