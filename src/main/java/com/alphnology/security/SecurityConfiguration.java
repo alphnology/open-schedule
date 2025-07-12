@@ -22,7 +22,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     protected void configure(HttpSecurity http) throws Exception {
 
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/images/*.png", "/icons/**", "/line-awesome/**/*.svg")
+                .requestMatchers("/images/*.png", "/icons/**", "/line-awesome/**")
                 .permitAll()
                 .requestMatchers("/share/**")
                 .anonymous());

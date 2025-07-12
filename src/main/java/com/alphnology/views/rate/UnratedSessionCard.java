@@ -11,8 +11,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
-import java.time.format.DateTimeFormatter;
-
 /**
  * @author me@fredpena.dev
  * @created 25/06/2025  - 12:11

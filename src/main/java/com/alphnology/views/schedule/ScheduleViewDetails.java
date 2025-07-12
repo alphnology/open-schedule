@@ -28,7 +28,6 @@ import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static com.alphnology.utils.SessionHelper.*;
@@ -146,7 +145,15 @@ public class ScheduleViewDetails extends Div {
             showShareDialog(message, session, sessionName);
         });
 
-        dialog.getFooter().add(attendingButton, favorite, rate, close);
+        Div footerLayout = new Div(attendingButton, favorite, rate, close);
+        footerLayout.addClassNames(
+                LumoUtility.Display.GRID,
+                LumoUtility.Grid.Column.COLUMNS_2,
+                LumoUtility.Display.Breakpoint.Small.FLEX,
+                LumoUtility.Gap.SMALL
+        );
+
+        dialog.getFooter().add(footerLayout);
 
 
         dialog.add(container(session));
@@ -405,14 +412,13 @@ public class ScheduleViewDetails extends Div {
             UI.getCurrent().getPage().executeJs("window.open($0, '_self')", mailtoUrl);
         });
 
-        Div socialButtons = new Div(twitterButton, linkedinButton);
-        socialButtons.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Gap.SMALL, LumoUtility.FlexWrap.WRAP);
-
-        Div utilityButtons = new Div(emailButton, copyButton);
-        utilityButtons.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Gap.SMALL);
-
-        Div bottomBar = new Div(utilityButtons, socialButtons);
-        bottomBar.addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.BETWEEN, LumoUtility.AlignItems.CENTER, LumoUtility.Width.FULL);
+        Div bottomBar = new Div(emailButton, copyButton, twitterButton, linkedinButton);
+        bottomBar.addClassNames(
+                LumoUtility.Display.GRID,
+                LumoUtility.Grid.Column.COLUMNS_2,
+                LumoUtility.Display.Breakpoint.Small.FLEX,
+                LumoUtility.Gap.SMALL
+        );
 
         dialog.add(textArea, bottomBar);
         dialog.open();
