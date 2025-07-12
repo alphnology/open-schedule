@@ -76,17 +76,14 @@ public class ReportBugView extends VerticalLayout {
         issueTitle.setClearButtonVisible(true);
         issueTitle.setPlaceholder("Example: The save button doesn't work on the X view");
         issueTitle.setTooltipText("A brief, descriptive title for the issue.");
-        issueTitle.addValueChangeListener(e -> updateSubmitButtonState());
 
         issueDescription.setClearButtonVisible(true);
         issueDescription.setHeight("180px");
         issueDescription.setPlaceholder("Describe the issue in as much detail as possible. Please include:\n1. What you were doing.\n2. What you expected to happen.\n3. What actually happened.");
         issueDescription.setTooltipText("A detailed description helps us resolve the issue faster.");
-        issueDescription.addValueChangeListener(e -> updateSubmitButtonState());
 
         submitButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         submitButton.setIcon(VaadinIcon.PAPERPLANE.create());
-        submitButton.setEnabled(false);
 
         form.add(issueTitle, issueDescription, submitButton);
         form.setColspan(issueTitle, 2);
@@ -97,17 +94,15 @@ public class ReportBugView extends VerticalLayout {
         return form;
     }
 
-    /**
-     * A helper method to enable/disable the submit button based on field content.
-     */
-    private void updateSubmitButtonState() {
-        boolean isFormValid = !issueTitle.getValue().isBlank() && !issueDescription.getValue().isBlank();
-        submitButton.setEnabled(isFormValid);
-    }
 
     private void submitBugReport() {
         String title = issueTitle.getValue();
         String description = issueDescription.getValue();
+
+        if (title.isBlank() || description.isBlank()) {
+            NotificationUtils.error("Please fill out both fields.");
+            return;
+        }
 
         submitButton.setEnabled(false);
 
@@ -121,7 +116,8 @@ public class ReportBugView extends VerticalLayout {
 
         } catch (IOException e) {
             NotificationUtils.error("Could not submit the report. Please try again or report it directly on GitHub.");
-            updateSubmitButtonState();
+        } finally {
+            submitButton.setEnabled(true);
         }
     }
 }
