@@ -1,6 +1,7 @@
 package com.alphnology.data;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -40,6 +41,13 @@ public class Speaker implements Serializable {
 
     @Size(max = 100)
     private String company;
+
+    @Size(max = 100)
+    @Email
+    private String email;
+
+    @Size(max = 100)
+    private String phone;
 
     @Size(max = 5)
     private String country;
