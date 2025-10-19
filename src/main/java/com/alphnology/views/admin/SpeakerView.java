@@ -7,17 +7,16 @@ import com.alphnology.exceptions.DeleteConstraintViolationException;
 import com.alphnology.services.SpeakerService;
 import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.CountryUtils;
+import com.alphnology.utils.DownloadHandlerUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.Header;
-import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -27,6 +26,7 @@ import com.vaadin.flow.component.shared.HasClearButton;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -34,6 +34,7 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.RolesAllowed;
@@ -42,6 +43,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.util.StringUtils;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.util.*;
@@ -62,7 +64,8 @@ public class SpeakerView extends VerticalLayout {
     private final TextField name = new TextField("Name");
     private final TextField title = new TextField("Title");
     private final TextField company = new TextField("Company");
-    private final TextField photoUrl = new TextField("Photo Url");
+    private final Image image = new Image();
+    private Upload imageUpload;
     private final TextArea bio = new TextArea("Biography");
     private final ComboBox<Country> countryField = new ComboBox<>("Select a country");
 
@@ -70,6 +73,7 @@ public class SpeakerView extends VerticalLayout {
     private final Button addSocialLinkButton = new Button("Add social link", VaadinIcon.PLUS.create());
 
 
+    private final Button removeImageButton = new Button("Remove image", VaadinIcon.TRASH.create());
     private final Button cancel = new Button("New", VaadinIcon.FILE_ADD.create());
     private final Button save = new Button("Save", VaadinIcon.HARDDRIVE_O.create());
     private final Button delete = new Button("Delete", VaadinIcon.TRASH.create());
@@ -98,7 +102,6 @@ public class SpeakerView extends VerticalLayout {
 
 
         binder.forField(countryField)
-                .asRequired()
                 .bind(speaker -> {
                             if (speaker == null) {
                                 return null;
@@ -147,6 +150,17 @@ public class SpeakerView extends VerticalLayout {
         cancel.addClickListener(e -> clearForm());
         save.addClickListener(this::saveOrUpdate);
         delete.addClickListener(this::delete);
+        removeImageButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+        removeImageButton.addClickListener(e -> {
+            if (element != null) {
+                element.setPhoto(null);
+            }
+            image.setVisible(false);
+            image.setSrc("");
+            imageUpload.clearFileList();
+            removeImageButton.setVisible(false);
+        });
+        removeImageButton.setVisible(false);
 
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
@@ -164,7 +178,7 @@ public class SpeakerView extends VerticalLayout {
 
             final String search = searchField.getValue().toLowerCase().trim();
 
-            Order order = builder.asc(root.get("code"));
+            Order order = builder.asc(root.get("name"));
             assert query != null;
             query.orderBy(order);
             query.distinct(true);
@@ -201,10 +215,12 @@ public class SpeakerView extends VerticalLayout {
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)), createFilterSpecification()).stream());
 
         grid.addComponentColumn(speaker -> {
-            Image image = new Image();
-            image.setSrc(speaker.getPhotoUrl());
-            image.setWidth("100px");
-            return image;
+            Image img = new Image();
+            if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
+                img.setSrc(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+            }
+            img.setWidth("100px");
+            return img;
         }).setHeader("Picture");
 
         grid.addColumn(Speaker::getName).setHeader("Name").setAutoWidth(true).setSortable(true).setSortProperty("name");
@@ -214,10 +230,12 @@ public class SpeakerView extends VerticalLayout {
         grid.addColumn(Speaker::getCompany).setHeader("Company").setAutoWidth(true).setSortable(true).setSortProperty("company");
 
         grid.addComponentColumn(speaker -> {
-            Image image = new Image();
-            image.setSrc("https://flagcdn.com/%s.svg".formatted(speaker.getCountry().toLowerCase()));
-            image.setWidth("50px");
-            return image;
+            Image img = new Image();
+            if (StringUtils.hasText(speaker.getCountry())) {
+                img.setSrc("https://flagcdn.com/%s.svg".formatted(speaker.getCountry().toLowerCase()));
+            }
+            img.setWidth("50px");
+            return img;
         }).setHeader("Country");
 
         grid.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
@@ -251,9 +269,8 @@ public class SpeakerView extends VerticalLayout {
         name.setWidthFull();
         title.setWidthFull();
         company.setWidthFull();
-        photoUrl.setWidthFull();
+        image.setWidthFull();
         bio.setWidthFull();
-        countryField.setWidthFull();
         countryField.setWidthFull();
         socialLinksLayout.setWidthFull();
         addSocialLinkButton.addClassNames(LumoUtility.Width.AUTO);
@@ -267,12 +284,28 @@ public class SpeakerView extends VerticalLayout {
                 LumoUtility.FlexDirection.COLUMN
         );
 
+        var handler = UploadHandler.inMemory((meta, bytes) -> {
+            UI.getCurrent().access(() -> {
+                if (element == null) {
+                    element = new Speaker();
+                }
+                element.setPhoto(bytes);
+                image.setVisible(true);
+                image.setSrc(DownloadHandlerUtils.fromByte(bytes));
+            });
+        });
+        imageUpload = new Upload(handler);
+        imageUpload.setAcceptedFileTypes("image/*");
+        imageUpload.setMaxFiles(1);
+        imageUpload.setDropLabel(new Span("Arrastra tu imagen aquí"));
+        imageUpload.setWidthFull();
+
         VerticalLayout formLayout = new VerticalLayout();
         formLayout.setSizeFull();
         formLayout.setPadding(false);
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
-        formLayout.add(header, name, title, company, countryField, photoUrl, socialLayout, bio);
+        formLayout.add(header, name, title, company, countryField, imageUpload, image, removeImageButton, socialLayout, bio);
 
         return formLayout;
     }
@@ -363,8 +396,19 @@ public class SpeakerView extends VerticalLayout {
         binder.readBean(this.element);
 
         socialLinksLayout.removeAll();
+        imageUpload.clearFileList();
         if (value != null) {
             value.getNetworking().forEach(this::addSocialLinkField);
+
+            if (value.getPhoto() != null && value.getPhoto().length > 0) {
+                image.setSrc(DownloadHandlerUtils.fromByte(value.getPhoto()));
+                image.setAlt(value.getName());
+                image.setVisible(true);
+                removeImageButton.setVisible(true);
+            } else {
+                image.setVisible(false);
+                removeImageButton.setVisible(false);
+            }
         }
 
         delete.setEnabled(element != null);

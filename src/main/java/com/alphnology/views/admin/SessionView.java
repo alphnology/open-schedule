@@ -7,6 +7,7 @@ import com.alphnology.data.enums.Level;
 import com.alphnology.data.enums.SessionType;
 import com.alphnology.services.*;
 import com.alphnology.utils.CommonUtils;
+import com.alphnology.utils.DownloadHandlerUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.alphnology.utils.RendererUtils;
 import com.vaadin.flow.component.ClickEvent;
@@ -149,7 +150,7 @@ public class SessionView extends VerticalLayout {
         track.setItemLabelGenerator(Track::getName);
 
         speakers.setItems(comboBoxItemFilter(Speaker::getName, String::contains), speakerService.findAll());
-        speakers.setItemLabelGenerator(l -> "%s at %s".formatted(l.getName(), l.getCompany()));
+        speakers.setItemLabelGenerator(l -> "%s(%s) at %s".formatted(l.getName(), l.getCountry(), l.getCompany()));
         speakers.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);
         speakers.setClearButtonVisible(true);
 
@@ -322,7 +323,10 @@ public class SessionView extends VerticalLayout {
             );
 
             session.getSpeakers().forEach(speaker -> {
-                AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName(), speaker.getPhotoUrl());
+                AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName());
+                if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
+                    avatar.setImageHandler(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+                }
                 avatarGroup.add(avatar);
 
                 speakerContainer.add(new Span(speaker.getName()));

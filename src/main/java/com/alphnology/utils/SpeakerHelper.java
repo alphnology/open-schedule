@@ -26,9 +26,9 @@ public class SpeakerHelper {
                 .withText(speaker.getName())
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
 
-        if (!speaker.getPhotoUrl().isEmpty()) {
-            image.setSrc(speaker.getPhotoUrl());
-            image.setAlt(speaker.getPhotoUrl());
+        if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
+            image.setSrc(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+            image.setAlt(speaker.getName());
         } else {
             image.setVisible(false);
         }
@@ -60,10 +60,10 @@ public class SpeakerHelper {
             layout.addClassNames(LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.Row.SMALL);
         }
 
-        session.getSpeakers().forEach(speaker -> {
-            AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName(), speaker.getPhotoUrl());
-            avatarGroup.add(avatar);
-        });
+//        session.getSpeakers().forEach(speaker -> {
+//            AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName(), speaker.getPhotoUrl());
+//            avatarGroup.add(avatar);
+//        });
 
         Span speakerSpan = new Span();
         speakerSpan.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD);

@@ -32,7 +32,7 @@ import java.util.Optional;
 
 @PageTitle("Favorite")
 @Route("favorite")
-@Menu(order = 3, icon = LineAwesomeIconUrl.HEART)
+@Menu(order = 4, icon = LineAwesomeIconUrl.HEART)
 @AnonymousAllowed
 public class FavoriteView extends Div {
 

@@ -33,7 +33,7 @@ import java.io.IOException;
 
 @PageTitle("Report an Issue")
 @Route(value = "bug")
-@Menu(order = 5, icon = LineAwesomeIconUrl.BUG_SOLID)
+@Menu(order = 6, icon = LineAwesomeIconUrl.BUG_SOLID)
 @AnonymousAllowed
 public class ReportBugView extends VerticalLayout {
 

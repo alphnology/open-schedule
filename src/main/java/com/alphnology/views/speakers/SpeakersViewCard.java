@@ -1,9 +1,11 @@
 package com.alphnology.views.speakers;
 
 import com.alphnology.data.Speaker;
+import com.alphnology.utils.DownloadHandlerUtils;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
+import org.springframework.util.StringUtils;
 
 import java.util.function.Consumer;
 
@@ -27,7 +29,9 @@ public class SpeakersViewCard extends ListItem {
 
         Span subtitle = new Span();
         subtitle.addClassNames(FontSize.SMALL, TextColor.SECONDARY);
-        subtitle.setText("%s at %s".formatted(speaker.getTitle(), speaker.getCompany()));
+        if (StringUtils.hasText(speaker.getTitle()) || StringUtils.hasText(speaker.getCompany())) {
+            subtitle.setText("%s at %s".formatted(speaker.getTitle(), speaker.getCompany()));
+        }
 
         Paragraph description = new Paragraph(speaker.getBio().substring(0, Math.min(speaker.getBio().length(), 200)));
         description.addClassNames(Margin.Vertical.MEDIUM);
@@ -40,7 +44,7 @@ public class SpeakersViewCard extends ListItem {
         footer.addClassNames(Display.FLEX, JustifyContent.START, AlignItems.CENTER, Width.FULL);
         Image country = new Image();
         country.setWidth("20%");
-        if (!speaker.getCountry().isEmpty()) {
+        if (StringUtils.hasText(speaker.getCountry())) {
             country.setSrc("https://flagcdn.com/%s.svg".formatted(speaker.getCountry().toLowerCase()));
             country.setAlt(speaker.getCountry());
             Tooltip.forComponent(country)
@@ -69,11 +73,10 @@ public class SpeakersViewCard extends ListItem {
         Tooltip.forComponent(image)
                 .withText(speaker.getName())
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
-        if (!speaker.getPhotoUrl().isEmpty()) {
-            image.setSrc(speaker.getPhotoUrl());
-            image.setAlt(speaker.getPhotoUrl());
-        } else {
-            image.setVisible(false);
+
+        if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
+            image.setSrc(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+            image.setAlt(speaker.getName());
         }
 
         div.add(image);

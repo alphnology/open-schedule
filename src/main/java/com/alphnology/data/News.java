@@ -11,45 +11,42 @@ import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.type.SqlTypes;
 
 import java.io.Serializable;
-import java.util.HashSet;
+import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.Set;
 
 @Getter
 @Setter
 @Entity
 @ToString
 @Table(
-        name = "speakers",
+        name = "news",
         indexes = {
-                @Index(columnList = "name")
+                @Index(columnList = "title"),
+                @Index(columnList = "publishedAt")
         }
 )
-public class Speaker implements Serializable {
+public class News implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long code;
 
     @NotNull
-    @Size(min = 1, max = 100)
-    private String name;
-
-    @Size(max = 100)
+    @Size(min = 1, max = 255)
     private String title;
 
-    @Size(max = 100)
-    private String company;
+    @NotNull
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String content;
 
-    @Size(max = 5)
-    private String country;
+    @NotNull
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "author")
+    private User author;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "networking")
-    private Set<String> networking = new HashSet<>();
-
-    @Size(max = 3000)
-    private String bio;
+    @NotNull
+    private LocalDateTime publishedAt;
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
@@ -57,9 +54,15 @@ public class Speaker implements Serializable {
     @Column(columnDefinition = "bytea")
     private byte[] photo;
 
-    @ManyToMany(mappedBy = "speakers", fetch = FetchType.EAGER)
-    @ToString.Exclude
-    private Set<Session> sessions = new HashSet<>();
+    @Version
+    private int version;
+
+    @PrePersist
+    public void prePersist() {
+        if (publishedAt == null) {
+            publishedAt = LocalDateTime.now();
+        }
+    }
 
     @Override
     public final boolean equals(Object o) {
@@ -68,7 +71,7 @@ public class Speaker implements Serializable {
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        Speaker that = (Speaker) o;
+        News that = (News) o;
         return Objects.equals(getCode(), that.getCode());
     }
 

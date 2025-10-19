@@ -27,7 +27,7 @@ public class Session implements Serializable {
     private Long code;
 
     @NotNull
-    @Size(min = 1, max = 100)
+    @Size(min = 1, max = 300)
     private String title;
 
     @NotNull

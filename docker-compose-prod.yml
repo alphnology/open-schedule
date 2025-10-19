@@ -32,7 +32,7 @@ services:
       - "traefik.http.routers.api.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$your_hash_here$$"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - # htpasswd echo $(htpasswd -nb admin "your_password")
+      #- # htpasswd echo $(htpasswd -nb admin "your_password")
 
   postgres:
     image: postgres:15

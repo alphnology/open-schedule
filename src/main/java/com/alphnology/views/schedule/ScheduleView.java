@@ -1,8 +1,6 @@
 package com.alphnology.views.schedule;
 
-import com.alphnology.data.Event;
-import com.alphnology.data.Room;
-import com.alphnology.data.Session;
+import com.alphnology.data.*;
 import com.alphnology.services.EventService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
@@ -14,8 +12,11 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableSupplier;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -23,7 +24,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,6 +39,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.alphnology.utils.PredicateUtils.createPredicateForDateTimeRange;
+import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 
 
 @PageTitle("Schedule")
@@ -44,11 +49,17 @@ import static com.alphnology.utils.PredicateUtils.createPredicateForDateTimeRang
 @AnonymousAllowed
 public class ScheduleView extends VerticalLayout {
 
+    private static final String SEARCH_PLACEHOLDER = "Search...";
     private static final String COLOR_WHITE = "white";
+
+    private final TextField searchField = new TextField(SEARCH_PLACEHOLDER);
 
     private final transient SessionService sessionService;
 
     private final ScheduleViewDetails scheduleViewDetails;
+    private final TabSheet tabSheet = new TabSheet();
+
+    private LocalDate currentDate;
 
 
     public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
@@ -78,25 +89,60 @@ public class ScheduleView extends VerticalLayout {
                 LumoUtility.AlignSelf.CENTER
         );
 
-        add(notice);
+        searchField.focus();
+        searchField.addClassNames(LumoUtility.Flex.GROW, LumoUtility.MinWidth.NONE);
+        searchField.setAriaLabel(SEARCH_PLACEHOLDER);
+        searchField.setClearButtonVisible(true);
+        searchField.setWidthFull();
+        searchField.setPlaceholder(SEARCH_PLACEHOLDER);
+        searchField.setPrefixComponent(LumoIcon.SEARCH.create());
+        searchField.setValueChangeMode(ValueChangeMode.LAZY);
+        searchField.addClassNames(LumoUtility.MaxWidth.SCREEN_MEDIUM, LumoUtility.AlignSelf.CENTER);
+        searchField.addValueChangeListener(event1 -> updateCurrentTabContent());
 
-        TabSheet tabSheet = new TabSheet();
-        tabSheet.setSizeFull();
+        add(notice, searchField);
+
+        int tabIndex = 0;
+        int selectedIndex = 0;
+        LocalDate today = LocalDate.now();
 
         for (LocalDate date = event.getStartDate(); !date.isAfter(event.getEndDate()); date = date.plusDays(1)) {
-            LocalDate finalDate = date;
-            tabSheet.add(date.format(DateTimeFormatterUtils.dateFormatter), new LazyComponent(() -> createSection(finalDate)));
+            tabSheet.add(date.format(DateTimeFormatterUtils.dateFormatter), createLazySection(date));
+
+            if (date.isEqual(today)) {
+                selectedIndex = tabIndex;
+            }
+            tabIndex++;
         }
 
         tabSheet.addThemeVariants(TabSheetVariant.LUMO_TABS_EQUAL_WIDTH_TABS);
+        tabSheet.setSelectedIndex(selectedIndex);
+        tabSheet.setSizeFull();
         add(tabSheet);
 
     }
 
-    private Component createSection(LocalDate date) {
+    private void updateCurrentTabContent() {
+        Tab selectedTab = tabSheet.getSelectedTab();
+        Component content = tabSheet.getComponent(selectedTab);
+        if (content instanceof Div container) {
+            populateSection(container, currentDate);
+        }
+    }
+
+    private Component createLazySection(LocalDate date) {
+        Div container = new Div();
+        return new LazyComponent(() -> populateSection(container, date), container);
+    }
+
+    private Component populateSection(Div container, LocalDate date) {
+        container.removeAll();
+        container.setSizeFull();
+        this.currentDate = date;
         List<Session> sessions = sessionService.findAll(createFilterSpecification(date));
         if (sessions.isEmpty()) {
-            return new Div(new Span("No sessions scheduled for this day."));
+            container.add(new Span("No sessions scheduled for this day."));
+            return container;
         }
 
         // Filter to ensure room is not null before grouping and get the sorted list of rooms
@@ -135,11 +181,11 @@ public class ScheduleView extends VerticalLayout {
             roomNameSpan.getStyle().set("flex-grow", "1");
             roomNameSpan.getStyle().set("flex-basis", "0"); // Allows flex-grow to distribute space
             roomNameSpan.getStyle().set("text-align", "center");
+            roomNameSpan.getStyle().setMinWidth("250px");
             if (room.getColor() != null) {
                 roomNameSpan.getStyle().setBackgroundColor(room.getColor()).setColor(COLOR_WHITE);
             }
             roomNameSpan.addClassNames(
-                    LumoUtility.Padding.SMALL,
                     LumoUtility.BorderRadius.SMALL,
                     LumoUtility.FontSize.LARGE,
                     LumoUtility.FontWeight.SEMIBOLD
@@ -200,7 +246,6 @@ public class ScheduleView extends VerticalLayout {
                         sessionCell.getStyle().set("text-align", "left");
 //                        sessionCell.getStyle().set("min-height", LumoUtility.Height.XLARGE); // To give some height to the cells
                         sessionCell.addClassNames(
-                                LumoUtility.Display.FLEX,
                                 LumoUtility.FlexDirection.ROW,
                                 LumoUtility.Padding.NONE,
                                 LumoUtility.BorderRadius.SMALL,
@@ -222,15 +267,24 @@ public class ScheduleView extends VerticalLayout {
                                 .filter(s -> s.getRoom() != null && s.getRoom().equals(room))
                                 .findFirst();
 
+                        sessionCell.getStyle().setMinWidth("250px");
                         if (sessionForThisRoomAndTime.isPresent()) {
                             Session currentSession = sessionForThisRoomAndTime.get();
                             sessionCell.add(new ScheduleViewCard(currentSession, sessionService, scheduleViewDetails::showSession));
                             if (currentSession.getRoom() != null && currentSession.getRoom().getColor() != null) {
                                 sessionCell.getStyle().setBackgroundColor(currentSession.getRoom().getColor()).setColor(COLOR_WHITE);
                             }
+                            sessionCell.addClassNames(
+                                    LumoUtility.Display.FLEX
+                            );
                         } else {
                             sessionCell.setText("");
                             sessionCell.removeClassName("transition-card");
+                            sessionCell.addClassNames(
+                                    LumoUtility.Display.HIDDEN,
+                                    LumoUtility.Display.Breakpoint.Small.FLEX
+                            );
+
                         }
                         dataRow.add(sessionCell);
                     }
@@ -238,7 +292,8 @@ public class ScheduleView extends VerticalLayout {
                     sectionLayout.add(dataRow);
                 });
 
-        return sectionLayout;
+        container.add(sectionLayout);
+        return container;
     }
 
     private static String getColor(Session first) {
@@ -260,14 +315,36 @@ public class ScheduleView extends VerticalLayout {
     private Specification<Session> createFilterSpecification(LocalDate date) {
         return (root, query, builder) -> {
 
+            final String search = searchField.getValue().toLowerCase().trim();
+
             Order order = builder.asc(root.get("code"));
             assert query != null;
             query.orderBy(order);
             query.distinct(true);
 
+            Predicate predicateTitle = predicateUnaccentLike(root, builder, "title", search);
+            Predicate predicateDescription = predicateUnaccentLike(root, builder, "description", search);
+
+
+            Join<Session, Room> roomJoin = root.join("room", JoinType.LEFT);
+            Predicate predicateRoom = predicateUnaccentLike(roomJoin, builder, "name", search);
+
+            Join<Session, Track> trackJoin = root.join("track", JoinType.LEFT);
+            Predicate predicateTrack = predicateUnaccentLike(trackJoin, builder, "name", search);
+
+            Join<Session, Speaker> speakerJoin = root.join("speakers", JoinType.LEFT);
+            Predicate predicateSpeaker = predicateUnaccentLike(speakerJoin, builder, "name", search);
+
+            Join<Session, Tag> tagJoin = root.join("tags", JoinType.LEFT);
+            Predicate predicateTag = predicateUnaccentLike(tagJoin, builder, "name", search);
+
+            final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateTitle, predicateDescription, predicateRoom, predicateTrack, predicateSpeaker, predicateTag));
+
+            Predicate orPredicate = orPredicates.isEmpty() ? builder.conjunction() : builder.or(orPredicates.toArray(Predicate[]::new));
+
             Predicate predicateDate = createPredicateForDateTimeRange(LocalDateTime.of(date, LocalDateTime.MIN.toLocalTime()), LocalDateTime.of(date, LocalDateTime.MAX.toLocalTime()), root.get("startTime"), root.get("endTime"), builder);
 
-            return builder.and(predicateDate);
+            return builder.and(orPredicate, predicateDate);
 
         };
     }
@@ -280,10 +357,11 @@ public class ScheduleView extends VerticalLayout {
     }
 
     private static class LazyComponent extends Div {
-        public LazyComponent(SerializableSupplier<? extends Component> supplier) {
+        public LazyComponent(SerializableSupplier<Component> supplier, Div content) {
             addAttachListener(e -> {
                 if (getElement().getChildCount() == 0) {
-                    add(supplier.get());
+                    add(content);
+                    supplier.get();
                 }
             });
         }
