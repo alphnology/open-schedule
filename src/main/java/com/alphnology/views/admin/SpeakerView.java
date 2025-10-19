@@ -24,6 +24,7 @@ import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.HasClearButton;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
@@ -64,6 +65,8 @@ public class SpeakerView extends VerticalLayout {
     private final TextField name = new TextField("Name");
     private final TextField title = new TextField("Title");
     private final TextField company = new TextField("Company");
+    private final EmailField email = new EmailField("Email");
+    private final TextField phone = new TextField("Phone");
     private final Image image = new Image();
     private Upload imageUpload;
     private final TextArea bio = new TextArea("Biography");
@@ -186,9 +189,10 @@ public class SpeakerView extends VerticalLayout {
             Predicate predicateName = predicateUnaccentLike(root, builder, "name", search);
             Predicate predicateTitle = predicateUnaccentLike(root, builder, "title", search);
             Predicate predicateCompany = predicateUnaccentLike(root, builder, "company", search);
+            Predicate predicateEmail = predicateUnaccentLike(root, builder, "email", search);
             Predicate predicateBio = predicateUnaccentLike(root, builder, "bio", search);
 
-            final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateName, predicateTitle, predicateCompany, predicateBio));
+            final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateName, predicateTitle, predicateCompany, predicateEmail, predicateBio));
 
             return builder.or(orPredicates.toArray(Predicate[]::new));
 
@@ -228,6 +232,10 @@ public class SpeakerView extends VerticalLayout {
         grid.addColumn(Speaker::getTitle).setHeader("Title").setAutoWidth(true).setSortable(true).setSortProperty("title");
 
         grid.addColumn(Speaker::getCompany).setHeader("Company").setAutoWidth(true).setSortable(true).setSortProperty("company");
+
+        grid.addColumn(Speaker::getEmail).setHeader("Email").setAutoWidth(true).setSortable(true).setSortProperty("email");
+
+        grid.addColumn(Speaker::getPhone).setHeader("Phone").setAutoWidth(true).setSortable(true).setSortProperty("phone");
 
         grid.addComponentColumn(speaker -> {
             Image img = new Image();
@@ -269,6 +277,8 @@ public class SpeakerView extends VerticalLayout {
         name.setWidthFull();
         title.setWidthFull();
         company.setWidthFull();
+        email.setWidthFull();
+        phone.setWidthFull();
         image.setWidthFull();
         bio.setWidthFull();
         countryField.setWidthFull();
@@ -302,10 +312,11 @@ public class SpeakerView extends VerticalLayout {
 
         VerticalLayout formLayout = new VerticalLayout();
         formLayout.setSizeFull();
+        formLayout.setSpacing(false);
         formLayout.setPadding(false);
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
-        formLayout.add(header, name, title, company, countryField, imageUpload, image, removeImageButton, socialLayout, bio);
+        formLayout.add(header, name, title, company, countryField, email, phone, imageUpload, image, removeImageButton, socialLayout, bio);
 
         return formLayout;
     }

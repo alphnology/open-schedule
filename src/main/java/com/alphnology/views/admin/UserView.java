@@ -189,6 +189,7 @@ public class UserView extends VerticalLayout {
         VerticalLayout formLayout = new VerticalLayout();
         formLayout.setSizeFull();
         formLayout.setPadding(false);
+        formLayout.setSpacing(false);
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
         formLayout.add(header, username, name, phone, roles, oneLogPwd, locked);

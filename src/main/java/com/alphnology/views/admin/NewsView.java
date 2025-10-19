@@ -200,6 +200,7 @@ public class NewsView extends VerticalLayout {
         VerticalLayout formLayout = new VerticalLayout();
         formLayout.setSizeFull();
         formLayout.setPadding(false);
+        formLayout.setSpacing(false);
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL, LumoUtility.Gap.SMALL);
         formLayout.add(header, title, content, imageUpload, image, removeImageButton);

@@ -360,6 +360,7 @@ public class SessionView extends VerticalLayout {
         VerticalLayout formLayout = new VerticalLayout();
         formLayout.setSizeFull();
         formLayout.setPadding(false);
+        formLayout.setSpacing(false);
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
         formLayout.add(header, title, speakers, startTime, endTime, type, room, level, language, track, tags, description);
