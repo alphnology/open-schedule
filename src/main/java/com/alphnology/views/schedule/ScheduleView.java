@@ -1,10 +1,7 @@
 package com.alphnology.views.schedule;
 
 import com.alphnology.data.*;
-import com.alphnology.services.EventService;
-import com.alphnology.services.SessionRatingService;
-import com.alphnology.services.SessionService;
-import com.alphnology.services.UserService;
+import com.alphnology.services.*;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.Component;
@@ -62,10 +59,10 @@ public class ScheduleView extends VerticalLayout {
     private LocalDate currentDate;
 
 
-    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
+    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
         this.sessionService = sessionService;
 
-        scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
+        scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService, qrService);
 
         setSpacing(false);
         setSizeFull();

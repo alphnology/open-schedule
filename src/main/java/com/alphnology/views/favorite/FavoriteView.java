@@ -2,6 +2,7 @@ package com.alphnology.views.favorite;
 
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
+import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.UserService;
@@ -38,7 +39,7 @@ public class FavoriteView extends Div {
 
     private ScheduleViewDetails scheduleViewDetails;
 
-    public FavoriteView(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
+    public FavoriteView(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
         addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.CENTER, LumoUtility.Padding.MEDIUM);
 
         User currentUser = VaadinSession.getCurrent().getAttribute(User.class);
@@ -48,7 +49,7 @@ public class FavoriteView extends Div {
             return;
         }
 
-        this.scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
+        this.scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService, qrService);
 
         buildLayout(currentUser, sessionService);
     }

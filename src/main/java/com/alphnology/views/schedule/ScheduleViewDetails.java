@@ -3,6 +3,7 @@ package com.alphnology.views.schedule;
 import com.alphnology.data.Event;
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
+import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.UserService;
@@ -38,15 +39,18 @@ public class ScheduleViewDetails extends Div {
     private final transient SessionService sessionService;
     private final transient SessionRatingService sessionRatingService;
     private final transient UserService userService;
+    private final transient QrService qrService;
+
 
     private final Div ratingDiv = new Div();
     private final User currentUser;
 
 
-    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
+    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
         this.userService = userService;
+        this.qrService = qrService;
         this.currentUser = VaadinSession.getCurrent().getAttribute(User.class);
     }
 
@@ -292,7 +296,7 @@ public class ScheduleViewDetails extends Div {
                     LumoUtility.Gap.Column.LARGE,
                     "transition-card"
             );
-            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, userService).showSpeaker(speaker));
+            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, userService, qrService).showSpeaker(speaker));
 
             containerSpeakers.add(containerSpeaker);
         });

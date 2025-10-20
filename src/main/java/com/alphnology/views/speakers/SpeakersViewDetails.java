@@ -1,20 +1,29 @@
 package com.alphnology.views.speakers;
 
 import com.alphnology.data.Speaker;
+import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.UserService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.SpeakerHelper;
+import com.alphnology.utils.VCardUtil;
 import com.alphnology.views.schedule.ScheduleViewDetails;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.DownloadResponse;
+import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.springframework.util.StringUtils;
+
+import java.io.ByteArrayInputStream;
 
 import static com.alphnology.utils.SessionHelper.tagSession;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
@@ -24,11 +33,13 @@ public class SpeakersViewDetails extends Div {
     private final transient SessionRatingService sessionRatingService;
     private final transient SessionService sessionService;
     private final transient UserService userService;
+    private final transient QrService qrService;
 
-    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
+    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
         this.userService = userService;
+        this.qrService = qrService;
     }
 
 
@@ -93,7 +104,7 @@ public class SpeakersViewDetails extends Div {
             );
             containerSession.addClickListener(event -> {
 
-                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService);
+                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService, qrService);
                 sessionService.get(session.getCode())
                         .ifPresent(scheduleViewDetails::showSession);
             });
@@ -108,18 +119,43 @@ public class SpeakersViewDetails extends Div {
         Image image = SpeakerHelper.getImage(speaker);
         image.addClassNames("flex-wrap-image-speaker");
 
+        String vCardUrl = VCardUtil.getVCardUrl(speaker);
+        byte[] qrCodeBytes = qrService.generatePng(vCardUrl, 256);
+
+        InputStreamDownloadHandler qrCodeResource = DownloadHandler.fromInputStream((event) -> {
+            try {
+                return new DownloadResponse(new ByteArrayInputStream(qrCodeBytes), "vcard-qr.png", null, qrCodeBytes.length);
+            } catch (Exception e) {
+                return DownloadResponse.error(500);
+            }
+        });
+
+
+        Image qrCodeImage = new Image(qrCodeResource, "vCard QR Code");
+        qrCodeImage.setWidth("200px");
+
+        Div imageContainer = new Div(qrCodeImage);
+        imageContainer.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.Gap.MEDIUM,
+                LumoUtility.AlignItems.CENTER
+        );
+
         Span header = new Span();
         header.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD, LumoUtility.Padding.SMALL);
         header.getElement().getThemeList().add(Lumo.DARK);
         header.addClassNames(LumoUtility.BorderRadius.MEDIUM);
-        header.setText("%s at %s".formatted(speaker.getTitle(), speaker.getCompany()));
+        if (StringUtils.hasText(speaker.getTitle()) || StringUtils.hasText(speaker.getCompany())) {
+            header.setText("%s at %s".formatted(speaker.getTitle(), speaker.getCompany()));
+        }
 
         Paragraph description = new Paragraph(speaker.getBio());
         description.addClassNames(LumoUtility.Margin.Vertical.MEDIUM, LumoUtility.Padding.Horizontal.SMALL);
         description.getStyle().set("white-space", "pre-line").set("flex-grow", "1").set("text-align", "justify");
 
         Footer footer = new Footer();
-        footer.addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.START, LumoUtility.AlignItems.CENTER, LumoUtility.Width.FULL);
+        footer.addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.BETWEEN, LumoUtility.AlignItems.CENTER, LumoUtility.Width.FULL);
 
         Image country = new Image();
         country.setWidth("10%");
@@ -133,9 +169,22 @@ public class SpeakersViewDetails extends Div {
         } else {
             country.setVisible(false);
         }
+
+        Button contactButton = new Button("View Contact Info", VaadinIcon.CONNECT.create());
+        contactButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
+        contactButton.addClickListener(e -> UI.getCurrent().getPage().open(vCardUrl, "_blank"));
+        contactButton.addClassNames(LumoUtility.Width.AUTO, LumoUtility.Padding.SMALL);
+
+        Div countryAndContact = new Div(qrCodeImage, country, contactButton);
+        countryAndContact.addClassNames(LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.FlexDirection.Breakpoint.Small.ROW,
+                LumoUtility.AlignItems.CENTER,
+                LumoUtility.Gap.SMALL);
+
         Div socialLinksLayout = getSocialLinks(speaker);
 
-        footer.add(country, socialLinksLayout);
+        footer.add(countryAndContact, socialLinksLayout);
 
         Div container = new Div();
         container.addClassNames(
@@ -149,6 +198,7 @@ public class SpeakersViewDetails extends Div {
         detailsContainer.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.Row.MEDIUM);
 
         container.add(image, detailsContainer);
+
 
         return container;
 
