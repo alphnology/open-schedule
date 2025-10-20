@@ -145,7 +145,7 @@ public class ScheduleViewDetails extends Div {
                     See you in the %s room!
                     
                     Check out the full schedule: %s
-                    """.formatted(sessionName, event.getName().replace(" ", ""), sessionDate.getYear() , room, eventUrl);
+                    """.formatted(sessionName, event.getName().replace(" ", ""), sessionDate.getYear(), room, eventUrl);
             showShareDialog(message, session, sessionName);
         });
 
@@ -402,7 +402,7 @@ public class ScheduleViewDetails extends Div {
         linkedinButton.addClickListener(e -> {
             String url = "%s/share/%s".formatted(CommonUtils.getBaseUrl(), session.getCode());
             String linkedInUrl = "https://www.linkedin.com/shareArticle?mini=true"
-                              + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8);
+                                 + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8);
             UI.getCurrent().getPage().executeJs("window.open($0, '_blank')", linkedInUrl);
         });
 

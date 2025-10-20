@@ -145,7 +145,7 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
             String title = "Speaker Profile: " + speaker.getName();
 
             UI.getCurrent().getPage().executeJs(
-                    "if (navigator.share) { navigator.share({ title: $0, text: $1, url: $2 }); } else { alert('Web Share API not supported in your browser.'); }",
+                    "if (navigator.share) { navigator.share({ title: $0, text: $1, vCardUrl: $2 }); } else { alert('Web Share API not supported in your browser.'); }",
                     title, text, vCardUrl
             );
         });
