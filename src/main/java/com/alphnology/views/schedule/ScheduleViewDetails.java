@@ -150,11 +150,13 @@ public class ScheduleViewDetails extends Div {
         });
 
         Div footerLayout = new Div(attendingButton, favorite, rate, close);
+        footerLayout.setWidthFull();
         footerLayout.addClassNames(
-                LumoUtility.Display.GRID,
-                LumoUtility.Grid.Column.COLUMNS_2,
-                LumoUtility.Display.Breakpoint.Small.FLEX,
-                LumoUtility.Gap.SMALL
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.FlexDirection.Breakpoint.Small.ROW,
+                LumoUtility.Gap.SMALL,
+                LumoUtility.JustifyContent.END
         );
 
         dialog.getFooter().add(footerLayout);
