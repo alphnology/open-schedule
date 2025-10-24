@@ -30,8 +30,7 @@ public class Session implements Serializable {
     @Size(min = 1, max = 300)
     private String title;
 
-    @NotNull
-    @Size(min = 1, max = 3000)
+    @Size(max = 3000)
     private String description;
 
     @NotNull

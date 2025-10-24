@@ -25,10 +25,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.vaadin.lineawesome.LineAwesomeIcon;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static com.alphnology.utils.SessionHelper.*;
@@ -146,7 +143,7 @@ public class ScheduleViewDetails extends Div {
                     
                     Check out the full schedule: %s
                     """.formatted(sessionName, event.getName().replace(" ", ""), sessionDate.getYear(), room, eventUrl);
-            showShareDialog(message, session, sessionName);
+            showShareDialog(message, sessionName);
         });
 
         Div footerLayout = new Div(attendingButton, favorite, rate, close);
@@ -370,8 +367,10 @@ public class ScheduleViewDetails extends Div {
 
     }
 
-    private void showShareDialog(String message, Session session, String sessionName) {
+    private void showShareDialog(String message, String sessionName) {
         Dialog dialog = new Dialog();
+        dialog.setWidthFull();
+        dialog.addClassNames(LumoUtility.MaxWidth.SCREEN_MEDIUM);
         dialog.setHeaderTitle("Share Session");
         dialog.setDraggable(true);
 
@@ -380,50 +379,21 @@ public class ScheduleViewDetails extends Div {
         textArea.setReadOnly(true);
         textArea.setWidthFull();
 
-        Button copyButton = new Button("Copy", VaadinIcon.COPY_O.create());
-        copyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        copyButton.setTooltipText("Copy message to clipboard");
-        copyButton.addClickListener(e -> {
-            UI.getCurrent().getPage().executeJs("navigator.clipboard.writeText($0)", message);
-            NotificationUtils.info("Message copied to clipboard");
-        });
+        Button shareButton = new Button("Share Session", VaadinIcon.SHARE.create());
+        shareButton.addClickListener(e -> {
 
-        Button twitterButton = new Button("Share on X", VaadinIcon.TWITTER.create());
-        twitterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        twitterButton.setTooltipText("Share on X (formerly Twitter)");
-        twitterButton.addClickListener(e -> {
-            String tweetUrl = "https://twitter.com/intent/tweet?text=" + URLEncoder.encode(message, StandardCharsets.UTF_8);
-            UI.getCurrent().getPage().executeJs("window.open($0, '_blank')", tweetUrl);
-        });
+            String title = "Session Details: " + sessionName;
 
-        Button linkedinButton = new Button("Share on LinkedIn", LineAwesomeIcon.LINKEDIN.create());
-        linkedinButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        linkedinButton.getStyle().set("--lumo-primary-color", "#0077B5");
-        linkedinButton.getStyle().set("--lumo-primary-text-color", "#FFFFFF");
-        linkedinButton.setTooltipText("Share on LinkedIn");
-        linkedinButton.addClickListener(e -> {
-            String url = "%s/share/%s".formatted(CommonUtils.getBaseUrl(), session.getCode());
-            String linkedInUrl = "https://www.linkedin.com/shareArticle?mini=true"
-                                 + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8);
-            UI.getCurrent().getPage().executeJs("window.open($0, '_blank')", linkedInUrl);
+            UI.getCurrent().getPage().executeJs("if (navigator.share) { navigator.share({ title: $0, text: $1}); } else { alert('Web Share API not supported in your browser.'); }", title, message);
         });
+//
 
-        Button emailButton = new Button(VaadinIcon.ENVELOPE_O.create());
-        emailButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        emailButton.setTooltipText("Share via your default email client");
-        emailButton.addClickListener(e -> {
-            String subject = "Check out this session: " + sessionName;
-            String mailtoUrl = "mailto:?subject=" + URLEncoder.encode(subject, StandardCharsets.UTF_8)
-                               + "&body=" + URLEncoder.encode(message, StandardCharsets.UTF_8);
-            UI.getCurrent().getPage().executeJs("window.open($0, '_self')", mailtoUrl);
-        });
-
-        Div bottomBar = new Div(emailButton, copyButton, twitterButton, linkedinButton);
+        Div bottomBar = new Div(shareButton);
+        bottomBar.setWidthFull();
         bottomBar.addClassNames(
-                LumoUtility.Display.GRID,
-                LumoUtility.Grid.Column.COLUMNS_2,
-                LumoUtility.Display.Breakpoint.Small.FLEX,
-                LumoUtility.Gap.SMALL
+                LumoUtility.Display.FLEX,
+                LumoUtility.Gap.SMALL,
+                LumoUtility.JustifyContent.END
         );
 
         dialog.add(textArea, bottomBar);

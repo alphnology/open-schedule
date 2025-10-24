@@ -1,5 +1,6 @@
 package com.alphnology.views.speakers;
 
+import com.alphnology.data.Contactable;
 import com.alphnology.data.Speaker;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
@@ -17,13 +18,9 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.server.streams.DownloadHandler;
-import com.vaadin.flow.server.streams.DownloadResponse;
-import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.springframework.util.StringUtils;
-
-import java.io.ByteArrayInputStream;
 
 import static com.alphnology.utils.SessionHelper.tagSession;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
@@ -119,19 +116,11 @@ public class SpeakersViewDetails extends Div {
         Image image = SpeakerHelper.getImage(speaker);
         image.addClassNames("flex-wrap-image-speaker");
 
-        String vCardUrl = VCardUtil.getVCardUrl(speaker);
-        byte[] qrCodeBytes = qrService.generatePng(vCardUrl, 256);
+        String vCardUrl = VCardUtil.getVCardUrl(new Contactable(speaker), "speaker");
 
-        InputStreamDownloadHandler qrCodeResource = DownloadHandler.fromInputStream((event) -> {
-            try {
-                return new DownloadResponse(new ByteArrayInputStream(qrCodeBytes), "vcard-qr.png", null, qrCodeBytes.length);
-            } catch (Exception e) {
-                return DownloadResponse.error(500);
-            }
-        });
+        DownloadHandler qrResource = VCardUtil.downloadHandler(qrService, vCardUrl);
 
-
-        Image qrCodeImage = new Image(qrCodeResource, "vCard QR Code");
+        Image qrCodeImage = new Image(qrResource, "vCard QR Code");
         qrCodeImage.setWidth("200px");
 
         Div imageContainer = new Div(qrCodeImage);

@@ -3,7 +3,6 @@ package com.alphnology.views.admin;
 import com.alphnology.components.ConfirmationDialog;
 import com.alphnology.data.News;
 import com.alphnology.data.User;
-import com.alphnology.security.AuthenticatedUser;
 import com.alphnology.services.NewsService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.DownloadHandlerUtils;
@@ -12,6 +11,7 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Footer;
@@ -61,6 +61,19 @@ import static com.alphnology.utils.ViewHelper.*;
 @Route("admin/news")
 @Menu(order = 16, icon = LineAwesomeIconUrl.FILE)
 @RolesAllowed("ADMIN")
+@Uses(TextField.class)
+@Uses(TextArea.class)
+@Uses(Button.class)
+@Uses(Icon.class)
+@Uses(Image.class)
+@Uses(Header.class)
+@Uses(Footer.class)
+@Uses(Span.class)
+@Uses(Upload.class)
+@Uses(Scroller.class)
+@Uses(SplitLayout.class)
+@Uses(VerticalLayout.class)
+@Uses(HorizontalLayout.class)
 public class NewsView extends VerticalLayout {
 
     private final TextField searchField = new TextField();
@@ -77,14 +90,12 @@ public class NewsView extends VerticalLayout {
     private final Button delete = new Button("Delete", VaadinIcon.TRASH.create());
 
     private final transient NewsService service;
-    private final transient AuthenticatedUser authenticatedUser;
     private News element;
 
     private final Binder<News> binder = new BeanValidationBinder<>(News.class);
 
-    public NewsView(NewsService service, AuthenticatedUser authenticatedUser) {
+    public NewsView(NewsService service) {
         this.service = service;
-        this.authenticatedUser = authenticatedUser;
 
         binder.bindInstanceFields(this);
 
