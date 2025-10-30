@@ -58,16 +58,14 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
         String codeParam = event.getRouteParameters().get("code").orElse(null);
         String typeParam = event.getRouteParameters().get("type").orElse(null);
 
-        if ((codeParam == null || codeParam.isBlank()) && (typeParam == null || typeParam.isBlank())) {
+        if (codeParam == null || codeParam.isBlank() || typeParam == null || typeParam.isBlank()) {
             event.forwardTo(SpeakersView.class);
             return;
         }
 
-        assert typeParam != null;
         this.currentType = typeParam.toLowerCase();
 
         try {
-            assert codeParam != null;
             Long code = Long.parseLong(codeParam);
 
             if ("speaker".equals(currentType)) {

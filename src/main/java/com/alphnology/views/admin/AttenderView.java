@@ -202,7 +202,12 @@ public class AttenderView extends VerticalLayout {
                 byte[] qrCodeBytes = qrService.generatePng(vCardUrl, 256);
 
                 // Sanitize filename
-                String fileName = attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png";
+                String fileName;
+                if (StringUtils.hasText(attender.getPhone())) {
+                    fileName = attender.getPhone() + attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png";
+                } else {
+                    fileName = attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png";
+                }
                 filesToZip.put(fileName, qrCodeBytes);
             }
 

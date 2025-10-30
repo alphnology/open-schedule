@@ -33,6 +33,7 @@ vaadin-login-overlay-wrapper::part(card) {
     height: 100%;
     padding: var(--lumo-size-xl);
     margin: 0;
+    overflow-y: auto;
 }
 
 vaadin-login-overlay-wrapper::part(brand) {
