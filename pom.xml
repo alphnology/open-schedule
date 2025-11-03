@@ -13,14 +13,14 @@
 
     <properties>
         <java.version>21</java.version>
-        <vaadin.version>24.8.3</vaadin.version>
+        <vaadin.version>24.9.1</vaadin.version>
         <hibernate.version>6.6.20.Final</hibernate.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.7</version>
     </parent>
 
     <repositories>

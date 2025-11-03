@@ -31,7 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@PageTitle("Favorite")
+@PageTitle("Favoritos")
+//@PageTitle("Favorite")
 @Route("favorite")
 @Menu(order = 4, icon = LineAwesomeIconUrl.HEART)
 @AnonymousAllowed

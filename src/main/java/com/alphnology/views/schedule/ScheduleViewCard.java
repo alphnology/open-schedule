@@ -48,6 +48,8 @@ public class ScheduleViewCard extends Div {
         Div roomDiv = getRoom(session);
         roomDiv.addClassNames(Display.BLOCK, Display.Breakpoint.Large.HIDDEN);
 
+        Div tagSession = tagSession(session);
+
         Div footer = new Div();
         footer.addClassNames(JustifyContent.START, AlignItems.CENTER);
         footer.add(createSpeakerRenderer(session));
@@ -60,7 +62,7 @@ public class ScheduleViewCard extends Div {
             footer.add(ratingDiv);
         }
 
-        add(header, levelDiv, trackDiv, roomDiv, footer);
+        add(header, levelDiv, trackDiv, roomDiv, tagSession, footer);
 
     }
 

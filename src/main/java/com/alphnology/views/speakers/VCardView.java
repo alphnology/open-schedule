@@ -32,7 +32,8 @@ import java.util.Optional;
  * @created 19/10/2025  - 19:43
  */
 
-@PageTitle("Contact Profile")
+@PageTitle("Perfil de contacto")
+//@PageTitle("Contact Profile")
 @Route("vcard/:code?/:type?")
 @AnonymousAllowed
 public class VCardView extends VerticalLayout implements BeforeEnterObserver {

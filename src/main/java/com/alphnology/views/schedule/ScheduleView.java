@@ -5,6 +5,8 @@ import com.alphnology.services.*;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -32,6 +34,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,7 +42,8 @@ import static com.alphnology.utils.PredicateUtils.createPredicateForDateTimeRang
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 
 
-@PageTitle("Schedule")
+@PageTitle("Cronograma")
+//@PageTitle("Schedule")
 @Route("")
 @RouteAlias("schedule")
 @Menu(order = 0, icon = LineAwesomeIconUrl.CALENDAR)
@@ -50,17 +54,20 @@ public class ScheduleView extends VerticalLayout {
     private static final String COLOR_WHITE = "white";
 
     private final TextField searchField = new TextField(SEARCH_PLACEHOLDER);
+    private final MultiSelectComboBox<Tag> tagFilter = new MultiSelectComboBox<>("Tags");
+
 
     private final transient SessionService sessionService;
 
     private final ScheduleViewDetails scheduleViewDetails;
     private final TabSheet tabSheet = new TabSheet();
 
-    private LocalDate currentDate;
 
-
-    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
+    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService, TagService tagService) {
         this.sessionService = sessionService;
+
+        this.tagFilter.setItems(tagService.findAll().stream().sorted(Comparator.comparing(Tag::getName)).toList());
+
 
         scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService, qrService);
 
@@ -97,14 +104,24 @@ public class ScheduleView extends VerticalLayout {
         searchField.addClassNames(LumoUtility.MaxWidth.SCREEN_MEDIUM, LumoUtility.AlignSelf.CENTER);
         searchField.addValueChangeListener(event1 -> updateCurrentTabContent());
 
-        add(notice, searchField);
+        tagFilter.setPlaceholder("Filter by tags");
+        tagFilter.setItemLabelGenerator(Tag::getName);
+        tagFilter.setClearButtonVisible(true);
+        tagFilter.setWidthFull();
+        tagFilter.addValueChangeListener(e -> updateCurrentTabContent());
+
+        Div filterLayout = new Div(searchField, tagFilter);
+        filterLayout.addClassNames(LumoUtility.Display.FLEX,
+                LumoUtility.Gap.XSMALL, LumoUtility.AlignItems.CENTER, LumoUtility.MaxWidth.SCREEN_LARGE, LumoUtility.AlignSelf.CENTER, LumoUtility.Width.FULL);
+
+        add(notice, filterLayout);
 
         int tabIndex = 0;
         int selectedIndex = 0;
         LocalDate today = LocalDate.now();
 
         for (LocalDate date = event.getStartDate(); !date.isAfter(event.getEndDate()); date = date.plusDays(1)) {
-            tabSheet.add(date.format(DateTimeFormatterUtils.dateFormatter), createLazySection(date));
+            tabSheet.add(new DateTab(date.format(DateTimeFormatterUtils.dateFormatter), date), createLazySection(date));
 
             if (date.isEqual(today)) {
                 selectedIndex = tabIndex;
@@ -121,9 +138,11 @@ public class ScheduleView extends VerticalLayout {
 
     private void updateCurrentTabContent() {
         Tab selectedTab = tabSheet.getSelectedTab();
-        Component content = tabSheet.getComponent(selectedTab);
-        if (content instanceof Div container) {
-            populateSection(container, currentDate);
+        if (selectedTab instanceof DateTab dateTab) {
+            Component content = tabSheet.getComponent(dateTab);
+            if (content instanceof Div container) {
+                populateSection(container, dateTab.getDate());
+            }
         }
     }
 
@@ -135,19 +154,22 @@ public class ScheduleView extends VerticalLayout {
     private Component populateSection(Div container, LocalDate date) {
         container.removeAll();
         container.setSizeFull();
-        this.currentDate = date;
         List<Session> sessions = sessionService.findAll(createFilterSpecification(date));
         if (sessions.isEmpty()) {
             container.add(new Span("No sessions scheduled for this day."));
             return container;
         }
 
+        String targetIdToScroll = findTargetIdToScroll(sessions, date);
+
+
         // Filter to ensure room is not null before grouping and get the sorted list of rooms
         List<Room> sortedRooms = sessions.stream()
+                .sorted(Comparator.comparing(this::getSessionTagsAsString, Comparator.nullsLast(String::compareTo))
+                        .thenComparing(s -> s.getRoom() != null ? s.getRoom().getName() : null, Comparator.nullsLast(String::compareTo)))
                 .map(Session::getRoom) // Make sure Room is not null
                 .filter(Objects::nonNull)
                 .distinct()
-                .sorted(Comparator.comparing(Room::getName))
                 .toList();
 
         Map<LocalDateTime, List<Session>> sessionsByStartTime = sessions.stream()
@@ -192,11 +214,16 @@ public class ScheduleView extends VerticalLayout {
         sectionLayout.add(headerRow);
 
         // 2. Create and add data rows
-        sessionsByStartTime.keySet().stream()
-                .sorted(LocalDateTime::compareTo)
-                .forEach(time -> {
+        ///hora, tags, room
+        sessionsByStartTime.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
                     sectionLayout.add(new Hr());
+
+                    String timeId = String.format("time-%02d-%02d", entry.getKey().getHour(), entry.getKey().getMinute());
+
                     Div dataRow = new Div();
+                    dataRow.setId(timeId);
                     dataRow.addClassNames(
                             LumoUtility.Display.FLEX,
                             LumoUtility.FlexDirection.COLUMN,
@@ -205,9 +232,7 @@ public class ScheduleView extends VerticalLayout {
                             LumoUtility.Gap.MEDIUM
                     );
 
-                    List<Session> sessionsInThisTimeSlot = sessionsByStartTime.get(time);
-
-                    TimeRange timeRange = sessionsInThisTimeSlot.stream().collect(Collectors.teeing(
+                    TimeRange timeRange = entry.getValue().stream().collect(Collectors.teeing(
                             Collectors.mapping(Session::getStartTime, Collectors.minBy(Comparator.naturalOrder())),
                             Collectors.mapping(Session::getEndTime, Collectors.maxBy(Comparator.naturalOrder())),
                             (minOpt, maxOpt) -> new TimeRange(minOpt.orElse(null), maxOpt.orElse(null))
@@ -250,17 +275,19 @@ public class ScheduleView extends VerticalLayout {
                                 "transition-card"
                         );
 
-                        if (sessionsInThisTimeSlot.size() == 1) {
-                            Session first = sessionsInThisTimeSlot.getFirst();
+                        if (entry.getValue().size() == 1) {
+                            Session first = entry.getValue().getFirst();
                             sessionCell.add(new ScheduleViewCard(first, sessionService, scheduleViewDetails::showSession));
 
                             String color = getColor(first);
                             sessionCell.getStyle().setBackgroundColor(color).setColor(COLOR_WHITE);
                             dataRow.add(sessionCell);
                             break;
+                        } else {
+                            dataRow.addClassNames(LumoUtility.Gap.MEDIUM);
                         }
 
-                        Optional<Session> sessionForThisRoomAndTime = sessionsInThisTimeSlot.stream()
+                        Optional<Session> sessionForThisRoomAndTime = entry.getValue().stream()
                                 .filter(s -> s.getRoom() != null && s.getRoom().equals(room))
                                 .findFirst();
 
@@ -271,9 +298,7 @@ public class ScheduleView extends VerticalLayout {
                             if (currentSession.getRoom() != null && currentSession.getRoom().getColor() != null) {
                                 sessionCell.getStyle().setBackgroundColor(currentSession.getRoom().getColor()).setColor(COLOR_WHITE);
                             }
-                            sessionCell.addClassNames(
-                                    LumoUtility.Display.FLEX
-                            );
+
                         } else {
                             sessionCell.setText("");
                             sessionCell.removeClassName("transition-card");
@@ -290,7 +315,55 @@ public class ScheduleView extends VerticalLayout {
                 });
 
         container.add(sectionLayout);
+
+        if (targetIdToScroll != null) {
+            UI.getCurrent().getPage().executeJs(
+                    "setTimeout(() => {" +
+                    "const element = document.getElementById($0);" +
+                    "if (element) {" +
+                    "  element.scrollIntoView({ behavior: 'smooth', block: 'start' });" +
+                    "}" +
+                    "}, 100);", targetIdToScroll);
+        }
+
         return container;
+    }
+
+    private String findTargetIdToScroll(List<Session> sessions, LocalDate date) {
+        if (!date.isEqual(LocalDate.now())) {
+            return null;
+        }
+
+        LocalTime now = LocalTime.now();
+        String firstTimeId = null;
+
+        List<LocalDateTime> sortedStartTimes = sessions.stream()
+                .map(Session::getStartTime)
+                .distinct()
+                .sorted()
+                .toList();
+
+        for (LocalDateTime startTime : sortedStartTimes) {
+            String currentTimeId = String.format("time-%02d-%02d", startTime.getHour(), startTime.getMinute());
+            if (firstTimeId == null) {
+                firstTimeId = currentTimeId;
+            }
+            // If current time is before this session's start time, this is our target.
+            if (now.isBefore(startTime.toLocalTime()) || now.equals(startTime.toLocalTime())) {
+                return currentTimeId;
+            }
+        }
+        return firstTimeId; // Fallback to the first session if we are past the last one
+    }
+
+    private String getSessionTagsAsString(Session session) {
+        if (session.getTags() == null || session.getTags().isEmpty()) {
+            return null;
+        }
+        return session.getTags().stream()
+                .sorted(Comparator.comparing(Tag::getName))
+                .map(Tag::getName)
+                .collect(Collectors.joining(", "));
     }
 
     private static String getColor(Session first) {
@@ -341,7 +414,15 @@ public class ScheduleView extends VerticalLayout {
 
             Predicate predicateDate = createPredicateForDateTimeRange(LocalDateTime.of(date, LocalDateTime.MIN.toLocalTime()), LocalDateTime.of(date, LocalDateTime.MAX.toLocalTime()), root.get("startTime"), root.get("endTime"), builder);
 
-            return builder.and(orPredicate, predicateDate);
+            Predicate predicateSelectedTags = builder.conjunction();
+            Set<Tag> selectedTags = tagFilter.getValue();
+            if (selectedTags != null && !selectedTags.isEmpty()) {
+                Join<Session, Tag> tagJoinForFilter = root.join("tags", JoinType.INNER);
+                predicateSelectedTags = tagJoinForFilter.in(selectedTags);
+            }
+
+            return builder.and(orPredicate, predicateDate, predicateSelectedTags);
+
 
         };
     }
@@ -361,6 +442,19 @@ public class ScheduleView extends VerticalLayout {
                     supplier.get();
                 }
             });
+        }
+    }
+
+    private static class DateTab extends Tab {
+        private final LocalDate date;
+
+        public DateTab(String label, LocalDate date) {
+            super(label);
+            this.date = date;
+        }
+
+        public LocalDate getDate() {
+            return date;
         }
     }
 

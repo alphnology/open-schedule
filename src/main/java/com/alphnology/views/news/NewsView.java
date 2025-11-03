@@ -20,7 +20,8 @@ import java.util.List;
  * @author me@fredpena.dev
  * @created 19/10/2025  - 08:56
  */
-@PageTitle("News")
+@PageTitle("Noticias")
+//@PageTitle("News")
 @Route("news")
 @Menu(order = 2, icon = LineAwesomeIconUrl.NEWSPAPER)
 @AnonymousAllowed
