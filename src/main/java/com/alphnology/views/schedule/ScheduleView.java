@@ -35,6 +35,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,8 @@ public class ScheduleView extends VerticalLayout {
 
     private static final String SEARCH_PLACEHOLDER = "Search...";
     private static final String COLOR_WHITE = "white";
+
+    private ZoneId timeZone;
 
     private final TextField searchField = new TextField(SEARCH_PLACEHOLDER);
     private final MultiSelectComboBox<Tag> tagFilter = new MultiSelectComboBox<>("Tags");
@@ -83,6 +86,8 @@ public class ScheduleView extends VerticalLayout {
         }
 
         Event event = optionalEvent.get();
+        timeZone = ZoneId.of(event.getTimeZone().substring(0, event.getTimeZone().indexOf("(") - 1));
+//        timeZone = ZoneId.of("America/Santo_Domingo");
 
         VaadinSession.getCurrent().setAttribute(Event.class, event);
 
@@ -118,7 +123,8 @@ public class ScheduleView extends VerticalLayout {
 
         int tabIndex = 0;
         int selectedIndex = 0;
-        LocalDate today = LocalDate.now();
+
+        LocalDate today = LocalDate.now(timeZone);
 
         for (LocalDate date = event.getStartDate(); !date.isAfter(event.getEndDate()); date = date.plusDays(1)) {
             tabSheet.add(new DateTab(date.format(DateTimeFormatterUtils.dateFormatter), date), createLazySection(date));
@@ -163,11 +169,10 @@ public class ScheduleView extends VerticalLayout {
         String targetIdToScroll = findTargetIdToScroll(sessions, date);
 
 
-        // Filter to ensure room is not null before grouping and get the sorted list of rooms
         List<Room> sortedRooms = sessions.stream()
-                .sorted(Comparator.comparing(this::getSessionTagsAsString, Comparator.nullsLast(String::compareTo))
-                        .thenComparing(s -> s.getRoom() != null ? s.getRoom().getName() : null, Comparator.nullsLast(String::compareTo)))
-                .map(Session::getRoom) // Make sure Room is not null
+                .sorted(Comparator.comparing(this::getSessionTagsAsString, Comparator.nullsLast(String::compareTo)))
+                .sorted(Comparator.comparing(s -> s.getRoom() != null ? s.getRoom().getName() : null, Comparator.nullsLast(String::compareTo)))
+                .map(Session::getRoom)
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -334,7 +339,7 @@ public class ScheduleView extends VerticalLayout {
             return null;
         }
 
-        LocalTime now = LocalTime.now();
+        LocalTime now = LocalTime.now(timeZone);
         String firstTimeId = null;
 
         List<LocalDateTime> sortedStartTimes = sessions.stream()
