@@ -15,11 +15,10 @@ import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -27,22 +26,23 @@ import com.vaadin.flow.component.shared.HasClearButton;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.DownloadResponse;
-import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.util.StringUtils;
@@ -50,8 +50,8 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
@@ -64,7 +64,9 @@ import static com.alphnology.utils.ViewHelper.*;
 public class AttenderView extends VerticalLayout {
 
     private final TextField searchField = new TextField();
-    private final Grid<Attender> grid = new Grid<>(Attender.class, false);
+    private final VirtualList<Attender> list = new VirtualList<>();
+    private final Span countBadge = new Span("0");
+    private Attender selectedItem;
 
     private final TextField name = new TextField("Name");
     private final TextField lastName = new TextField("Last name");
@@ -88,74 +90,62 @@ public class AttenderView extends VerticalLayout {
 
     private final Binder<Attender> binder = new BeanValidationBinder<>(Attender.class);
 
-
-    public AttenderView(
-            AttenderService service, QrService qrService
-    ) {
+    public AttenderView(AttenderService service, QrService qrService) {
         this.service = service;
         this.qrService = qrService;
 
         countryField.setItems(CountryUtils.getCountryNamesWithCodes());
         countryField.setPlaceholder("Choose a country");
 
-        // Bind fields. This where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
         binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) {
-                clear.setClearButtonVisible(true);
-            }
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
         });
-
-
         binder.forField(countryField)
-                .bind(speaker -> {
-                            if (speaker == null) {
-                                return null;
-                            }
-                            String speakerCountryCode = speaker.getCountry();
+                .bind(attender -> {
+                            if (attender == null) return null;
+                            String code = attender.getCountry();
                             return CountryUtils.getCountryNamesWithCodes().stream()
-                                    .filter(countryInList -> Objects.equals(speakerCountryCode, countryInList.getCode()))
-                                    .findFirst()
-                                    .orElse(null);
+                                    .filter(c -> Objects.equals(code, c.getCode()))
+                                    .findFirst().orElse(null);
                         },
-                        (speaker, selectedCountry) -> {
-                            if (speaker != null) {
-                                speaker.setCountry(selectedCountry != null ? selectedCountry.getCode() : null);
-                            }
-                        }
-                );
+                        (attender, selected) -> {
+                            if (attender != null)
+                                attender.setCountry(selected != null ? selected.getCode() : null);
+                        });
 
+        initList();
 
-        initGrid();
+        // ── Sidebar ──
+        Anchor downloadAllAnchor = getAnchor();
+        Button downloadAllBtn = new Button("QRs", VaadinIcon.DOWNLOAD.create());
+        downloadAllBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+        downloadAllAnchor.add(downloadAllBtn);
+        downloadAllAnchor.getElement().setAttribute("download", true);
 
-        SplitLayout splitLayout = new SplitLayout();
-        splitLayout.setSizeFull();
+        countBadge.addClassName("admin-count-badge");
+        HorizontalLayout toolbar = new HorizontalLayout(searchField, countBadge, downloadAllAnchor);
+        toolbar.setWidthFull();
+        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
+        toolbar.setFlexGrow(1, searchField);
+        toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        sidebar.setSizeFull();
+        sidebar.setPadding(false);
+        sidebar.setSpacing(false);
+        sidebar.setFlexGrow(1, list);
+
+        // ── Form panel ──
         Footer footer = new Footer(createFooter());
         Scroller formScroller = getScrollerVertical();
         formScroller.setContent(createFormLayout());
-
         VerticalLayout form = getSecondaryLayout(formScroller, footer);
-        form.setWidth("35%");
 
-        VerticalLayout gridLayout = new VerticalLayout();
-        gridLayout.setWidthFull();
-        gridLayout.getStyle().set("gap", "0.3rem");
-
-        Anchor downloadAllQrsAnchor = getAnchor();
-        Button downloadAllQrsButton = new Button("Download All QRs", VaadinIcon.DOWNLOAD.create());
-        downloadAllQrsButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
-        downloadAllQrsAnchor.add(downloadAllQrsButton);
-        downloadAllQrsAnchor.getElement().setAttribute("download", true);
-
-        HorizontalLayout toolbar = new HorizontalLayout(searchField, downloadAllQrsAnchor);
-        toolbar.setWidthFull();
-        toolbar.setFlexGrow(1, searchField);
-        toolbar.setAlignItems(Alignment.BASELINE);
-
-        gridLayout.add(toolbar, grid);
-
-        splitLayout.addToPrimary(gridLayout);
+        SplitLayout splitLayout = new SplitLayout();
+        splitLayout.setSizeFull();
+        splitLayout.setSplitterPosition(35);
+        splitLayout.addToPrimary(sidebar);
         splitLayout.addToSecondary(form);
 
         add(splitLayout);
@@ -164,6 +154,7 @@ public class AttenderView extends VerticalLayout {
         setMargin(false);
         setSpacing(false);
 
+        refreshList();
         clearForm();
 
         cancel.addClickListener(e -> clearForm());
@@ -175,12 +166,11 @@ public class AttenderView extends VerticalLayout {
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         delete.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
-
     }
 
     @NotNull
     private Anchor getAnchor() {
-        DownloadHandler qrResource = DownloadHandler.fromInputStream((event1) -> {
+        DownloadHandler qrResource = DownloadHandler.fromInputStream(event1 -> {
             try {
                 byte[] zipBytes = createZipBytesForAllQrs();
                 return new DownloadResponse(new ByteArrayInputStream(zipBytes), "all-attender-qrs.zip", null, zipBytes.length);
@@ -188,31 +178,23 @@ public class AttenderView extends VerticalLayout {
                 return DownloadResponse.error(500);
             }
         });
-
-        Anchor downloadAllQrsAnchor = new Anchor();
-        downloadAllQrsAnchor.setHref(qrResource);
-        return downloadAllQrsAnchor;
+        Anchor anchor = new Anchor();
+        anchor.setHref(qrResource);
+        return anchor;
     }
 
     private byte[] createZipBytesForAllQrs() {
         try {
             List<Attender> attenders = service.findAll(createFilterSpecification());
             Map<String, byte[]> filesToZip = new HashMap<>();
-
             for (Attender attender : attenders) {
                 String vCardUrl = VCardUtil.getVCardUrl(new Contactable(attender), "attender");
-                byte[] qrCodeBytes = qrService.generatePng(vCardUrl, 256);
-
-                // Sanitize filename
-                String fileName;
-                if (StringUtils.hasText(attender.getPhone())) {
-                    fileName = attender.getPhone() + attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png";
-                } else {
-                    fileName = attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png";
-                }
-                filesToZip.put(fileName, qrCodeBytes);
+                byte[] qrBytes = qrService.generatePng(vCardUrl, 256);
+                String fileName = StringUtils.hasText(attender.getPhone())
+                        ? attender.getPhone() + attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png"
+                        : attender.getName().replace(" ", "_") + attender.getLastName().replace(" ", "_") + ".png";
+                filesToZip.put(fileName, qrBytes);
             }
-
             return ZipUtils.createZip(filesToZip);
         } catch (Exception e) {
             log.error("Error creating ZIP file with QR codes", e);
@@ -223,70 +205,83 @@ public class AttenderView extends VerticalLayout {
 
     private Specification<Attender> createFilterSpecification() {
         return (root, query, builder) -> {
-
             final String search = searchField.getValue().toLowerCase().trim();
-
             Order order = builder.asc(root.get("name"));
             assert query != null;
             query.orderBy(order);
             query.distinct(true);
-
             Predicate predicateName = predicateUnaccentLike(root, builder, "name", search);
             Predicate predicateLastName = predicateUnaccentLike(root, builder, "lastName", search);
             Predicate predicateTitle = predicateUnaccentLike(root, builder, "title", search);
             Predicate predicateCompany = predicateUnaccentLike(root, builder, "company", search);
             Predicate predicateEmail = predicateUnaccentLike(root, builder, "email", search);
-
-            final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateName, predicateLastName, predicateTitle, predicateCompany, predicateEmail));
-
-            return builder.or(orPredicates.toArray(Predicate[]::new));
-
+            return builder.or(predicateName, predicateLastName, predicateTitle, predicateCompany, predicateEmail);
         };
     }
 
-    private void initGrid() {
-        searchField.focus();
+    private void initList() {
         searchField.setWidthFull();
-        searchField.setPlaceholder("Search...");
+        searchField.setPlaceholder("Search attenders...");
         searchField.setClearButtonVisible(true);
         searchField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
-        searchField.setValueChangeMode(ValueChangeMode.EAGER);
-        searchField.getStyle().setPadding("0").setMargin("0");
-        searchField.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        searchField.setValueChangeMode(ValueChangeMode.LAZY);
+        searchField.addValueChangeListener(e -> refreshList());
 
-
-        grid.setSizeFull();
-        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        grid.setMultiSort(true, Grid.MultiSortPriority.APPEND);
-        grid.setEmptyStateText("No record found.");
-
-        grid.setItems(query -> service.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)), createFilterSpecification()).stream());
-
-        grid.addColumn(Attender::getName).setHeader("Name").setAutoWidth(true).setSortable(true).setSortProperty("name");
-
-        grid.addColumn(Attender::getLastName).setHeader("LastName").setAutoWidth(true).setSortable(true).setSortProperty("lastName");
-
-        grid.addColumn(Attender::getTitle).setHeader("Title").setAutoWidth(true).setSortable(true).setSortProperty("title");
-
-        grid.addColumn(Attender::getCompany).setHeader("Company").setAutoWidth(true).setSortable(true).setSortProperty("company");
-
-        grid.addColumn(Attender::getEmail).setHeader("Email").setAutoWidth(true).setSortable(true).setSortProperty("email");
-
-        grid.addColumn(Attender::getPhone).setHeader("Phone").setAutoWidth(true).setSortable(true).setSortProperty("phone");
-
-        grid.addComponentColumn(speaker -> {
-            Image img = new Image();
-            if (StringUtils.hasText(speaker.getCountry())) {
-                img.setSrc("https://flagcdn.com/%s.svg".formatted(speaker.getCountry().toLowerCase()));
-            }
-            img.setWidth("50px");
-            return img;
-        }).setHeader("Country");
-
-        grid.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
+        list.setSizeFull();
+        list.setRenderer(new ComponentRenderer<>(this::buildListItem));
     }
 
+    private Div buildListItem(Attender attender) {
+        Div item = new Div();
+        item.addClassName("admin-list-item");
+        if (selectedItem != null && Objects.equals(selectedItem.getCode(), attender.getCode())) {
+            item.addClassName("selected");
+        }
+
+        // Icon
+        Div iconDiv = new Div();
+        iconDiv.addClassName("admin-item-icon");
+        Icon icon = VaadinIcon.USER.create();
+        icon.setSize("18px");
+        iconDiv.add(icon);
+
+        // Body
+        Div body = new Div();
+        body.addClassName("admin-item-body");
+        String fullName = Stream.of(attender.getName(), attender.getLastName())
+                .filter(StringUtils::hasText).collect(Collectors.joining(" "));
+        Span nameSpan = new Span(fullName);
+        nameSpan.addClassName("admin-item-name");
+        String sub = Stream.of(attender.getCompany(), attender.getTitle())
+                .filter(StringUtils::hasText).collect(Collectors.joining(" · "));
+        Span subSpan = new Span(sub);
+        subSpan.addClassName("admin-item-sub");
+        body.add(nameSpan, subSpan);
+
+        // Side: country flag
+        Div side = new Div();
+        side.addClassName("admin-item-side");
+        if (StringUtils.hasText(attender.getCountry())) {
+            Image flag = new Image("https://flagcdn.com/%s.svg".formatted(attender.getCountry().toLowerCase()), "");
+            flag.addClassName("admin-item-flag");
+            side.add(flag);
+        }
+
+        item.add(iconDiv, body, side);
+        item.addClickListener(e -> selectItem(attender));
+        return item;
+    }
+
+    private void selectItem(Attender attender) {
+        populateForm(attender);
+        list.getDataProvider().refreshAll();
+    }
+
+    private void refreshList() {
+        List<Attender> items = service.findAll(createFilterSpecification());
+        list.setItems(items);
+        countBadge.setText(String.valueOf(items.size()));
+    }
 
     private VerticalLayout createFormLayout() {
         Header header = getSecondaryHeader("Attender management", "Manage attender profiles");
@@ -303,7 +298,7 @@ public class AttenderView extends VerticalLayout {
             if (element != null && element.getCode() != null) {
                 VCardUtil.openQr(new Contactable(element), "attender", qrService);
             } else {
-                NotificationUtils.info("Please select a attender first.");
+                NotificationUtils.info("Please select an attender first.");
             }
         });
         viewQrButton.setVisible(false);
@@ -313,13 +308,8 @@ public class AttenderView extends VerticalLayout {
         downloadQrAnchor.add(downloadQrButton);
 
         Div qrButtonsLayout = new Div(viewQrButton, downloadQrAnchor);
-        qrButtonsLayout.addClassNames(
-                LumoUtility.Display.FLEX,
-                LumoUtility.Gap.SMALL,
-                LumoUtility.JustifyContent.CENTER,
-                LumoUtility.Width.FULL
-        );
-
+        qrButtonsLayout.addClassNames(LumoUtility.Display.FLEX, LumoUtility.Gap.SMALL,
+                LumoUtility.JustifyContent.CENTER, LumoUtility.Width.FULL);
 
         VerticalLayout formLayout = new VerticalLayout();
         formLayout.setSizeFull();
@@ -328,31 +318,19 @@ public class AttenderView extends VerticalLayout {
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
         formLayout.add(header, name, lastName, title, company, countryField, email, phone, qrButtonsLayout);
-
         return formLayout;
     }
 
-
     private void saveOrUpdate(ClickEvent<Button> buttonClickEvent) {
-
         try {
-
-            if (this.element == null) {
-                this.element = new Attender();
-            }
-
+            if (this.element == null) this.element = new Attender();
             binder.writeBean(this.element);
-
             ConfirmationDialog.confirmation(event -> {
                 service.save(element);
-
                 populateForm(element);
-
-                grid.getDataProvider().refreshAll();
+                refreshList();
                 NotificationUtils.success();
             });
-
-
         } catch (ObjectOptimisticLockingFailureException ex) {
             log.error(ex.getLocalizedMessage());
             NotificationUtils.error("Error updating the data. Somebody else has updated the record while you were making changes.");
@@ -362,16 +340,12 @@ public class AttenderView extends VerticalLayout {
         }
     }
 
-
     private void delete(ClickEvent<Button> buttonClickEvent) {
         ConfirmationDialog.delete(event -> {
             try {
-
                 service.delete(element.getCode());
-
-                populateForm(null);
-
-                grid.getDataProvider().refreshAll();
+                clearForm();
+                refreshList();
             } catch (DeleteConstraintViolationException ex) {
                 log.error(ex.getLocalizedMessage());
                 NotificationUtils.info(ex.getMessage());
@@ -380,25 +354,22 @@ public class AttenderView extends VerticalLayout {
     }
 
     private HorizontalLayout createFooter() {
-
         HorizontalLayout buttonLayout = new HorizontalLayout(save, cancel, delete);
         buttonLayout.setFlexGrow(1, save, cancel, delete);
-        buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM);
-        buttonLayout.addClassNames(LumoUtility.Background.CONTRAST_10);
+        buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM,
+                LumoUtility.Background.CONTRAST_10);
         buttonLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
         return buttonLayout;
     }
 
     private void clearForm() {
         populateForm(null);
-
+        list.getDataProvider().refreshAll();
     }
-
 
     private void populateForm(Attender value) {
         this.element = value;
-
+        this.selectedItem = value;
         binder.readBean(this.element);
 
         viewQrButton.setVisible(value != null);
@@ -406,12 +377,9 @@ public class AttenderView extends VerticalLayout {
 
         if (value != null) {
             String vCardUrl = VCardUtil.getVCardUrl(new Contactable(element), "attender");
-
             DownloadHandler qrResource = VCardUtil.downloadHandler(qrService, vCardUrl, element.getName().replace(" ", ""));
             downloadQrAnchor.setHref(qrResource);
         }
-
         delete.setEnabled(element != null);
     }
-
 }

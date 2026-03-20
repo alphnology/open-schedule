@@ -45,7 +45,7 @@ public class AttenderService {
         return repository.findAll(filter, pageable);
     }
 
-    public List<Attender> findAll(@Nullable Specification<Attender> spec) {
+    public List<Attender> findAll(Specification<Attender> spec) {
         return repository.findAll(spec);
     }
 

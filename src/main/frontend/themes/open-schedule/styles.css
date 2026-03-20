@@ -2,6 +2,7 @@
 @import url('./views/login.css');
 @import url('./views/change-password.css');
 @import url('./views/speakers-schedule-view.css');
+@import url('./views/admin-catalog.css');
 @import url('./components/vaadin-checkbox.css');
 
 

@@ -56,5 +56,9 @@ public class RoomService {
         return repository.findAll();
     }
 
+    public List<Room> findAll(Specification<Room> spec) {
+        return repository.findAll(spec);
+    }
+
 
 }

@@ -12,12 +12,10 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.Header;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -25,32 +23,33 @@ import com.vaadin.flow.component.shared.HasClearButton;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.renderer.LocalDateRenderer;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.util.StringUtils;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.Objects;
 
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
@@ -63,7 +62,9 @@ import static com.alphnology.utils.ViewHelper.*;
 public class EventView extends VerticalLayout {
 
     private final TextField searchField = new TextField();
-    private final Grid<Event> grid = new Grid<>(Event.class, false);
+    private final VirtualList<Event> list = new VirtualList<>();
+    private final Span countBadge = new Span("0");
+    private Event selectedItem;
 
     private final TextField name = new TextField("Name");
     private final DatePicker startDate = new DatePicker("Start date");
@@ -77,16 +78,14 @@ public class EventView extends VerticalLayout {
 
     private final transient EventService service;
     private Event element;
+    private final String formatterDate;
 
     private final Binder<Event> binder = new BeanValidationBinder<>(Event.class);
 
-
-    public EventView(
-            EventService service,
-            @Value("${application.formatter.date:unknown}") String formatterDate
-    ) {
+    public EventView(EventService service,
+                     @Value("${application.formatter.date:unknown}") String formatterDate) {
         this.service = service;
-
+        this.formatterDate = formatterDate;
 
         timeZone.setItems(CountryUtils.getAvailableZoneIds());
         timeZone.setPlaceholder("Choose a time zone");
@@ -97,32 +96,37 @@ public class EventView extends VerticalLayout {
         startDate.setI18n(dateFormat);
         endDate.setI18n(dateFormat);
 
-        // Bind fields. This where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
         binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) {
-                clear.setClearButtonVisible(true);
-            }
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
         });
 
+        initList();
 
-        initGrid(formatterDate);
+        // ── Sidebar ──
+        countBadge.addClassName("admin-count-badge");
+        HorizontalLayout toolbar = new HorizontalLayout(searchField, countBadge);
+        toolbar.setWidthFull();
+        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
+        toolbar.setFlexGrow(1, searchField);
+        toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
-        SplitLayout splitLayout = new SplitLayout();
-        splitLayout.setSizeFull();
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        sidebar.setSizeFull();
+        sidebar.setPadding(false);
+        sidebar.setSpacing(false);
+        sidebar.setFlexGrow(1, list);
 
+        // ── Form panel ──
         Footer footer = new Footer(createFooter());
         Scroller formScroller = getScrollerVertical();
         formScroller.setContent(createFormLayout());
-
         VerticalLayout form = getSecondaryLayout(formScroller, footer);
-        form.setWidth("35%");
 
-        VerticalLayout gridLayout = new VerticalLayout(searchField, grid);
-        gridLayout.setWidthFull();
-        gridLayout.getStyle().set("gap", "0.3rem");
-
-        splitLayout.addToPrimary(gridLayout);
+        SplitLayout splitLayout = new SplitLayout();
+        splitLayout.setSizeFull();
+        splitLayout.setSplitterPosition(35);
+        splitLayout.addToPrimary(sidebar);
         splitLayout.addToSecondary(form);
 
         add(splitLayout);
@@ -131,6 +135,7 @@ public class EventView extends VerticalLayout {
         setMargin(false);
         setSpacing(false);
 
+        refreshList();
         clearForm();
 
         cancel.addClickListener(e -> clearForm());
@@ -140,64 +145,85 @@ public class EventView extends VerticalLayout {
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         delete.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
-
     }
 
     private Specification<Event> createFilterSpecification() {
         return (root, query, builder) -> {
-
             final String search = searchField.getValue().toLowerCase().trim();
-
             Order order = builder.asc(root.get("startDate"));
             assert query != null;
             query.orderBy(order);
             query.distinct(true);
-
             Predicate predicateName = predicateUnaccentLike(root, builder, "name", search);
-
             Predicate predicateTimeZone = predicateUnaccentLike(root, builder, "timeZone", search);
-
             Predicate predicateLocation = predicateUnaccentLike(root, builder, "location", search);
-
             final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateName, predicateTimeZone, predicateLocation));
-
             return builder.or(orPredicates.toArray(Predicate[]::new));
-
         };
     }
 
-    private void initGrid(String formatterDate) {
-        searchField.focus();
+    private void initList() {
         searchField.setWidthFull();
-        searchField.setPlaceholder("Search...");
+        searchField.setPlaceholder("Search events...");
         searchField.setClearButtonVisible(true);
         searchField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
-        searchField.setValueChangeMode(ValueChangeMode.EAGER);
-        searchField.getStyle().setPadding("0").setMargin("0");
-        searchField.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        searchField.setValueChangeMode(ValueChangeMode.LAZY);
+        searchField.addValueChangeListener(e -> refreshList());
 
+        list.setSizeFull();
+        list.setRenderer(new ComponentRenderer<>(this::buildListItem));
+    }
 
-        grid.setSizeFull();
-        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        grid.setMultiSort(true, Grid.MultiSortPriority.APPEND);
-        grid.setEmptyStateText("No record found.");
+    private Div buildListItem(Event event) {
+        Div item = new Div();
+        item.addClassName("admin-list-item");
+        if (selectedItem != null && Objects.equals(selectedItem.getCode(), event.getCode())) {
+            item.addClassName("selected");
+        }
 
-        grid.setItems(query -> service.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)), createFilterSpecification()).stream());
+        // Icon
+        Div iconDiv = new Div();
+        iconDiv.addClassName("admin-item-icon");
+        Icon icon = VaadinIcon.CALENDAR.create();
+        icon.setSize("18px");
+        iconDiv.add(icon);
 
-        grid.addColumn(Event::getName).setHeader("Name").setAutoWidth(true).setSortable(true).setSortProperty("name");
+        // Body
+        Div body = new Div();
+        body.addClassName("admin-item-body");
+        Span nameSpan = new Span(event.getName());
+        nameSpan.addClassName("admin-item-name");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(formatterDate);
+        String startStr = event.getStartDate() != null ? event.getStartDate().format(fmt) : "—";
+        String endStr = event.getEndDate() != null ? event.getEndDate().format(fmt) : "—";
+        Span subSpan = new Span(startStr + " → " + endStr);
+        subSpan.addClassName("admin-item-sub");
+        body.add(nameSpan, subSpan);
 
-        grid.addColumn(new LocalDateRenderer<>(Event::getStartDate, formatterDate)).setHeader("Start date")
-                .setComparator(Event::getStartDate).setAutoWidth(true).setSortable(true).setSortProperty("startDate");
+        // Side: timezone abbreviation
+        Div side = new Div();
+        side.addClassName("admin-item-side");
+        if (StringUtils.hasText(event.getTimeZone())) {
+            String tz = event.getTimeZone().contains("(") ? event.getTimeZone().substring(0, event.getTimeZone().indexOf("(")).trim() : event.getTimeZone();
+            Span badge = new Span(tz.length() > 12 ? tz.substring(tz.lastIndexOf("/") + 1) : tz);
+            badge.addClassNames("admin-badge", "muted");
+            side.add(badge);
+        }
 
-        grid.addColumn(new LocalDateRenderer<>(Event::getEndDate, formatterDate)).setHeader("End date")
-                .setComparator(Event::getEndDate).setAutoWidth(true).setSortable(true).setSortProperty("endDate");
+        item.add(iconDiv, body, side);
+        item.addClickListener(e -> selectItem(event));
+        return item;
+    }
 
-        grid.addColumn(Event::getTimeZone).setHeader("TimeZone").setAutoWidth(true).setSortable(true).setSortProperty("timeZone");
+    private void selectItem(Event event) {
+        populateForm(event);
+        list.getDataProvider().refreshAll();
+    }
 
-        grid.addColumn(Event::getLocation).setHeader("Location").setAutoWidth(true).setSortable(true).setSortProperty("location");
-
-        grid.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
+    private void refreshList() {
+        List<Event> items = service.findAll(createFilterSpecification());
+        list.setItems(items);
+        countBadge.setText(String.valueOf(items.size()));
     }
 
     private VerticalLayout createFormLayout() {
@@ -218,32 +244,19 @@ public class EventView extends VerticalLayout {
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
         formLayout.add(header, name, startDate, endDate, timeZone, location);
-
         return formLayout;
     }
 
-
     private void saveOrUpdate(ClickEvent<Button> buttonClickEvent) {
-
         try {
-
-            if (this.element == null) {
-                this.element = new Event();
-            }
-
+            if (this.element == null) this.element = new Event();
             binder.writeBean(this.element);
-
-
             ConfirmationDialog.confirmation(event -> {
                 service.save(element);
-
                 populateForm(element);
-
-                grid.getDataProvider().refreshAll();
+                refreshList();
                 NotificationUtils.success();
             });
-
-
         } catch (ObjectOptimisticLockingFailureException ex) {
             log.error(ex.getLocalizedMessage());
             NotificationUtils.error("Error updating the data. Somebody else has updated the record while you were making changes.");
@@ -253,20 +266,13 @@ public class EventView extends VerticalLayout {
         }
     }
 
-
     private void delete(ClickEvent<Button> buttonClickEvent) {
         try {
-
             ConfirmationDialog.delete(event -> {
-
                 service.delete(element.getCode());
-
-                populateForm(null);
-
-                grid.getDataProvider().refreshAll();
-
+                clearForm();
+                refreshList();
             });
-
         } catch (ObjectOptimisticLockingFailureException ex) {
             log.error(ex.getLocalizedMessage());
             NotificationUtils.error("Error delete the data. Somebody else has delete the record while you were making changes.");
@@ -274,18 +280,17 @@ public class EventView extends VerticalLayout {
     }
 
     private HorizontalLayout createFooter() {
-
         HorizontalLayout buttonLayout = new HorizontalLayout(save, cancel, delete);
         buttonLayout.setFlexGrow(1, save, cancel, delete);
-        buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM);
-        buttonLayout.addClassNames(LumoUtility.Background.CONTRAST_10);
+        buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM,
+                LumoUtility.Background.CONTRAST_10);
         buttonLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
         return buttonLayout;
     }
 
     private void clearForm() {
         populateForm(null);
+        list.getDataProvider().refreshAll();
 
         UI.getCurrent().getPage().executeJs("return Intl.DateTimeFormat().resolvedOptions().timeZone;")
                 .then(String.class, id -> {
@@ -298,13 +303,10 @@ public class EventView extends VerticalLayout {
                 });
     }
 
-
     private void populateForm(Event value) {
         this.element = value;
-
+        this.selectedItem = value;
         binder.readBean(this.element);
-
         delete.setEnabled(element != null);
     }
-
 }

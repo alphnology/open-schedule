@@ -7,15 +7,12 @@ import com.alphnology.services.RoomService;
 import com.alphnology.utils.ColorUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.Header;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -23,31 +20,30 @@ import com.vaadin.flow.component.shared.HasClearButton;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
-import org.springframework.data.domain.PageRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.util.StringUtils;
 import org.vaadin.addons.tatu.ColorPicker;
-import org.vaadin.addons.tatu.ColorPickerVariant;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.Objects;
 
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
@@ -60,7 +56,9 @@ import static com.alphnology.utils.ViewHelper.*;
 public class RoomView extends VerticalLayout {
 
     private final TextField searchField = new TextField();
-    private final Grid<Room> grid = new Grid<>(Room.class, false);
+    private final VirtualList<Room> list = new VirtualList<>();
+    private final Span countBadge = new Span("0");
+    private Room selectedItem;
 
     private final TextField name = new TextField("Name");
     private final ColorPicker color = new ColorPicker();
@@ -75,40 +73,43 @@ public class RoomView extends VerticalLayout {
 
     private final Binder<Room> binder = new BeanValidationBinder<>(Room.class);
 
-
-    public RoomView(
-            RoomService service
-    ) {
+    public RoomView(RoomService service) {
         this.service = service;
 
         color.setLabel("Color");
         color.setPresets(Arrays.stream(ColorUtils.values()).map(ColorUtils::getColorPreset).toList());
 
-        // Bind fields. This where you'd define e.g. validation rules
         binder.bindInstanceFields(this);
         binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) {
-                clear.setClearButtonVisible(true);
-            }
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
         });
 
-        initGrid();
+        initList();
 
-        SplitLayout splitLayout = new SplitLayout();
-        splitLayout.setSizeFull();
+        // ── Sidebar ──
+        countBadge.addClassName("admin-count-badge");
+        HorizontalLayout toolbar = new HorizontalLayout(searchField, countBadge);
+        toolbar.setWidthFull();
+        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
+        toolbar.setFlexGrow(1, searchField);
+        toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        sidebar.setSizeFull();
+        sidebar.setPadding(false);
+        sidebar.setSpacing(false);
+        sidebar.setFlexGrow(1, list);
+
+        // ── Form panel ──
         Footer footer = new Footer(createFooter());
         Scroller formScroller = getScrollerVertical();
         formScroller.setContent(createFormLayout());
-
         VerticalLayout form = getSecondaryLayout(formScroller, footer);
-        form.setWidth("35%");
 
-        VerticalLayout gridLayout = new VerticalLayout(searchField, grid);
-        gridLayout.setWidthFull();
-        gridLayout.getStyle().set("gap", "0.3rem");
-
-        splitLayout.addToPrimary(gridLayout);
+        SplitLayout splitLayout = new SplitLayout();
+        splitLayout.setSizeFull();
+        splitLayout.setSplitterPosition(40);
+        splitLayout.addToPrimary(sidebar);
         splitLayout.addToSecondary(form);
 
         add(splitLayout);
@@ -117,6 +118,7 @@ public class RoomView extends VerticalLayout {
         setMargin(false);
         setSpacing(false);
 
+        refreshList();
         clearForm();
 
         cancel.addClickListener(e -> clearForm());
@@ -126,60 +128,75 @@ public class RoomView extends VerticalLayout {
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         cancel.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
         delete.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
-
     }
 
     private Specification<Room> createFilterSpecification() {
         return (root, query, builder) -> {
-
             final String search = searchField.getValue().toLowerCase().trim();
-
             Order order = builder.asc(root.get("code"));
             assert query != null;
             query.orderBy(order);
             query.distinct(true);
-
             Predicate predicateName = predicateUnaccentLike(root, builder, "name", search);
-
             final List<Predicate> orPredicates = new ArrayList<>(List.of(predicateName));
-
             return builder.or(orPredicates.toArray(Predicate[]::new));
-
         };
     }
 
-    private void initGrid() {
-        searchField.focus();
+    private void initList() {
         searchField.setWidthFull();
-        searchField.setPlaceholder("Search...");
+        searchField.setPlaceholder("Search rooms...");
         searchField.setClearButtonVisible(true);
         searchField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
-        searchField.setValueChangeMode(ValueChangeMode.EAGER);
-        searchField.getStyle().setPadding("0").setMargin("0");
-        searchField.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        searchField.setValueChangeMode(ValueChangeMode.LAZY);
+        searchField.addValueChangeListener(e -> refreshList());
 
+        list.setSizeFull();
+        list.setRenderer(new ComponentRenderer<>(this::buildListItem));
+    }
 
-        grid.setSizeFull();
-        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        grid.setMultiSort(true, Grid.MultiSortPriority.APPEND);
-        grid.setEmptyStateText("No record found.");
+    private Div buildListItem(Room room) {
+        Div item = new Div();
+        item.addClassName("admin-list-item");
+        if (selectedItem != null && Objects.equals(selectedItem.getCode(), room.getCode())) {
+            item.addClassName("selected");
+        }
 
-        grid.setItems(query -> service.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)), createFilterSpecification()).stream());
+        // Icon: colored circle
+        Div iconDiv = new Div();
+        iconDiv.addClassName("admin-item-icon");
+        if (StringUtils.hasText(room.getColor())) {
+            iconDiv.getStyle().set("background-color", room.getColor());
+        }
+        Icon icon = VaadinIcon.WORKPLACE.create();
+        icon.setSize("18px");
+        icon.getStyle().set("color", StringUtils.hasText(room.getColor()) ? "rgba(255,255,255,0.9)" : null);
+        iconDiv.add(icon);
 
-        grid.addColumn(Room::getName).setHeader("Name").setAutoWidth(true).setSortable(true).setSortProperty("name");
+        // Body
+        Div body = new Div();
+        body.addClassName("admin-item-body");
+        Span nameSpan = new Span(room.getName());
+        nameSpan.addClassName("admin-item-name");
+        String cap = room.getCapacity() != 0 ? "Capacity: " + room.getCapacity() : "";
+        Span subSpan = new Span(cap);
+        subSpan.addClassName("admin-item-sub");
+        body.add(nameSpan, subSpan);
 
-        grid.addComponentColumn((ValueProvider<Room, Component>) room -> {
-            ColorPicker colorPicker = new ColorPicker();
-            colorPicker.setEnabled(false);
-            colorPicker.addThemeVariants(ColorPickerVariant.COMPACT);
-            colorPicker.setValue(room.getColor());
-            return colorPicker;
-        }).setHeader("Color").setAutoWidth(true).setSortable(true).setSortProperty("color");
+        item.add(iconDiv, body);
+        item.addClickListener(e -> selectItem(room));
+        return item;
+    }
 
-        grid.addColumn(Room::getCapacity).setHeader("Capacity").setAutoWidth(true).setSortable(true).setSortProperty("capacity");
+    private void selectItem(Room room) {
+        populateForm(room);
+        list.getDataProvider().refreshAll();
+    }
 
-        grid.asSingleSelect().addValueChangeListener(event -> populateForm(event.getValue()));
+    private void refreshList() {
+        List<Room> items = service.findAll(createFilterSpecification());
+        list.setItems(items);
+        countBadge.setText(String.valueOf(items.size()));
     }
 
     private VerticalLayout createFormLayout() {
@@ -188,7 +205,6 @@ public class RoomView extends VerticalLayout {
         name.setWidthFull();
         color.setWidthFull();
         capacity.setWidthFull();
-
         capacity.setValue(1);
         capacity.setStepButtonsVisible(true);
         capacity.setMin(1);
@@ -201,32 +217,19 @@ public class RoomView extends VerticalLayout {
         formLayout.setMargin(false);
         formLayout.addClassNames(LumoUtility.Padding.SMALL);
         formLayout.add(header, name, color, capacity);
-
         return formLayout;
     }
 
-
     private void saveOrUpdate(ClickEvent<Button> buttonClickEvent) {
-
         try {
-
-            if (this.element == null) {
-                this.element = new Room();
-            }
-
+            if (this.element == null) this.element = new Room();
             binder.writeBean(this.element);
-
-
             ConfirmationDialog.confirmation(event -> {
                 service.save(element);
-
                 populateForm(element);
-
-                grid.getDataProvider().refreshAll();
+                refreshList();
                 NotificationUtils.success();
             });
-
-
         } catch (ObjectOptimisticLockingFailureException ex) {
             log.error(ex.getLocalizedMessage());
             NotificationUtils.error("Error updating the data. Somebody else has updated the record while you were making changes.");
@@ -236,16 +239,12 @@ public class RoomView extends VerticalLayout {
         }
     }
 
-
     private void delete(ClickEvent<Button> buttonClickEvent) {
         ConfirmationDialog.delete(event -> {
             try {
-
                 service.delete(element.getCode());
-
-                populateForm(null);
-
-                grid.getDataProvider().refreshAll();
+                clearForm();
+                refreshList();
             } catch (DeleteConstraintViolationException ex) {
                 log.error(ex.getLocalizedMessage());
                 NotificationUtils.error(ex.getMessage());
@@ -254,30 +253,25 @@ public class RoomView extends VerticalLayout {
     }
 
     private HorizontalLayout createFooter() {
-
         HorizontalLayout buttonLayout = new HorizontalLayout(save, cancel, delete);
         buttonLayout.setFlexGrow(1, save, cancel, delete);
-        buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM);
-        buttonLayout.addClassNames(LumoUtility.Background.CONTRAST_10);
+        buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM,
+                LumoUtility.Background.CONTRAST_10);
         buttonLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
-
         return buttonLayout;
     }
 
     private void clearForm() {
         populateForm(null);
-
+        list.getDataProvider().refreshAll();
         capacity.setValue(1);
         color.setValue(ColorUtils.DEFAULT.getColorPreset().getColor());
     }
 
-
     private void populateForm(Room value) {
         this.element = value;
-
+        this.selectedItem = value;
         binder.readBean(this.element);
-
         delete.setEnabled(element != null);
     }
-
 }

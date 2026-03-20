@@ -56,5 +56,9 @@ public class TrackService {
         return repository.findAll();
     }
 
+    public List<Track> findAll(Specification<Track> spec) {
+        return repository.findAll(spec);
+    }
+
 
 }
