@@ -59,11 +59,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.alphnology.utils.CommonUtils.comboBoxItemFilter;
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
-import static org.reflections.Reflections.log;
 
+@Slf4j
 @PageTitle("Sessions")
 @Route("admin/session")
 @Menu(order = 16, icon = LineAwesomeIconUrl.FILE)

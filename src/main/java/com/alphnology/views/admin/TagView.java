@@ -34,9 +34,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
-import static org.reflections.Reflections.log;
+import lombok.extern.slf4j.Slf4j;
 
+import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
+
+@Slf4j
 @PageTitle("Tag")
 @Route("admin/tag")
 @Menu(order = 13, icon = LineAwesomeIconUrl.FILE)

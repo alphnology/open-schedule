@@ -52,10 +52,12 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import java.io.ByteArrayInputStream;
 import java.util.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
-import static org.reflections.Reflections.log;
 
+@Slf4j
 @PageTitle("Speakers")
 @Route("admin/speaker")
 @Menu(order = 15, icon = LineAwesomeIconUrl.FILE)

@@ -51,10 +51,12 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import java.io.ByteArrayInputStream;
 import java.util.*;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
-import static org.reflections.Reflections.log;
 
+@Slf4j
 @PageTitle("Attender")
 @Route("admin/attender")
 @Menu(order = 18, icon = LineAwesomeIconUrl.FILE)

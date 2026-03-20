@@ -1,8 +1,10 @@
 package com.alphnology;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.Theme;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,6 +17,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @Theme(value = "open-schedule")
+@StyleSheet(Lumo.UTILITY_STYLESHEET)
 @PWA(name = "Open Schedule", shortName = "Open Schedule", offlineResources = {"images/offline.png"})
 public class Application implements AppShellConfigurator {
 

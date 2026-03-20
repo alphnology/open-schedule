@@ -19,7 +19,7 @@ vaadin:
 management:
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
   endpoints:
     web:
       exposure:
@@ -35,10 +35,12 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    baseline-version: 1
+    baseline-version: 0
     locations: [ classpath:db/migration/prod ] #, filesystem:./sql
     placeholderReplacement: false
   jpa:
+    hibernate:
+      ddl-auto: validate
     show-sql: false
 
   mustache:
@@ -91,9 +93,18 @@ application:
       password: ${EMAIL_SMTP_PASSWORD:}
 
 
+storage:
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:open-schedule}
+    public-endpoint: ${MINIO_PUBLIC_ENDPOINT:#{null}}
+    signed-url-expiry-seconds: ${MINIO_SIGNED_URL_EXPIRY:3600}
+
 github:
   api:
-    token: ${GIT_HUB_API_TOKEN:ghp_YourSecretTokenHere}
+    token: ${GIT_HUB_API_TOKEN:}
   repository:
     name: ${GIT_HUB_REPOSITORY_NAME:alphnology/open-schedule}
 ---
@@ -106,7 +117,7 @@ spring:
     locations: [ classpath:db/migration/prod, classpath:db/migration/dev ] #, filesystem:./sql
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     show-sql: false
 
   devtools:
@@ -118,4 +129,4 @@ spring:
       log-condition-evaluation-delta: false
 
 application:
-  url: ${http://localhost:${server.port}}
+  url: http://localhost:${server.port}

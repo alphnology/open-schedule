@@ -46,10 +46,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
-import static org.reflections.Reflections.log;
 
+@Slf4j
 @PageTitle("Track")
 @Route("admin/track")
 @Menu(order = 14, icon = LineAwesomeIconUrl.FILE)
