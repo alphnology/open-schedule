@@ -99,7 +99,7 @@ storage:
     access-key: ${MINIO_ACCESS_KEY:minioadmin}
     secret-key: ${MINIO_SECRET_KEY:minioadmin}
     bucket: ${MINIO_BUCKET:open-schedule}
-    public-endpoint: ${MINIO_PUBLIC_ENDPOINT:#{null}}
+    public-endpoint: ${MINIO_PUBLIC_ENDPOINT:}
     signed-url-expiry-seconds: ${MINIO_SIGNED_URL_EXPIRY:3600}
 
 github:

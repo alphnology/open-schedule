@@ -33,12 +33,12 @@ public class SessionRating implements Serializable {
     private Long code;
 
     @NotNull
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "session", referencedColumnName = "code", nullable = false)
     private Session session;
 
     @NotNull
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "users", referencedColumnName = "code", nullable = false)
     private User users;
 

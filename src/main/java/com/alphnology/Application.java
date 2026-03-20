@@ -1,5 +1,6 @@
 package com.alphnology;
 
+import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.server.AppShellSettings;
@@ -17,6 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @Theme(value = "open-schedule")
+@NpmPackage(value = "@webcomponents/shadycss", version = "1.11.2")
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @PWA(name = "Open Schedule", shortName = "Open Schedule", offlineResources = {"images/offline.png"})
 public class Application implements AppShellConfigurator {

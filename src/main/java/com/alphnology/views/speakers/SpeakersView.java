@@ -68,7 +68,7 @@ public class SpeakersView extends VerticalLayout {
         setAlignItems(FlexComponent.Alignment.STRETCH);
         addClassNames(LumoUtility.MaxWidth.SCREEN_XLARGE, LumoUtility.Margin.Horizontal.AUTO, LumoUtility.Padding.Bottom.LARGE, LumoUtility.Padding.Horizontal.LARGE);
 
-        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, userService, qrService);
+        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService);
 
         HorizontalLayout container = new HorizontalLayout();
         container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);

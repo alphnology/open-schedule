@@ -5,6 +5,7 @@ import com.alphnology.data.Speaker;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
+import com.alphnology.services.SpeakerService;
 import com.alphnology.services.UserService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.SpeakerHelper;
@@ -29,18 +30,22 @@ public class SpeakersViewDetails extends Div {
 
     private final transient SessionRatingService sessionRatingService;
     private final transient SessionService sessionService;
+    private final transient SpeakerService speakerService;
     private final transient UserService userService;
     private final transient QrService qrService;
 
-    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
+    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
+        this.speakerService = speakerService;
         this.userService = userService;
         this.qrService = qrService;
     }
 
 
     public void showSpeaker(Speaker speaker) {
+        Speaker hydratedSpeaker = speakerService.get(speaker.getCode()).orElse(speaker);
+
         Dialog dialog = new Dialog();
         dialog.setWidth("1024px");
         dialog.setDraggable(true);
@@ -50,7 +55,7 @@ public class SpeakersViewDetails extends Div {
 
         Span title = new Span();
         title.addClassNames(LumoUtility.FontSize.XXLARGE, LumoUtility.FontWeight.SEMIBOLD);
-        title.setText(speaker.getName());
+        title.setText(hydratedSpeaker.getName());
 
         Button close = new Button("Close", VaadinIcon.CLOSE.create());
         close.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
@@ -61,9 +66,9 @@ public class SpeakersViewDetails extends Div {
         dialog.getFooter().add(close);
 
 
-        dialog.add(container(speaker));
+        dialog.add(container(hydratedSpeaker));
         dialog.add(new Hr());
-        dialog.add(sessionContainer(speaker));
+        dialog.add(sessionContainer(hydratedSpeaker));
 
     }
 
@@ -101,7 +106,7 @@ public class SpeakersViewDetails extends Div {
             );
             containerSession.addClickListener(event -> {
 
-                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService, qrService);
+                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService);
                 sessionService.get(session.getCode())
                         .ifPresent(scheduleViewDetails::showSession);
             });

@@ -2,8 +2,8 @@ package com.alphnology.infrastructure.storage;
 
 import io.minio.*;
 import io.minio.http.Method;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -11,11 +11,19 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MinioObjectStorageService implements ObjectStorageService {
 
     private final MinioClient minioClient;
+    private final MinioClient publicMinioClient;
     private final StorageProperties props;
+
+    public MinioObjectStorageService(MinioClient minioClient,
+                                     @Qualifier("publicMinioClient") MinioClient publicMinioClient,
+                                     StorageProperties props) {
+        this.minioClient = minioClient;
+        this.publicMinioClient = publicMinioClient;
+        this.props = props;
+    }
 
     @Override
     public void upload(String key, InputStream data, long size, String contentType) {
@@ -61,7 +69,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
     @Override
     public String getSignedUrl(String key) {
         try {
-            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            return publicMinioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .bucket(props.getBucket())
                     .object(key)
                     .method(Method.GET)

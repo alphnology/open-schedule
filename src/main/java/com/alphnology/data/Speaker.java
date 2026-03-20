@@ -65,7 +65,7 @@ public class Speaker implements Serializable {
     @Column(columnDefinition = "bytea")
     private byte[] photo;
 
-    @ManyToMany(mappedBy = "speakers", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "speakers", fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<Session> sessions = new HashSet<>();
 

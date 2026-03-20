@@ -6,6 +6,7 @@ import com.alphnology.data.User;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
+import com.alphnology.services.SpeakerService;
 import com.alphnology.services.UserService;
 import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.DateTimeFormatterUtils;
@@ -35,6 +36,7 @@ public class ScheduleViewDetails extends Div {
 
     private final transient SessionService sessionService;
     private final transient SessionRatingService sessionRatingService;
+    private final transient SpeakerService speakerService;
     private final transient UserService userService;
     private final transient QrService qrService;
 
@@ -43,9 +45,10 @@ public class ScheduleViewDetails extends Div {
     private final User currentUser;
 
 
-    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
+    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
+        this.speakerService = speakerService;
         this.userService = userService;
         this.qrService = qrService;
         this.currentUser = VaadinSession.getCurrent().getAttribute(User.class);
@@ -159,9 +162,11 @@ public class ScheduleViewDetails extends Div {
         dialog.getFooter().add(footerLayout);
 
 
-        dialog.add(container(session));
-        dialog.add(new Hr());
-        dialog.add(sessionContainer(session));
+        sessionService.get(session.getCode()).ifPresent(loaded -> {
+            dialog.add(container(loaded));
+            dialog.add(new Hr());
+            dialog.add(sessionContainer(loaded));
+        });
 
     }
 
@@ -295,7 +300,7 @@ public class ScheduleViewDetails extends Div {
                     LumoUtility.Gap.Column.LARGE,
                     "transition-card"
             );
-            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, userService, qrService).showSpeaker(speaker));
+            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService).showSpeaker(speaker));
 
             containerSpeakers.add(containerSpeaker);
         });

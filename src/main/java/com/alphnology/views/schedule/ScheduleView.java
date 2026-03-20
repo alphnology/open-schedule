@@ -66,13 +66,13 @@ public class ScheduleView extends VerticalLayout {
     private final TabSheet tabSheet = new TabSheet();
 
 
-    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService, TagService tagService) {
+    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, SpeakerService speakerService, QrService qrService, TagService tagService) {
         this.sessionService = sessionService;
 
         this.tagFilter.setItems(tagService.findAll().stream().sorted(Comparator.comparing(Tag::getName)).toList());
 
 
-        scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, userService, qrService);
+        scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService);
 
         setSpacing(false);
         setSizeFull();
