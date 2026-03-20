@@ -1,8 +1,8 @@
 package com.alphnology.views.speakers;
 
 import com.alphnology.data.Speaker;
-import com.alphnology.utils.DownloadHandlerUtils;
 import com.vaadin.flow.component.html.*;
+import org.springframework.util.StringUtils;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.springframework.util.StringUtils;
@@ -14,14 +14,14 @@ import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 public class SpeakersViewCard extends ListItem {
 
 
-    public SpeakersViewCard(Speaker speaker, Consumer<Speaker> callback) {
+    public SpeakersViewCard(Speaker speaker, String photoUrl, Consumer<Speaker> callback) {
         addClassNames(Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN, AlignItems.START, Padding.MEDIUM,
                 BorderRadius.LARGE);
 
         getStyle().setCursor("pointer");
         addClickListener(event -> callback.accept(speaker));
 
-        Div div = getDiv(speaker);
+        Div div = getDiv(speaker, photoUrl);
 
         Span header = new Span();
         header.addClassNames(FontSize.XLARGE, FontWeight.SEMIBOLD);
@@ -62,7 +62,7 @@ public class SpeakersViewCard extends ListItem {
 
     }
 
-    private static Div getDiv(Speaker speaker) {
+    private static Div getDiv(Speaker speaker, String photoUrl) {
         Div div = new Div();
         div.addClassNames(Background.CONTRAST, Display.FLEX, AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.Bottom.MEDIUM, Overflow.HIDDEN, BorderRadius.MEDIUM, Width.FULL);
@@ -74,8 +74,8 @@ public class SpeakersViewCard extends ListItem {
                 .withText(speaker.getName())
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
 
-        if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
-            image.setSrc(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+        if (StringUtils.hasText(photoUrl)) {
+            image.setSrc(photoUrl);
             image.setAlt(speaker.getName());
         }
 

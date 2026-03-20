@@ -6,9 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.proxy.HibernateProxy;
-import org.hibernate.type.SqlTypes;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -48,11 +46,9 @@ public class News implements Serializable {
     @NotNull
     private LocalDateTime publishedAt;
 
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(columnDefinition = "bytea")
-    private byte[] photo;
+    @Size(max = 255)
+    @Column(name = "photo_key")
+    private String photoKey;
 
     @Version
     private int version;

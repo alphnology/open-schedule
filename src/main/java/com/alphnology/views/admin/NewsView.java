@@ -3,9 +3,9 @@ package com.alphnology.views.admin;
 import com.alphnology.components.ConfirmationDialog;
 import com.alphnology.data.News;
 import com.alphnology.data.User;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.NewsService;
 import com.alphnology.utils.DateTimeFormatterUtils;
-import com.alphnology.utils.DownloadHandlerUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.UI;
@@ -46,9 +46,14 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
+
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 import static com.alphnology.utils.ViewHelper.*;
@@ -57,6 +62,7 @@ import static com.alphnology.utils.ViewHelper.*;
  * @author me@fredpena.dev
  * @created 19/10/2025  - 09:00
  */
+@Slf4j
 @PageTitle("News")
 @Route("admin/news")
 @Menu(order = 16, icon = LineAwesomeIconUrl.FILE)
@@ -90,12 +96,15 @@ public class NewsView extends VerticalLayout {
     private final Button delete = new Button("Delete", VaadinIcon.TRASH.create());
 
     private final transient NewsService service;
+    private final transient ObjectStorageService storageService;
     private News element;
+    private transient String photoKeyPendingDeletion;
 
     private final Binder<News> binder = new BeanValidationBinder<>(News.class);
 
-    public NewsView(NewsService service) {
+    public NewsView(NewsService service, ObjectStorageService storageService) {
         this.service = service;
+        this.storageService = storageService;
 
         binder.bindInstanceFields(this);
 
@@ -186,9 +195,15 @@ public class NewsView extends VerticalLayout {
 
         var handler = UploadHandler.inMemory((meta, bytes) -> UI.getCurrent().access(() -> {
             if (element == null) element = new News();
-            element.setPhoto(bytes);
+            if (element.getPhotoKey() != null) {
+                photoKeyPendingDeletion = element.getPhotoKey();
+            }
+            String key = "news/" + UUID.randomUUID();
+            String contentType = meta.contentType() != null ? meta.contentType() : "image/jpeg";
+            storageService.upload(key, new ByteArrayInputStream(bytes), bytes.length, contentType);
+            element.setPhotoKey(key);
             image.setVisible(true);
-            image.setSrc(DownloadHandlerUtils.fromByte(bytes));
+            image.setSrc(storageService.getSignedUrl(key));
             removeImageButton.setVisible(true);
         }));
         imageUpload = new Upload(handler);
@@ -200,7 +215,10 @@ public class NewsView extends VerticalLayout {
         removeImageButton = new Button("Remove image", VaadinIcon.TRASH.create());
         removeImageButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
         removeImageButton.addClickListener(e -> {
-            if (element != null) element.setPhoto(null);
+            if (element != null && element.getPhotoKey() != null) {
+                photoKeyPendingDeletion = element.getPhotoKey();
+                element.setPhotoKey(null);
+            }
             image.setVisible(false);
             image.setSrc("");
             imageUpload.clearFileList();
@@ -231,8 +249,13 @@ public class NewsView extends VerticalLayout {
             }
             binder.writeBean(this.element);
 
+            final String keyToDelete = photoKeyPendingDeletion;
             ConfirmationDialog.confirmation(event -> {
                 service.save(element);
+                if (keyToDelete != null) {
+                    try { storageService.delete(keyToDelete); } catch (Exception ex) { log.warn("Could not delete old news photo: {}", keyToDelete); }
+                }
+                photoKeyPendingDeletion = null;
                 populateForm(element);
                 grid.getDataProvider().refreshAll();
                 NotificationUtils.success();
@@ -267,6 +290,7 @@ public class NewsView extends VerticalLayout {
     }
 
     private void clearForm() {
+        photoKeyPendingDeletion = null;
         populateForm(null);
     }
 
@@ -276,8 +300,8 @@ public class NewsView extends VerticalLayout {
         imageUpload.clearFileList();
 
         if (value != null) {
-            if (value.getPhoto() != null && value.getPhoto().length > 0) {
-                image.setSrc(DownloadHandlerUtils.fromByte(value.getPhoto()));
+            if (StringUtils.hasText(value.getPhotoKey())) {
+                image.setSrc(storageService.getSignedUrl(value.getPhotoKey()));
                 image.setAlt(value.getTitle());
                 image.setVisible(true);
                 removeImageButton.setVisible(true);

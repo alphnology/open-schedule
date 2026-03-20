@@ -5,9 +5,9 @@ import com.alphnology.data.*;
 import com.alphnology.data.enums.Language;
 import com.alphnology.data.enums.Level;
 import com.alphnology.data.enums.SessionType;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.*;
 import com.alphnology.utils.CommonUtils;
-import com.alphnology.utils.DownloadHandlerUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.alphnology.utils.RendererUtils;
 import com.vaadin.flow.component.ClickEvent;
@@ -92,6 +92,7 @@ public class SessionView extends VerticalLayout {
     private final Button delete = new Button("Delete", VaadinIcon.TRASH.create());
 
     private final transient SessionService service;
+    private final transient ObjectStorageService storageService;
     private Session element;
 
     private final Binder<Session> binder = new BeanValidationBinder<>(Session.class);
@@ -104,10 +105,12 @@ public class SessionView extends VerticalLayout {
             SpeakerService speakerService,
             EventService eventService,
             TagService tagService,
+            ObjectStorageService storageService,
             @Value("${application.formatter.date-time-12:unknown}") String formatterDateTime,
             @Value("${application.formatter.date:unknown}") String formatterDate
     ) {
         this.service = service;
+        this.storageService = storageService;
 
 
         Optional<Event> optionalEvent = eventService.findAll().stream().findFirst();
@@ -326,8 +329,8 @@ public class SessionView extends VerticalLayout {
 
             session.getSpeakers().forEach(speaker -> {
                 AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName());
-                if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
-                    avatar.setImageHandler(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+                if (org.springframework.util.StringUtils.hasText(speaker.getPhotoKey())) {
+                    avatar.setImage(storageService.getSignedUrl(speaker.getPhotoKey()));
                 }
                 avatarGroup.add(avatar);
 

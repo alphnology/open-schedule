@@ -3,6 +3,7 @@ package com.alphnology.views.schedule;
 import com.alphnology.data.Event;
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
@@ -39,18 +40,20 @@ public class ScheduleViewDetails extends Div {
     private final transient SpeakerService speakerService;
     private final transient UserService userService;
     private final transient QrService qrService;
+    private final transient ObjectStorageService storageService;
 
 
     private final Div ratingDiv = new Div();
     private final User currentUser;
 
 
-    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService) {
+    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
         this.speakerService = speakerService;
         this.userService = userService;
         this.qrService = qrService;
+        this.storageService = storageService;
         this.currentUser = VaadinSession.getCurrent().getAttribute(User.class);
     }
 
@@ -250,7 +253,9 @@ public class ScheduleViewDetails extends Div {
 
         session.getSpeakers().forEach(speaker -> {
 
-            Image image = SpeakerHelper.getImage(speaker);
+            String photoUrl = org.springframework.util.StringUtils.hasText(speaker.getPhotoKey())
+                    ? storageService.getSignedUrl(speaker.getPhotoKey()) : null;
+            Image image = SpeakerHelper.getImage(speaker, photoUrl);
             image.addClassNames("flex-wrap-image-session-speaker");
 
             Span speakerName = new Span(speaker.getName());
@@ -300,7 +305,7 @@ public class ScheduleViewDetails extends Div {
                     LumoUtility.Gap.Column.LARGE,
                     "transition-card"
             );
-            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService).showSpeaker(speaker));
+            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService).showSpeaker(speaker));
 
             containerSpeakers.add(containerSpeaker);
         });

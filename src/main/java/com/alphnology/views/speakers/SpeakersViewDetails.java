@@ -2,6 +2,7 @@ package com.alphnology.views.speakers;
 
 import com.alphnology.data.Contactable;
 import com.alphnology.data.Speaker;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
@@ -33,13 +34,15 @@ public class SpeakersViewDetails extends Div {
     private final transient SpeakerService speakerService;
     private final transient UserService userService;
     private final transient QrService qrService;
+    private final transient ObjectStorageService storageService;
 
-    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService) {
+    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
         this.speakerService = speakerService;
         this.userService = userService;
         this.qrService = qrService;
+        this.storageService = storageService;
     }
 
 
@@ -106,7 +109,7 @@ public class SpeakersViewDetails extends Div {
             );
             containerSession.addClickListener(event -> {
 
-                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService);
+                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService);
                 sessionService.get(session.getCode())
                         .ifPresent(scheduleViewDetails::showSession);
             });
@@ -118,7 +121,9 @@ public class SpeakersViewDetails extends Div {
     }
 
     private Div container(Speaker speaker) {
-        Image image = SpeakerHelper.getImage(speaker);
+        String photoUrl = org.springframework.util.StringUtils.hasText(speaker.getPhotoKey())
+                ? storageService.getSignedUrl(speaker.getPhotoKey()) : null;
+        Image image = SpeakerHelper.getImage(speaker, photoUrl);
         image.addClassNames("flex-wrap-image-speaker");
 
         String vCardUrl = VCardUtil.getVCardUrl(new Contactable(speaker), "speaker");

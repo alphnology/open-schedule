@@ -1,9 +1,10 @@
 package com.alphnology.views.news;
 
 import com.alphnology.data.News;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.NewsService;
 import com.alphnology.utils.DateTimeFormatterUtils;
-import com.alphnology.utils.DownloadHandlerUtils;
+import org.springframework.util.StringUtils;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
@@ -27,7 +28,10 @@ import java.util.List;
 @AnonymousAllowed
 public class NewsView extends VerticalLayout {
 
-    public NewsView(NewsService newsService) {
+    private final transient ObjectStorageService storageService;
+
+    public NewsView(NewsService newsService, ObjectStorageService storageService) {
+        this.storageService = storageService;
         setSizeFull();
         addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.BoxSizing.BORDER);
         setAlignItems(Alignment.CENTER);
@@ -61,8 +65,8 @@ public class NewsView extends VerticalLayout {
         title.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD);
 
         Image image = new Image();
-        if (news.getPhoto() != null && news.getPhoto().length > 0) {
-            image.setSrc(DownloadHandlerUtils.fromByte(news.getPhoto()));
+        if (StringUtils.hasText(news.getPhotoKey())) {
+            image.setSrc(storageService.getSignedUrl(news.getPhotoKey()));
             image.setAlt(news.getTitle());
             image.getStyle().set("float", "left");
             image.addClassNames(LumoUtility.Margin.Right.AUTO,

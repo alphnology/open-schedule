@@ -1,11 +1,12 @@
 package com.alphnology.views.speakers;
 
 import com.alphnology.data.Contactable;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.AttenderService;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SpeakerService;
-import com.alphnology.utils.DownloadHandlerUtils;
 import com.alphnology.utils.VCardUtil;
+import org.springframework.util.StringUtils;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -41,13 +42,15 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
     private final transient SpeakerService speakerService;
     private final transient AttenderService attenderService;
     private final transient QrService qrService;
+    private final transient ObjectStorageService storageService;
     private Optional<Contactable> contactableOpt = Optional.empty();
     private String currentType = "speaker";
 
-    public VCardView(SpeakerService speakerService, AttenderService attenderService, QrService qrService) {
+    public VCardView(SpeakerService speakerService, AttenderService attenderService, QrService qrService, ObjectStorageService storageService) {
         this.speakerService = speakerService;
         this.attenderService = attenderService;
         this.qrService = qrService;
+        this.storageService = storageService;
         setSizeFull();
         setJustifyContentMode(JustifyContentMode.CENTER);
         setAlignItems(Alignment.CENTER);
@@ -104,8 +107,8 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
                 .withText(contactable.fullName())
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
 
-        if (contactable.photo() != null && contactable.photo().length > 0) {
-            image.setSrc(DownloadHandlerUtils.fromByte(contactable.photo()));
+        if (StringUtils.hasText(contactable.photoKey())) {
+            image.setSrc(storageService.getSignedUrl(contactable.photoKey()));
             image.setAlt(contactable.fullName());
         } else {
             image.setVisible(false);

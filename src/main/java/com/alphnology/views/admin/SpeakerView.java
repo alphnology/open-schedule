@@ -5,6 +5,7 @@ import com.alphnology.data.Contactable;
 import com.alphnology.data.Country;
 import com.alphnology.data.Speaker;
 import com.alphnology.exceptions.DeleteConstraintViolationException;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SpeakerService;
 import com.alphnology.utils.*;
@@ -51,6 +52,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
+import java.util.UUID;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -92,17 +94,20 @@ public class SpeakerView extends VerticalLayout {
 
     private final transient SpeakerService service;
     private final transient QrService qrService;
+    private final transient ObjectStorageService storageService;
 
     private Speaker element;
+    private transient String photoKeyPendingDeletion;
 
     private final Binder<Speaker> binder = new BeanValidationBinder<>(Speaker.class);
 
 
     public SpeakerView(
-            SpeakerService service, QrService qrService
+            SpeakerService service, QrService qrService, ObjectStorageService storageService
     ) {
         this.service = service;
         this.qrService = qrService;
+        this.storageService = storageService;
 
         countryField.setItems(CountryUtils.getCountryNamesWithCodes());
         countryField.setPlaceholder("Choose a country");
@@ -181,8 +186,9 @@ public class SpeakerView extends VerticalLayout {
         delete.addClickListener(this::delete);
         removeImageButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
         removeImageButton.addClickListener(e -> {
-            if (element != null) {
-                element.setPhoto(null);
+            if (element != null && element.getPhotoKey() != null) {
+                photoKeyPendingDeletion = element.getPhotoKey();
+                element.setPhotoKey(null);
             }
             image.setVisible(false);
             image.setSrc("");
@@ -286,8 +292,8 @@ public class SpeakerView extends VerticalLayout {
 
         grid.addComponentColumn(speaker -> {
             Image img = new Image();
-            if (speaker.getPhoto() != null && speaker.getPhoto().length > 0) {
-                img.setSrc(DownloadHandlerUtils.fromByte(speaker.getPhoto()));
+            if (org.springframework.util.StringUtils.hasText(speaker.getPhotoKey())) {
+                img.setSrc(storageService.getSignedUrl(speaker.getPhotoKey()));
             }
             img.setWidth("100px");
             return img;
@@ -365,9 +371,16 @@ public class SpeakerView extends VerticalLayout {
                 if (element == null) {
                     element = new Speaker();
                 }
-                element.setPhoto(bytes);
+                if (element.getPhotoKey() != null) {
+                    photoKeyPendingDeletion = element.getPhotoKey();
+                }
+                String key = "speakers/" + UUID.randomUUID();
+                String contentType = meta.contentType() != null ? meta.contentType() : "image/jpeg";
+                storageService.upload(key, new ByteArrayInputStream(bytes), bytes.length, contentType);
+                element.setPhotoKey(key);
                 image.setVisible(true);
-                image.setSrc(DownloadHandlerUtils.fromByte(bytes));
+                image.setSrc(storageService.getSignedUrl(key));
+                removeImageButton.setVisible(true);
             });
         });
         imageUpload = new Upload(handler);
@@ -434,9 +447,13 @@ public class SpeakerView extends VerticalLayout {
 
             binder.writeBean(this.element);
 
-
+            final String keyToDelete = photoKeyPendingDeletion;
             ConfirmationDialog.confirmation(event -> {
                 service.save(element);
+                if (keyToDelete != null) {
+                    try { storageService.delete(keyToDelete); } catch (Exception ex) { log.warn("Could not delete old photo: {}", keyToDelete); }
+                }
+                photoKeyPendingDeletion = null;
 
                 populateForm(element);
 
@@ -483,8 +500,8 @@ public class SpeakerView extends VerticalLayout {
     }
 
     private void clearForm() {
+        photoKeyPendingDeletion = null;
         populateForm(null);
-
     }
 
 
@@ -501,8 +518,8 @@ public class SpeakerView extends VerticalLayout {
         if (value != null) {
             value.getNetworking().forEach(this::addSocialLinkField);
 
-            if (value.getPhoto() != null && value.getPhoto().length > 0) {
-                image.setSrc(DownloadHandlerUtils.fromByte(value.getPhoto()));
+            if (org.springframework.util.StringUtils.hasText(value.getPhotoKey())) {
+                image.setSrc(storageService.getSignedUrl(value.getPhotoKey()));
                 image.setAlt(value.getName());
                 image.setVisible(true);
                 removeImageButton.setVisible(true);

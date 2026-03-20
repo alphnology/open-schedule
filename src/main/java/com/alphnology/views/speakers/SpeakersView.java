@@ -2,6 +2,7 @@ package com.alphnology.views.speakers;
 
 import com.alphnology.data.Country;
 import com.alphnology.data.Speaker;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.*;
 import com.alphnology.utils.CountryUtils;
 import com.vaadin.flow.component.button.Button;
@@ -50,6 +51,7 @@ public class SpeakersView extends VerticalLayout {
     private int currentPage = 0;
 
     private final transient SpeakerService speakerService;
+    private final transient ObjectStorageService storageService;
 
     private final OrderedList imageContainer = new OrderedList();
     private final TextField searchField = new TextField(SEARCH_PLACEHOLDER);
@@ -61,14 +63,15 @@ public class SpeakersView extends VerticalLayout {
     private final Button loadMoreButton = new Button("Load more");
 
 
-    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService) {
+    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService, ObjectStorageService storageService) {
         this.speakerService = speakerService;
+        this.storageService = storageService;
         addClassNames("speakers-view");
         setSizeFull();
         setAlignItems(FlexComponent.Alignment.STRETCH);
         addClassNames(LumoUtility.MaxWidth.SCREEN_XLARGE, LumoUtility.Margin.Horizontal.AUTO, LumoUtility.Padding.Bottom.LARGE, LumoUtility.Padding.Horizontal.LARGE);
 
-        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService);
+        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService);
 
         HorizontalLayout container = new HorizontalLayout();
         container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);
@@ -220,7 +223,11 @@ public class SpeakersView extends VerticalLayout {
         Pageable pageable = PageRequest.of(currentPage, PAGE_SIZE);
         Page<Speaker> speakerPage = speakerService.list(pageable, createFilterSpecification());
 
-        speakerPage.getContent().forEach(s -> imageContainer.add(new SpeakersViewCard(s, speakersViewDetails::showSpeaker)));
+        speakerPage.getContent().forEach(s -> {
+            String photoUrl = org.springframework.util.StringUtils.hasText(s.getPhotoKey())
+                    ? storageService.getSignedUrl(s.getPhotoKey()) : null;
+            imageContainer.add(new SpeakersViewCard(s, photoUrl, speakersViewDetails::showSpeaker));
+        });
 
         loadMoreButton.setVisible(speakerPage.hasNext());
 

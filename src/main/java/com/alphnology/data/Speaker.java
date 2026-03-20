@@ -59,11 +59,9 @@ public class Speaker implements Serializable {
     @Size(max = 3000)
     private String bio;
 
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(columnDefinition = "bytea")
-    private byte[] photo;
+    @Size(max = 255)
+    @Column(name = "photo_key")
+    private String photoKey;
 
     @ManyToMany(mappedBy = "speakers", fetch = FetchType.LAZY)
     @ToString.Exclude

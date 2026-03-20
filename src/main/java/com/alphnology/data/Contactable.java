@@ -1,11 +1,10 @@
 package com.alphnology.data;
 
 public record Contactable(Long code, String fullName, String company, String title, String email, String phone,
-                          byte[] photo) {
-
+                          String photoKey) {
 
     public Contactable(Speaker speaker) {
-        this(speaker.getCode(), speaker.getName(), speaker.getCompany(), speaker.getTitle(), speaker.getEmail(), speaker.getPhone(), speaker.getPhoto());
+        this(speaker.getCode(), speaker.getName(), speaker.getCompany(), speaker.getTitle(), speaker.getEmail(), speaker.getPhone(), speaker.getPhotoKey());
     }
 
     public Contactable(Attender attender) {
