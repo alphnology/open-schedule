@@ -3,7 +3,7 @@ package com.alphnology.views.speakers;
 import com.alphnology.data.Country;
 import com.alphnology.data.Speaker;
 import com.alphnology.infrastructure.storage.ObjectStorageService;
-import com.alphnology.services.*;
+import com.alphnology.services.SpeakerService;
 import com.alphnology.utils.CountryUtils;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -63,15 +63,14 @@ public class SpeakersView extends VerticalLayout {
     private final Button loadMoreButton = new Button("Load more");
 
 
-    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, QrService qrService, ObjectStorageService storageService) {
+    public SpeakersView(SpeakerService speakerService, ObjectStorageService storageService, SpeakersViewDetails speakersViewDetails) {
         this.speakerService = speakerService;
         this.storageService = storageService;
+        this.speakersViewDetails = speakersViewDetails;
         addClassNames("speakers-view");
         setSizeFull();
         setAlignItems(FlexComponent.Alignment.STRETCH);
         addClassNames(LumoUtility.MaxWidth.SCREEN_XLARGE, LumoUtility.Margin.Horizontal.AUTO, LumoUtility.Padding.Bottom.LARGE, LumoUtility.Padding.Horizontal.LARGE);
-
-        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService);
 
         HorizontalLayout container = new HorizontalLayout();
         container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);

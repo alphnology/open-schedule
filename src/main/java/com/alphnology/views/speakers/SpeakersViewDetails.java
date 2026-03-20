@@ -20,13 +20,19 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import static com.alphnology.utils.SessionHelper.tagSession;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
+@UIScope
+@Component
 public class SpeakersViewDetails extends Div {
 
     private final transient SessionRatingService sessionRatingService;
@@ -35,6 +41,10 @@ public class SpeakersViewDetails extends Div {
     private final transient UserService userService;
     private final transient QrService qrService;
     private final transient ObjectStorageService storageService;
+
+    @Autowired
+    @Lazy
+    private ScheduleViewDetails scheduleViewDetails;
 
     public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
         this.sessionService = sessionService;
@@ -107,12 +117,9 @@ public class SpeakersViewDetails extends Div {
                     LumoUtility.BorderRadius.LARGE,
                     "transition-card"
             );
-            containerSession.addClickListener(event -> {
-
-                ScheduleViewDetails scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService);
-                sessionService.get(session.getCode())
-                        .ifPresent(scheduleViewDetails::showSession);
-            });
+            containerSession.addClickListener(event ->
+                    sessionService.get(session.getCode()).ifPresent(scheduleViewDetails::showSession)
+            );
             containerSessions.add(containerSession);
 
         });

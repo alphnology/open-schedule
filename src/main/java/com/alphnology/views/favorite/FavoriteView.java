@@ -2,12 +2,7 @@ package com.alphnology.views.favorite;
 
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
-import com.alphnology.infrastructure.storage.ObjectStorageService;
-import com.alphnology.services.QrService;
-import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
-import com.alphnology.services.SpeakerService;
-import com.alphnology.services.UserService;
 import com.alphnology.views.login.LoginView;
 import com.alphnology.views.schedule.ScheduleView;
 import com.alphnology.views.schedule.ScheduleViewCard;
@@ -40,9 +35,10 @@ import java.util.Optional;
 @AnonymousAllowed
 public class FavoriteView extends Div {
 
-    private ScheduleViewDetails scheduleViewDetails;
+    private final ScheduleViewDetails scheduleViewDetails;
 
-    public FavoriteView(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
+    public FavoriteView(SessionService sessionService, ScheduleViewDetails scheduleViewDetails) {
+        this.scheduleViewDetails = scheduleViewDetails;
         addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.CENTER, LumoUtility.Padding.MEDIUM);
 
         User currentUser = VaadinSession.getCurrent().getAttribute(User.class);
@@ -51,8 +47,6 @@ public class FavoriteView extends Div {
             add(createEmptyStateLayout(true));
             return;
         }
-
-        this.scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService);
 
         buildLayout(currentUser, sessionService);
     }

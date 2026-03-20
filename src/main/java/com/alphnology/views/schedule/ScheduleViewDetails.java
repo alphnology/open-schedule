@@ -25,14 +25,20 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 import static com.alphnology.utils.SessionHelper.*;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
+@UIScope
+@Component
 public class ScheduleViewDetails extends Div {
 
     private final transient SessionService sessionService;
@@ -42,9 +48,11 @@ public class ScheduleViewDetails extends Div {
     private final transient QrService qrService;
     private final transient ObjectStorageService storageService;
 
+    @Autowired
+    @Lazy
+    private SpeakersViewDetails speakersViewDetails;
 
     private final Div ratingDiv = new Div();
-    private final User currentUser;
 
 
     public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
@@ -54,7 +62,10 @@ public class ScheduleViewDetails extends Div {
         this.userService = userService;
         this.qrService = qrService;
         this.storageService = storageService;
-        this.currentUser = VaadinSession.getCurrent().getAttribute(User.class);
+    }
+
+    private User getCurrentUser() {
+        return VaadinSession.getCurrent().getAttribute(User.class);
     }
 
     public void showSession(Session session) {
@@ -85,6 +96,7 @@ public class ScheduleViewDetails extends Div {
         updateFavoriteButtonState(favorite, session);
 
         favorite.addClickListener(e -> {
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 UI.getCurrent().navigate(LoginView.class);
                 return;
@@ -106,6 +118,7 @@ public class ScheduleViewDetails extends Div {
         });
 
         rate.addClickListener(e -> {
+            User currentUser = getCurrentUser();
             if (currentUser == null) {
                 UI.getCurrent().navigate(LoginView.class);
                 return;
@@ -143,10 +156,10 @@ public class ScheduleViewDetails extends Div {
 
         attendingButton.addClickListener(e -> {
             String message = """
-                    Looking forward to the "%s" session at #%s%s. 
-                    
+                    Looking forward to the "%s" session at #%s%s.
+
                     See you in the %s room!
-                    
+
                     Check out the full schedule: %s
                     """.formatted(sessionName, event.getName().replace(" ", ""), sessionDate.getYear(), room, eventUrl);
             showShareDialog(message, sessionName);
@@ -174,6 +187,7 @@ public class ScheduleViewDetails extends Div {
     }
 
     private void updateFavoriteButtonState(Button favoriteButton, Session session) {
+        User currentUser = getCurrentUser();
         if (currentUser != null) {
             if (currentUser.getFavoriteSessions() != null && currentUser.getFavoriteSessions().contains(session.getCode())) {
                 favoriteButton.setText("In Favorites");
@@ -195,6 +209,7 @@ public class ScheduleViewDetails extends Div {
     }
 
     private void updateRateButtonState(Button rateButton, Session session) {
+        User currentUser = getCurrentUser();
         if (currentUser != null) {
             userService.get(currentUser.getCode())
                     .ifPresent(user -> {
@@ -305,7 +320,7 @@ public class ScheduleViewDetails extends Div {
                     LumoUtility.Gap.Column.LARGE,
                     "transition-card"
             );
-            containerSpeaker.addClickListener(event -> new SpeakersViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService).showSpeaker(speaker));
+            containerSpeaker.addClickListener(event -> speakersViewDetails.showSpeaker(speaker));
 
             containerSpeakers.add(containerSpeaker);
         });

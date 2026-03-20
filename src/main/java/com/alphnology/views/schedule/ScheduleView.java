@@ -1,8 +1,9 @@
 package com.alphnology.views.schedule;
 
 import com.alphnology.data.*;
-import com.alphnology.infrastructure.storage.ObjectStorageService;
-import com.alphnology.services.*;
+import com.alphnology.services.EventService;
+import com.alphnology.services.SessionService;
+import com.alphnology.services.TagService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.Component;
@@ -67,13 +68,11 @@ public class ScheduleView extends VerticalLayout {
     private final TabSheet tabSheet = new TabSheet();
 
 
-    public ScheduleView(EventService eventService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, SpeakerService speakerService, QrService qrService, TagService tagService, ObjectStorageService storageService) {
+    public ScheduleView(EventService eventService, SessionService sessionService, TagService tagService, ScheduleViewDetails scheduleViewDetails) {
         this.sessionService = sessionService;
+        this.scheduleViewDetails = scheduleViewDetails;
 
         this.tagFilter.setItems(tagService.findAll().stream().sorted(Comparator.comparing(Tag::getName)).toList());
-
-
-        scheduleViewDetails = new ScheduleViewDetails(sessionService, sessionRatingService, speakerService, userService, qrService, storageService);
 
         setSpacing(false);
         setSizeFull();
