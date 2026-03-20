@@ -3,6 +3,7 @@ package com.alphnology.views;
 import com.alphnology.data.User;
 import com.alphnology.security.AuthenticatedUser;
 import com.alphnology.utils.ImageUtils;
+import com.alphnology.views.login.ChangePasswordView;
 import com.alphnology.views.login.LogoutView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -210,7 +211,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
 
             Popover popover = new Popover();
             popover.setModal(true);
-            popover.setOverlayRole("menu");
+            popover.setRole("menu");
             popover.setAriaLabel("User menu");
             popover.setTarget(button);
             popover.setPosition(PopoverPosition.BOTTOM_END);
@@ -238,6 +239,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             userInfo.add(userAvatar, nameLayout);
 
             UnorderedList list = new UnorderedList(
+                    createListItem("Change password", LineAwesomeIcon.KEY_SOLID, ChangePasswordView.class),
                     createListItem("Sign out", LineAwesomeIcon.SIGN_OUT_ALT_SOLID, LogoutView.class)
             );
             list.addClassNames(LumoUtility.ListStyleType.NONE, LumoUtility.Margin.Vertical.NONE, LumoUtility.Padding.XSMALL, LumoUtility.Gap.MEDIUM);
@@ -247,7 +249,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             hr.addClassNames(LumoUtility.Margin.Vertical.XSMALL);
 
 
-            popover.add(userInfo, list, hr);
+            popover.add(userInfo, hr, list);
 
             layout.add(button, popover);
 

@@ -1,5 +1,6 @@
 vaadin-scroller[slot="drawer"] {
     padding: var(--lumo-space-s);
+    overflow-y: auto;
 }
 
 vaadin-side-nav-item vaadin-icon {
@@ -71,5 +72,28 @@ vaadin-side-nav-item.external > vaadin-icon {
 vaadin-side-nav-item.external::part(link):hover {
     color: var(--lumo-primary-text-color);
     text-decoration: underline;
+}
+
+/* Popover menu item hover & transition */
+.no-underline {
+    text-decoration: none !important;
+}
+
+.transition-colors {
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.hover\:bg-contrast-10:hover {
+    background-color: var(--lumo-contrast-10pct);
+}
+
+/* SideNav admin group label */
+vaadin-side-nav-item::part(toggle-button) {
+    color: var(--lumo-secondary-text-color);
+}
+
+/* Navbar shadow */
+[slot="navbar"] {
+    box-shadow: 0 1px 0 var(--lumo-contrast-10pct);
 }
 
