@@ -21,7 +21,7 @@ import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -37,15 +37,19 @@ public class SpeakersViewDetails extends Div {
     private final transient QrService qrService;
     private final transient ObjectStorageService storageService;
 
-    @Lazy
-    private final ScheduleViewDetails scheduleViewDetails;
+    private final transient ObjectProvider<ScheduleViewDetails> scheduleViewDetailsProvider;
 
-    public SpeakersViewDetails(SessionService sessionService, SpeakerService speakerService, QrService qrService, ObjectStorageService storageService, ScheduleViewDetails scheduleViewDetails) {
+    public SpeakersViewDetails(
+            SessionService sessionService,
+            SpeakerService speakerService,
+            QrService qrService,
+            ObjectStorageService storageService,
+            ObjectProvider<ScheduleViewDetails> scheduleViewDetailsProvider) {
         this.sessionService = sessionService;
         this.speakerService = speakerService;
         this.qrService = qrService;
         this.storageService = storageService;
-        this.scheduleViewDetails = scheduleViewDetails;
+        this.scheduleViewDetailsProvider = scheduleViewDetailsProvider;
     }
 
 
@@ -111,7 +115,7 @@ public class SpeakersViewDetails extends Div {
                     "transition-card"
             );
             containerSession.addClickListener(event ->
-                    sessionService.get(session.getCode()).ifPresent(scheduleViewDetails::showSession)
+                    sessionService.get(session.getCode()).ifPresent(scheduleViewDetailsProvider.getObject()::showSession)
             );
             containerSessions.add(containerSession);
 

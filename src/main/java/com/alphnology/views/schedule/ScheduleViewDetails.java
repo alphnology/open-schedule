@@ -26,7 +26,7 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -43,18 +43,22 @@ public class ScheduleViewDetails extends Div {
     private final transient UserService userService;
     private final transient ObjectStorageService storageService;
 
-    @Lazy
-    private final SpeakersViewDetails speakersViewDetails;
+    private final transient ObjectProvider<SpeakersViewDetails> speakersViewDetailsProvider;
 
     private final Div ratingDiv = new Div();
 
 
-    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, ObjectStorageService storageService, SpeakersViewDetails speakersViewDetails) {
+    public ScheduleViewDetails(
+            SessionService sessionService,
+            SessionRatingService sessionRatingService,
+            UserService userService,
+            ObjectStorageService storageService,
+            ObjectProvider<SpeakersViewDetails> speakersViewDetailsProvider) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
         this.userService = userService;
         this.storageService = storageService;
-        this.speakersViewDetails = speakersViewDetails;
+        this.speakersViewDetailsProvider = speakersViewDetailsProvider;
     }
 
     private User getCurrentUser() {
@@ -313,7 +317,7 @@ public class ScheduleViewDetails extends Div {
                     LumoUtility.Gap.Column.LARGE,
                     "transition-card"
             );
-            containerSpeaker.addClickListener(event -> speakersViewDetails.showSpeaker(speaker));
+            containerSpeaker.addClickListener(event -> speakersViewDetailsProvider.getObject().showSpeaker(speaker));
 
             containerSpeakers.add(containerSpeaker);
         });
