@@ -36,7 +36,7 @@ public class Sponsor implements Serializable {
     private String description;
 
     @NotNull
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "category", referencedColumnName = "code", nullable = false)
     private SponsorCategory category;
 

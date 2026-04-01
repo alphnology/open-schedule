@@ -15,6 +15,16 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@NamedEntityGraph(
+        name = "Session.withDisplayAssociations",
+        attributeNodes = {
+                @NamedAttributeNode("room"),
+                @NamedAttributeNode("track"),
+                @NamedAttributeNode("speakers"),
+                @NamedAttributeNode("tags"),
+                @NamedAttributeNode("ratings")
+        }
+)
 @Getter
 @Setter
 @Entity
@@ -27,11 +37,10 @@ public class Session implements Serializable {
     private Long code;
 
     @NotNull
-    @Size(min = 1, max = 100)
+    @Size(min = 1, max = 300)
     private String title;
 
-    @NotNull
-    @Size(min = 1, max = 3000)
+    @Size(max = 3000)
     private String description;
 
     @NotNull
@@ -50,15 +59,15 @@ public class Session implements Serializable {
     @Enumerated(EnumType.STRING)
     private SessionType type = SessionType.T;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room", referencedColumnName = "code")
     private Room room;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "track", referencedColumnName = "code")
     private Track track;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "session_speaker",
             joinColumns = @JoinColumn(name = "session_code"),
@@ -66,7 +75,7 @@ public class Session implements Serializable {
     )
     private Set<Speaker> speakers = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "session_tag",
             joinColumns = @JoinColumn(name = "session_code"),
@@ -75,7 +84,7 @@ public class Session implements Serializable {
     private Set<Tag> tags = new HashSet<>();
 
     @ToString.Exclude
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "session")
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true, mappedBy = "session")
     private List<SessionRating> ratings = new ArrayList<>();
 
     public boolean blocksAllRooms() {

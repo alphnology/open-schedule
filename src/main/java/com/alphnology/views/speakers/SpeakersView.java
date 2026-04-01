@@ -2,11 +2,10 @@ package com.alphnology.views.speakers;
 
 import com.alphnology.data.Country;
 import com.alphnology.data.Speaker;
-import com.alphnology.services.SessionRatingService;
-import com.alphnology.services.SessionService;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.SpeakerService;
-import com.alphnology.services.UserService;
 import com.alphnology.utils.CountryUtils;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.html.*;
@@ -24,6 +23,9 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
@@ -44,8 +46,11 @@ import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 public class SpeakersView extends VerticalLayout {
 
     private static final String SEARCH_PLACEHOLDER = "Search...";
+    private static final int PAGE_SIZE = 50;
+    private int currentPage = 0;
 
     private final transient SpeakerService speakerService;
+    private final transient ObjectStorageService storageService;
 
     private final OrderedList imageContainer = new OrderedList();
     private final TextField searchField = new TextField(SEARCH_PLACEHOLDER);
@@ -54,16 +59,17 @@ public class SpeakersView extends VerticalLayout {
     private final MultiSelectComboBox<String> filterCompany = new MultiSelectComboBox<>("Company");
     private final ComboBox<String> orderBy = new ComboBox<>("Order by");
     private final SpeakersViewDetails speakersViewDetails;
+    private final Button loadMoreButton = new Button("Load more");
 
 
-    public SpeakersView(SpeakerService speakerService, SessionService sessionService, SessionRatingService sessionRatingService, UserService userService) {
+    public SpeakersView(SpeakerService speakerService, ObjectStorageService storageService, SpeakersViewDetails speakersViewDetails) {
         this.speakerService = speakerService;
+        this.storageService = storageService;
+        this.speakersViewDetails = speakersViewDetails;
         addClassNames("speakers-view");
         setSizeFull();
         setAlignItems(FlexComponent.Alignment.STRETCH);
         addClassNames(LumoUtility.MaxWidth.SCREEN_XLARGE, LumoUtility.Margin.Horizontal.AUTO, LumoUtility.Padding.Bottom.LARGE, LumoUtility.Padding.Horizontal.LARGE);
-
-        speakersViewDetails = new SpeakersViewDetails(sessionService, sessionRatingService, userService);
 
         HorizontalLayout container = new HorizontalLayout();
         container.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);
@@ -103,9 +109,16 @@ public class SpeakersView extends VerticalLayout {
 
         imageContainer.addClassNames(LumoUtility.Gap.MEDIUM, LumoUtility.Display.GRID, LumoUtility.ListStyleType.NONE, LumoUtility.Margin.NONE, LumoUtility.Padding.NONE);
 
-        refreshAll();
+        loadSpeakers(true);
 
-        Section imageContainerSection = new Section(imageContainer);
+        loadMoreButton.setWidthFull();
+        loadMoreButton.addClickListener(e -> loadSpeakers(false));
+
+        VerticalLayout contentLayout = new VerticalLayout(imageContainer, loadMoreButton);
+        contentLayout.setPadding(false);
+        contentLayout.setSpacing(true);
+
+        Section imageContainerSection = new Section(contentLayout);
         imageContainerSection.setWidthFull();
         imageContainerSection.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE, LumoUtility.BorderRadius.NONE, LumoUtility.BoxShadow.NONE);
 
@@ -129,13 +142,12 @@ public class SpeakersView extends VerticalLayout {
         orderBy.setItems(List.of("Name", "Company", "Title", "Country"));
         orderBy.setValue("Name");
 
-        searchField.addValueChangeListener(e -> refreshAll());
-        filterTitle.addValueChangeListener(e -> refreshAll());
-        filterCompany.addValueChangeListener(e -> refreshAll());
-        filterCountry.addValueChangeListener(e -> refreshAll());
-        orderBy.addValueChangeListener(e -> refreshAll());
+        searchField.addValueChangeListener(e -> loadSpeakers(true));
+        filterTitle.addValueChangeListener(e -> loadSpeakers(true));
+        filterCompany.addValueChangeListener(e -> loadSpeakers(true));
+        filterCountry.addValueChangeListener(e -> loadSpeakers(true));
+        orderBy.addValueChangeListener(e -> loadSpeakers(true));
 
-        searchField.setClearButtonVisible(true);
         filterTitle.setClearButtonVisible(true);
         filterCompany.setClearButtonVisible(true);
         filterCountry.setClearButtonVisible(true);
@@ -164,7 +176,9 @@ public class SpeakersView extends VerticalLayout {
     }
 
     private static <K> Map<K, List<Speaker>> groupByField(List<Speaker> speakers, Function<Speaker, K> classifier) {
-        return speakers.stream().collect(Collectors.groupingBy(classifier));
+        return speakers.stream()
+                .filter(speaker -> classifier.apply(speaker) != null)
+                .collect(Collectors.groupingBy(classifier));
     }
 
     private Specification<Speaker> createFilterSpecification() {
@@ -198,10 +212,23 @@ public class SpeakersView extends VerticalLayout {
         };
     }
 
-    private void refreshAll() {
-        imageContainer.removeAll();
+    private void loadSpeakers(boolean reset) {
+        if (reset) {
+            currentPage = 0;
+            imageContainer.removeAll();
+        }
 
-        speakerService.findAll(createFilterSpecification())
-                .forEach(s -> imageContainer.add(new SpeakersViewCard(s, speakersViewDetails::showSpeaker)));
+        Pageable pageable = PageRequest.of(currentPage, PAGE_SIZE);
+        Page<Speaker> speakerPage = speakerService.list(pageable, createFilterSpecification());
+
+        speakerPage.getContent().forEach(s -> {
+            String photoUrl = org.springframework.util.StringUtils.hasText(s.getPhotoKey())
+                    ? storageService.getSignedUrl(s.getPhotoKey()) : null;
+            imageContainer.add(new SpeakersViewCard(s, photoUrl, speakersViewDetails::showSpeaker));
+        });
+
+        loadMoreButton.setVisible(speakerPage.hasNext());
+
+        currentPage++;
     }
 }

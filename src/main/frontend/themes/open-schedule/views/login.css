@@ -1,117 +1,357 @@
-vaadin-login-overlay-wrapper::part(overlay),
-.singup-view {
-    background-image: url("/images/login-bg.png");
-    -webkit-background-size: cover; /* For WebKit */
-    -moz-background-size: cover; /* Mozilla */
-    -o-background-size: cover; /* Opera */
-    background-size: cover; /* Generic */
+/* ============================================================
+   LOGIN VIEW — Open Schedule
+   ============================================================ */
+
+/* ── 1. Full-screen overlay: dark base ── */
+vaadin-login-overlay-wrapper::part(overlay) {
+    background: #0f172a;
 }
 
+/* ── 2. Content: side-by-side ── */
+vaadin-login-overlay-wrapper::part(content) {
+    justify-content: flex-end;
+}
 
-vaadin-login-form-wrapper {
-    background: white !important;
+/* ── 3. Brand panel (left) ── */
+vaadin-login-overlay-wrapper::part(brand) {
+    flex: 1;
+    background:
+        radial-gradient(ellipse 700px 700px at 15% 20%, rgba(37, 99, 235, 0.30) 0%, transparent 65%),
+        radial-gradient(ellipse 500px 500px at 85% 82%, rgba(29, 78, 216, 0.40) 0%, transparent 60%),
+        linear-gradient(150deg, #0f172a 0%, #0e2552 52%, #1740a0 100%);
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    padding: 4rem 3rem !important;
+    position: relative;
+    overflow: hidden;
 }
 
-vaadin-login-form-wrapper vaadin-button {
-    width: calc(var(--lumo-size-xl) * 5);
-    margin: var(--lumo-space-s) auto;
+/* ── 4. Form card (right) ── */
+vaadin-login-overlay-wrapper::part(card) {
+    background: #ffffff;
+    width: 480px;
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 3rem 2.75rem;
+    margin: 0;
+    overflow-y: auto;
     align-content: center;
+    box-shadow: -10px 0 60px rgba(0, 0, 0, 0.22);
 }
 
+/* ── 5. Hide the brand description slot ── */
+vaadin-login-overlay-wrapper::part(description) {
+    display: none !important;
+    margin: 0 !important;
+}
+
+/* ── 6. Form wrapper base ── */
+vaadin-login-form-wrapper {
+    background: transparent;
+    align-items: stretch;
+}
+
+/* ── 7. Form input fields ── */
 vaadin-login-form-wrapper vaadin-text-field,
 vaadin-login-form-wrapper vaadin-password-field {
-    --lumo-text-field-size: var(--lumo-size-m);
+    --lumo-text-field-size: var(--lumo-size-l);
+    width: 100%;
 }
 
-vaadin-login-overlay-wrapper::part(card) {
-    background: white !important;
-    display: block;
-    align-content: center;
-    width: calc(var(--lumo-size-xl) * 12);
-    border-radius: 0;
-    height: 100%;
-    padding: var(--lumo-size-xl);
-    margin: 0;
+/* ── 8. Submit button: full width ── */
+vaadin-login-form-wrapper vaadin-button {
+    width: 100%;
+    height: var(--lumo-size-l);
+    margin: var(--lumo-space-s) 0;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
 }
 
-vaadin-login-overlay-wrapper::part(brand) {
-    background: white !important;
-}
-
-vaadin-login-overlay-wrapper::part(description) {
-    display: none;
-}
-
-vaadin-login-overlay-wrapper::part(content) {
-    justify-content: end;
-}
-
-.login-image {
-    width: 400px;
-}
-
-@media only screen and (max-height: 1024px) {
-    .login-image {
-        width: 230px;
-    }
-
-}
-
-@media only screen and (max-width: 1024px) and  (max-height: 1366px) {
-    vaadin-login-overlay-wrapper::part(card) {
-        width: 100%;
-    }
-
-    vaadin-login-form vaadin-button[theme~="submit"] {
-        width: 100%;
-    }
-}
-
-@media only screen and  (max-width: 768px) {
-    vaadin-login-overlay-wrapper::part(card) {
-        padding: .2rem;
-    }
-
-    .login-image {
-        width: 350px;
-    }
-
-}
-
-@media only screen and  (max-width: 500px) {
-    .login-image {
-        width: 150px;
-    }
-}
-
-@media only screen and  (max-width: 450px) and (max-height: 750px) {
-    vaadin-login-overlay-wrapper::part(card) {
-        padding: 1.2rem;
-    }
-
-    vaadin-login-form-wrapper vaadin-password-field,
-    vaadin-login-form-wrapper vaadin-text-field {
-        padding: 0.5rem 0.1rem 0.1rem;
-        font-size: var(--lumo-font-size-s);
-        --lumo-text-field-size: var(--lumo-size-s);
-    }
-
-    .login-image {
-        width: 100px;
-    }
-}
-
-vaadin-login-overlay-wrapper::part(brand) {
-    padding: 0 !important;
-}
-
-vaadin-login-overlay-wrapper::part(description) {
-    margin: 10px !important;
+/* ── 9. Form heading (i18n title/description) ── */
+vaadin-login-form-wrapper::part(form-title) {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--lumo-heading-text-color);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+    margin-top: 0;
 }
 
 vaadin-login-form-wrapper::part(footer) {
     font-weight: 600;
 }
 
+/* ── 10. Brand panel content ── */
+.login-brand-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    z-index: 1;
+}
 
+.login-brand-logo {
+    width: 100px;
+    margin-bottom: 2rem;
+    opacity: 0.92;
+}
+
+.login-brand-name {
+    font-size: 2.625rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.04em !important;
+    line-height: 1.1 !important;
+    margin-bottom: 0.875rem !important;
+    display: block;
+}
+
+.login-brand-tagline {
+    font-size: 1.0625rem !important;
+    color: rgba(255, 255, 255, 0.58) !important;
+    font-weight: 400 !important;
+    line-height: 1.65 !important;
+    margin-bottom: 2.25rem !important;
+    max-width: 360px;
+    display: block;
+}
+
+.login-brand-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    justify-content: center;
+    max-width: 420px;
+}
+
+.login-brand-tag {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.82) !important;
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* ── 11. Form card header (logo + welcome) ── */
+.login-card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.login-card-logo {
+    width: 42px;
+    margin-bottom: 1.375rem;
+}
+
+.login-welcome-title {
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+    color: var(--lumo-heading-text-color) !important;
+    letter-spacing: -0.025em !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.25rem !important;
+    display: block;
+}
+
+.login-welcome-subtitle {
+    font-size: 0.9375rem !important;
+    color: var(--lumo-secondary-text-color) !important;
+    font-weight: 400 !important;
+    line-height: 1.5 !important;
+    margin-bottom: 1.75rem !important;
+    display: block;
+}
+
+/* ── 12. Footer (right panel) ── */
+.login-footer-wrapper {
+    width: 100%;
+    padding-top: 0.25rem;
+}
+
+.login-footer-divider {
+    border: none;
+    border-top: 1px solid var(--lumo-contrast-10pct);
+    margin: 0.75rem 0;
+}
+
+.login-footer-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.25rem 0;
+}
+
+.login-footer-text {
+    font-size: 0.875rem;
+    color: var(--lumo-secondary-text-color);
+    display: inline;
+}
+
+.login-footer-link {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--lumo-primary-text-color) !important;
+    text-decoration: none !important;
+    display: inline;
+}
+
+.login-footer-link:hover {
+    text-decoration: underline !important;
+}
+
+/* Back to home row */
+.login-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    cursor: pointer;
+    padding: 0.3rem 0;
+    text-decoration: none !important;
+}
+
+.login-back-icon {
+    width: 1em;
+    height: 1em;
+    color: var(--lumo-tertiary-text-color);
+    transition: color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.login-back-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--lumo-tertiary-text-color) !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease;
+    display: inline;
+}
+
+.login-back-home:hover .login-back-icon,
+.login-back-home:hover .login-back-text {
+    color: var(--lumo-primary-text-color) !important;
+}
+
+/* Version badge */
+.login-version {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--lumo-disabled-text-color);
+    text-align: center;
+    margin-top: 0.75rem;
+    letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+/* Large tablets (≤ 1100 px) */
+@media only screen and (max-width: 1100px) {
+    vaadin-login-overlay-wrapper::part(card) {
+        width: 440px;
+        padding: 2.5rem 2.25rem;
+    }
+
+    .login-brand-name {
+        font-size: 2.25rem !important;
+    }
+}
+
+/* Tablets (≤ 900 px) */
+@media only screen and (max-width: 900px) {
+    vaadin-login-overlay-wrapper::part(card) {
+        width: 380px;
+        padding: 2.25rem 2rem;
+    }
+
+    .login-brand-name {
+        font-size: 1.875rem !important;
+    }
+
+    .login-brand-tagline {
+        font-size: 0.9375rem !important;
+    }
+
+    .login-brand-logo {
+        width: 72px;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Mobile — stacked layout (≤ 768 px) */
+@media only screen and (max-width: 768px) {
+    vaadin-login-overlay-wrapper::part(content) {
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+    }
+
+    vaadin-login-overlay-wrapper::part(brand) {
+        flex: 0 0 auto !important;
+        min-height: auto !important;
+        padding: 2.25rem 1.75rem 3.75rem !important;
+    }
+
+    vaadin-login-overlay-wrapper::part(card) {
+        width: 100% !important;
+        min-height: auto !important;
+        height: auto !important;
+        box-shadow: none !important;
+        border-radius: 1.5rem 1.5rem 0 0 !important;
+        margin-top: -1.5rem !important;
+        position: relative;
+        z-index: 2;
+        padding: 2rem 1.5rem 2rem !important;
+        align-content: flex-start;
+    }
+
+    .login-brand-logo {
+        width: 58px;
+        margin-bottom: 0.875rem;
+    }
+
+    .login-brand-name {
+        font-size: 1.75rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .login-brand-tagline {
+        display: none !important;
+    }
+
+    .login-brand-tags {
+        display: none !important;
+    }
+
+    .login-card-logo {
+        display: none;
+    }
+}
+
+/* Small phones (≤ 480 px) */
+@media only screen and (max-width: 480px) {
+    vaadin-login-overlay-wrapper::part(brand) {
+        padding: 1.75rem 1.25rem 3.25rem !important;
+    }
+
+    vaadin-login-overlay-wrapper::part(card) {
+        padding: 1.75rem 1.25rem 1.5rem !important;
+    }
+
+    .login-brand-name {
+        font-size: 1.5rem !important;
+    }
+}

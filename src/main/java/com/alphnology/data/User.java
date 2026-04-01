@@ -59,7 +59,7 @@ public class User implements Serializable {
     private Role roles;
 
     @ToString.Exclude
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy = "users")
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true, mappedBy = "users")
     private List<SessionRating> ratings = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.JSON)

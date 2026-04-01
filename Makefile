@@ -93,14 +93,12 @@ build-image: build image
 build-image-amd64: build image-amd64
 
 ## Build, create, and push the docker image to DockerHub.
-build-push-image: build-image
-	@echo Pushing image to ECR
-	@echo '${GREEN}PROJECT_DOCKER_REPOSITORY ${RESET}'$(PROJECT_DOCKER_REPOSITORY):${PROJECT_VERSION}
-	@docker push ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION}
 
 ## Build, create, and push the amd64 docker image to DockerHub.
 build-push-image-amd64: build-image-amd64
 	@echo Pushing image to ECR
 	@echo '${GREEN}PROJECT_DOCKER_REPOSITORY ${RESET}'$(PROJECT_DOCKER_REPOSITORY):${PROJECT_VERSION}
 	@docker push ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION}
+	@docker tag ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION} ${PROJECT_DOCKER_REPOSITORY}:latest
+    @docker push ${PROJECT_DOCKER_REPOSITORY}:latest
 

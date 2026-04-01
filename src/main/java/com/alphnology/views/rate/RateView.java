@@ -30,7 +30,7 @@ import java.util.List;
 
 @PageTitle("Rate")
 @Route("rate")
-@Menu(order = 2, icon = LineAwesomeIconUrl.STAR)
+@Menu(order = 3, icon = LineAwesomeIconUrl.STAR)
 @AnonymousAllowed
 public class RateView extends VerticalLayout implements AfterNavigationObserver {
 

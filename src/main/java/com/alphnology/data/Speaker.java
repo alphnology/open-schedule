@@ -1,6 +1,7 @@
 package com.alphnology.data;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -35,15 +36,20 @@ public class Speaker implements Serializable {
     @Size(min = 1, max = 100)
     private String name;
 
-    @NotNull
-    @Size(min = 1, max = 100)
+    @Size(max = 100)
     private String title;
 
     @Size(max = 100)
     private String company;
 
-    @NotNull
-    @Size(min = 1, max = 5)
+    @Size(max = 100)
+    @Email
+    private String email;
+
+    @Size(max = 100)
+    private String phone;
+
+    @Size(max = 5)
     private String country;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -53,10 +59,11 @@ public class Speaker implements Serializable {
     @Size(max = 3000)
     private String bio;
 
-    @Size(max = 200)
-    private String photoUrl;
+    @Size(max = 255)
+    @Column(name = "photo_key")
+    private String photoKey;
 
-    @ManyToMany(mappedBy = "speakers", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "speakers", fetch = FetchType.LAZY)
     @ToString.Exclude
     private Set<Session> sessions = new HashSet<>();
 

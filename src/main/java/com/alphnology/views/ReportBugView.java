@@ -33,11 +33,11 @@ import java.io.IOException;
 
 @PageTitle("Report an Issue")
 @Route(value = "bug")
-@Menu(order = 5, icon = LineAwesomeIconUrl.BUG_SOLID)
+@Menu(order = 6, icon = LineAwesomeIconUrl.BUG_SOLID)
 @AnonymousAllowed
 public class ReportBugView extends VerticalLayout {
 
-    private final GitHubService gitHubService;
+    private final transient GitHubService gitHubService;
 
     private final TextField issueTitle = new TextField("Issue Title");
     private final TextArea issueDescription = new TextArea("Description");
@@ -114,7 +114,7 @@ public class ReportBugView extends VerticalLayout {
             issueTitle.clear();
             issueDescription.clear();
 
-        } catch (IOException e) {
+        } catch (IOException _) {
             NotificationUtils.error("Could not submit the report. Please try again or report it directly on GitHub.");
         } finally {
             submitButton.setEnabled(true);

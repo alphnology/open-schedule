@@ -3,6 +3,7 @@ package com.alphnology.views;
 import com.alphnology.data.User;
 import com.alphnology.security.AuthenticatedUser;
 import com.alphnology.utils.ImageUtils;
+import com.alphnology.views.login.ChangePasswordView;
 import com.alphnology.views.login.LogoutView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -14,7 +15,9 @@ import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -24,6 +27,8 @@ import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Layout;
@@ -37,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +54,14 @@ import java.util.Optional;
 @Slf4j
 @Layout
 @AnonymousAllowed
-public class MainLayout extends AppLayout implements BeforeEnterObserver {
+public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterNavigationObserver {
 
     private H1 viewTitle;
+    private boolean drawerCollapsed;
+    private Button collapseToggle;
+    private final List<Popover> groupPopovers = new ArrayList<>();
 
-    private AuthenticatedUser authenticatedUser;
+    private transient AuthenticatedUser authenticatedUser;
 
     private final String eventWebsite;
     private final String appVersion;
@@ -74,6 +83,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
     private void addHeaderContent() {
         DrawerToggle toggle = new DrawerToggle();
         toggle.setAriaLabel("Menu toggle");
+        toggle.addClassName("drawer-toggle-mobile");
 
         viewTitle = new H1();
         viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE, LumoUtility.Margin.End.AUTO);
@@ -85,6 +95,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         layout.addClassNames(LumoUtility.Height.XLARGE);
 
         layout.add(toggle);
+        layout.add(createCollapseToggle());
 
         layout.add(viewTitle);
 
@@ -104,53 +115,64 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         Scroller scroller = new Scroller(createNavigation());
 
         addToDrawer(header, scroller, createFooter());
+
+        // Attach group popovers to the DOM — they render in the overlay layer
+        if (!groupPopovers.isEmpty()) {
+            Div popoverHost = new Div();
+            groupPopovers.forEach(popoverHost::add);
+            addToDrawer(popoverHost);
+        }
+    }
+
+    private Button createCollapseToggle() {
+        collapseToggle = new Button(VaadinIcon.ANGLE_DOUBLE_LEFT.create());
+        collapseToggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        collapseToggle.addClassName("drawer-collapse-toggle");
+        collapseToggle.setAriaLabel("Collapse sidebar");
+        collapseToggle.addClickListener(event -> toggleDrawerCollapse());
+        return collapseToggle;
     }
 
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
-        // Map to keep track of parent items (groups) that have already been created.
-        // The key will be the group name (e.g., "admin").
         Map<String, SideNavItem> parentItems = new HashMap<>();
+        Map<String, List<MenuEntry>> groupChildEntries = new HashMap<>();
 
         List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
 
         for (MenuEntry entry : menuEntries) {
             String path = entry.path();
             if (path == null || path.isEmpty()) {
-                continue; // Skip entries without a path
+                continue;
             }
 
-            // Clean up the path and split it into segments.
-            // e.g., "admin/event" -> ["admin", "event"]
             String[] segments = path.replaceFirst("^/", "").split("/");
 
             if (segments.length == 1) {
-                // If there's only one segment, it's a direct link in the menu.
-                // This also handles the root path "/" (where segments[0] would be empty).
                 nav.addItem(createSideNavItemFromEntry(entry));
-
             } else if (segments.length > 1) {
                 String groupName = segments[0];
+                groupChildEntries.computeIfAbsent(groupName, k -> new ArrayList<>()).add(entry);
 
-                // Check if the parent group has already been created. If not, create it.
                 SideNavItem parentItem = parentItems.computeIfAbsent(groupName, key -> {
-                    // This code runs only the first time we encounter a new group.
-                    // Capitalize the first letter for a nice title.
                     String parentTitle = key.substring(0, 1).toUpperCase() + key.substring(1);
                     SideNavItem newParent = new SideNavItem(parentTitle);
-                    // Set a folder icon to visually represent it as a container.
                     newParent.setPrefixComponent(new SvgIcon("line-awesome/svg/cog-solid.svg"));
-
-
-                    // Add the new group to the main navigation.
                     nav.addItem(newParent);
                     return newParent;
                 });
 
-                // Create the child item and add it to its parent.
                 parentItem.addItem(createSideNavItemFromEntry(entry));
             }
         }
+
+        // Build popovers for each group — shown only when sidebar is collapsed
+        parentItems.forEach((groupName, parentItem) -> {
+            List<MenuEntry> children = groupChildEntries.getOrDefault(groupName, List.of());
+            if (!children.isEmpty()) {
+                groupPopovers.add(buildGroupPopover(groupName, parentItem, children));
+            }
+        });
 
         SideNavItem eventLink = new SideNavItem("Event website", eventWebsite, LineAwesomeIcon.GLOBE_SOLID.create());
         eventLink.setOpenInNewBrowserTab(true);
@@ -163,6 +185,44 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         nav.addItem(contribute);
 
         return nav;
+    }
+
+    private Popover buildGroupPopover(String groupName, SideNavItem target, List<MenuEntry> entries) {
+        Popover popover = new Popover();
+
+        popover.setTarget(target);
+        popover.setPosition(PopoverPosition.END_TOP);
+        popover.addThemeVariants(PopoverVariant.LUMO_NO_PADDING);
+        popover.setOpenOnClick(false);
+        popover.setOpenOnHover(false); // enabled only when sidebar is collapsed
+
+        VerticalLayout content = new VerticalLayout();
+        content.setPadding(false);
+        content.setSpacing(false);
+        content.setWidth("220px");
+        content.addClassNames(LumoUtility.Padding.XSMALL, "collapsed-nav-popover-content");
+
+        Span label = new Span(groupName.substring(0, 1).toUpperCase() + groupName.substring(1));
+        label.getStyle()
+                .set("display", "block")
+                .set("font-size", "var(--lumo-font-size-xs)")
+                .set("font-weight", "600")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("padding", "var(--lumo-space-xs) var(--lumo-space-s) 0")
+                .set("letter-spacing", "0.05em")
+                .set("text-transform", "uppercase");
+        content.add(label);
+
+        for (MenuEntry entry : entries) {
+            content.add(createPopoverNavItem(entry));
+        }
+
+        popover.add(content);
+        return popover;
+    }
+
+    private void updateGroupPopovers(boolean collapsed) {
+        groupPopovers.forEach(p -> p.setOpenOnHover(collapsed));
     }
 
     /**
@@ -181,6 +241,34 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
         }
         // This is useful so the parent group remains highlighted when navigating to a child view.
         item.setMatchNested(true);
+        item.addClassNames(LumoUtility.Width.FULL);
+        return item;
+    }
+
+    private Div createPopoverNavItem(MenuEntry entry) {
+        Div item = new Div();
+        item.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.AlignItems.CENTER,
+                LumoUtility.Gap.SMALL,
+                LumoUtility.Padding.SMALL,
+                LumoUtility.BorderRadius.MEDIUM,
+                LumoUtility.Width.FULL,
+                "hover:bg-contrast-10",
+                "transition-colors"
+        );
+        item.getStyle().set("cursor", "pointer").set("box-sizing", "border-box");
+        item.addClickListener(e -> UI.getCurrent().navigate(entry.path()));
+
+        if (entry.icon() != null) {
+            SvgIcon icon = new SvgIcon(entry.icon());
+            icon.getStyle()
+                    .set("width", "var(--lumo-icon-size-m)")
+                    .set("height", "var(--lumo-icon-size-m)")
+                    .set("flex-shrink", "0");
+            item.add(icon);
+        }
+        item.add(new Span(entry.title()));
         return item;
     }
 
@@ -208,7 +296,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
 
             Popover popover = new Popover();
             popover.setModal(true);
-            popover.setOverlayRole("menu");
+            popover.setRole("menu");
             popover.setAriaLabel("User menu");
             popover.setTarget(button);
             popover.setPosition(PopoverPosition.BOTTOM_END);
@@ -236,6 +324,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
             userInfo.add(userAvatar, nameLayout);
 
             UnorderedList list = new UnorderedList(
+                    createListItem("Change password", LineAwesomeIcon.KEY_SOLID, ChangePasswordView.class),
                     createListItem("Sign out", LineAwesomeIcon.SIGN_OUT_ALT_SOLID, LogoutView.class)
             );
             list.addClassNames(LumoUtility.ListStyleType.NONE, LumoUtility.Margin.Vertical.NONE, LumoUtility.Padding.XSMALL, LumoUtility.Gap.MEDIUM);
@@ -245,7 +334,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
             hr.addClassNames(LumoUtility.Margin.Vertical.XSMALL);
 
 
-            popover.add(userInfo, list, hr);
+            popover.add(userInfo, hr, list);
 
             layout.add(button, popover);
 
@@ -311,8 +400,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
     }
 
     @Override
-    protected void afterNavigation() {
-        super.afterNavigation();
+    public void afterNavigation(AfterNavigationEvent event) {
         viewTitle.setText(getCurrentPageTitle());
     }
 
@@ -328,11 +416,56 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
 
         User user = VaadinSession.getCurrent().getAttribute(User.class);
 
-        if (user != null) {
-            if (user.isOneLogPwd()) {
-                event.forwardTo("change-password");
-            }
+        if (user != null && user.isOneLogPwd()) {
+            event.forwardTo("change-password");
         }
+    }
+
+    @Override
+    protected void onAttach(com.vaadin.flow.component.AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        initDrawerCollapseState();
+    }
+
+    private void toggleDrawerCollapse() {
+        drawerCollapsed = !drawerCollapsed;
+        getElement().executeJs(
+                "this.classList.toggle('drawer-collapsed', $0);"
+                        + "localStorage.setItem('drawer-collapsed', String($0));"
+                        + "this.querySelectorAll('vaadin-side-nav-item').forEach(function(item) {"
+                        + "  if ($0) { item.title = item.textContent.trim(); }"
+                        + "  else { item.removeAttribute('title'); }"
+                        + "});",
+                drawerCollapsed);
+        updateCollapseIcon();
+
+        updateGroupPopovers(drawerCollapsed);
+    }
+
+    private void updateCollapseIcon() {
+        Icon icon = drawerCollapsed ? VaadinIcon.ANGLE_DOUBLE_RIGHT.create() : VaadinIcon.ANGLE_DOUBLE_LEFT.create();
+        collapseToggle.setIcon(icon);
+        collapseToggle.setAriaLabel(drawerCollapsed ? "Expand sidebar" : "Collapse sidebar");
+    }
+
+    private void initDrawerCollapseState() {
+        getElement()
+                .executeJs(
+                        "var collapsed = localStorage.getItem('drawer-collapsed') === 'true';"
+                                + "if (collapsed) {"
+                                + "  this.classList.add('drawer-collapsed');"
+                                + "  this.querySelectorAll('vaadin-side-nav-item').forEach(function(item) {"
+                                + "    item.title = item.textContent.trim();"
+                                + "  });"
+                                + "} else {"
+                                + "  this.classList.remove('drawer-collapsed');"
+                                + "}"
+                                + "return collapsed;")
+                .then(Boolean.class, collapsed -> {
+                    drawerCollapsed = Boolean.TRUE.equals(collapsed);
+                    updateCollapseIcon();
+                    updateGroupPopovers(drawerCollapsed);
+                });
     }
 
 }

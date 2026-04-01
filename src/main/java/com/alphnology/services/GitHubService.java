@@ -18,36 +18,30 @@ import java.io.IOException;
 @Service
 public class GitHubService {
 
-    private final GitHub github;
+    private GitHub github;
     private final String repositoryName;
 
-    /**
-     * Constructor that initializes the connection to the GitHub API.
-     * It uses the token and repository name from application.properties.
-     *
-     * @param token          The personal access token for GitHub.
-     * @param repositoryName The repository name in "owner/repo" format.
-     * @throws IOException If the connection to GitHub fails.
-     */
     public GitHubService(@Value("${github.api.token}") String token,
-                         @Value("${github.repository.name}") String repositoryName) throws IOException {
-        this.github = new GitHubBuilder().withOAuthToken(token).build();
+                         @Value("${github.repository.name}") String repositoryName) {
         this.repositoryName = repositoryName;
-
-        log.info("GitHubService initialized for repository: {}", repositoryName);
-
+        try {
+            this.github = new GitHubBuilder().withOAuthToken(token).build();
+            log.info("GitHubService initialized for repository: {}", repositoryName);
+        } catch (LinkageError e) {
+            // github-api:1.327 references PropertyNamingStrategy.SNAKE_CASE which was
+            // removed in Jackson 2.16+. Bug reporting is disabled until the library is upgraded.
+            log.warn("GitHub API library incompatible with current Jackson version — bug reporting disabled: {}", e.getMessage());
+        } catch (IOException e) {
+            log.warn("Could not initialize GitHub service — bug reporting disabled: {}", e.getMessage());
+        }
     }
 
-    /**
-     * Creates a new issue in the configured repository.
-     *
-     * @param title The title of the issue.
-     * @param body  The description of the issue.
-     * @throws IOException If creating the issue fails.
-     */
     public void createIssue(String title, String body) throws IOException {
+        if (github == null) {
+            log.warn("GitHub service unavailable, skipping issue creation for: {}", title);
+            return;
+        }
         String finalBody = body + "\n\n---\n*This issue was submitted automatically from the Open Schedule application.*";
-
         log.info("Attempting to create GitHub issue with title: '{}'", title);
         GHRepository repository = github.getRepository(repositoryName);
         repository.createIssue(title)
@@ -56,6 +50,5 @@ public class GitHubService {
                 .label("from-app")
                 .create();
         log.info("Successfully created GitHub issue in repository '{}'.", repositoryName);
-
     }
 }

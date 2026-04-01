@@ -52,6 +52,10 @@ public class TagService {
         return repository.findAll();
     }
 
+    public List<Tag> findAll(Specification<Tag> spec) {
+        return repository.findAll(spec);
+    }
+
     public void delete(Long id) throws DeleteConstraintViolationException {
         Tag entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found."));

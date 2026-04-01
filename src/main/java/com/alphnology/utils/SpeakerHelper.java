@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.springframework.util.StringUtils;
 
 /**
  * @author me@fredpena.dev
@@ -19,16 +20,16 @@ public class SpeakerHelper {
     private SpeakerHelper() {
     }
 
-    public static Image getImage(Speaker speaker) {
+    public static Image getImage(Speaker speaker, String photoUrl) {
         Image image = new Image();
         image.addClassNames(LumoUtility.BorderRadius.LARGE);
         Tooltip.forComponent(image)
                 .withText(speaker.getName())
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
 
-        if (!speaker.getPhotoUrl().isEmpty()) {
-            image.setSrc(speaker.getPhotoUrl());
-            image.setAlt(speaker.getPhotoUrl());
+        if (StringUtils.hasText(photoUrl)) {
+            image.setSrc(photoUrl);
+            image.setAlt(speaker.getName());
         } else {
             image.setVisible(false);
         }
@@ -60,10 +61,10 @@ public class SpeakerHelper {
             layout.addClassNames(LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.Row.SMALL);
         }
 
-        session.getSpeakers().forEach(speaker -> {
-            AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName(), speaker.getPhotoUrl());
-            avatarGroup.add(avatar);
-        });
+//        session.getSpeakers().forEach(speaker -> {
+//            AvatarGroup.AvatarGroupItem avatar = new AvatarGroup.AvatarGroupItem(speaker.getName(), speaker.getPhotoUrl());
+//            avatarGroup.add(avatar);
+//        });
 
         Span speakerSpan = new Span();
         speakerSpan.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD);

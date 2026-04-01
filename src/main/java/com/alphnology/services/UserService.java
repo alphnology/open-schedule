@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Getter
@@ -45,8 +46,16 @@ public class UserService {
         return repository.findAll(filter, pageable);
     }
 
+    public List<User> findAll(Specification<User> spec) {
+        return repository.findAll(spec);
+    }
+
     public boolean isThisUserNotAlreadyRegistered(String userCode) {
         return repository.findByUsername(userCode).isEmpty();
+    }
+
+    public long count() {
+        return repository.count();
     }
 
 }

@@ -45,4 +45,8 @@ public class SessionRatingService {
         return repository.findByUsersAndSession(users, session);
     }
 
+    public long count() {
+        return repository.count();
+    }
+
 }

@@ -1,0 +1,70 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Great ideas make Open Schedule better for everyone. Describe the problem you want to solve first — the best feature requests start with a real need.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user need or pain point. "I'm always frustrated when..." or "As an event organizer, I need..."
+      placeholder: "As an attendee, I can't export my favorite sessions to my calendar. I have to manually add each one."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen? Be as specific as possible.
+      placeholder: "Add an 'Export to iCal' button on the Favorites page that generates an .ics file with all bookmarked sessions."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you considered and why they didn't work.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature area
+      options:
+        - Admin / Management
+        - Public schedule
+        - Speaker profiles
+        - Session ratings
+        - Email / Notifications
+        - Storage
+        - Authentication / Security
+        - API / Integration
+        - Deployment / Infrastructure
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: willing
+    attributes:
+      label: Would you be willing to implement this?
+      options:
+        - "Yes — I plan to submit a PR"
+        - "Maybe — I could try with guidance"
+        - "No — I'm just suggesting it"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this has not been requested before
+          required: true

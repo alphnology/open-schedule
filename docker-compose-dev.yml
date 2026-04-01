@@ -1,8 +1,8 @@
 services:
   postgres:
-    image: postgres:15
+    image: postgres:18
     volumes:
-      - db_postgres:/var/lib/postgresql/data
+      - db_postgres:/var/lib/postgresql
     ports:
       - "5432:5432"
     environment:
@@ -15,12 +15,15 @@ services:
       timeout: 5s
       retries: 5
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    restart: always
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
     ports:
-      - 1025:1025
-      - 8025:8025
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
 
   app-open-schedule:
     image: alphnology/open-schedule:latest

@@ -1,5 +1,6 @@
 vaadin-scroller[slot="drawer"] {
     padding: var(--lumo-space-s);
+    overflow-y: auto;
 }
 
 vaadin-side-nav-item vaadin-icon {
@@ -73,3 +74,112 @@ vaadin-side-nav-item.external::part(link):hover {
     text-decoration: underline;
 }
 
+/* Popover menu item hover & transition */
+.no-underline {
+    text-decoration: none !important;
+}
+
+.transition-colors {
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.hover\:bg-contrast-10:hover {
+    background-color: var(--lumo-contrast-10pct);
+}
+
+/* SideNav admin group label */
+vaadin-side-nav-item::part(toggle-button) {
+    color: var(--lumo-secondary-text-color);
+}
+
+/* Navbar shadow */
+[slot="navbar"] {
+    box-shadow: 0 1px 0 var(--lumo-contrast-10pct);
+}
+
+vaadin-app-layout::part(drawer) {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+vaadin-side-nav-item::part(link) {
+    transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+vaadin-side-nav-item > [slot="prefix"] {
+    transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-collapse-toggle {
+    cursor: pointer;
+    min-width: var(--lumo-size-s) !important;
+    width: var(--lumo-size-s) !important;
+}
+
+@media (min-width: 800px) {
+    vaadin-app-layout.drawer-collapsed {
+        --vaadin-app-layout-drawer-width: 72px;
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(link) {
+        font-size: 0;
+        gap: 0;
+        justify-content: center;
+        padding: var(--lumo-space-s);
+        border-radius: var(--lumo-border-radius-m);
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-side-nav-item > [slot="prefix"] {
+        font-size: 1.375rem !important;
+        width: 1.375rem;
+        height: 1.375rem;
+        flex-shrink: 0;
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-side-nav-item[current]::part(link) {
+        background-color: var(--lumo-primary-color-10pct);
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(link):hover {
+        background-color: var(--lumo-contrast-5pct);
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(toggle-button) {
+        display: none;
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-side-nav-item > [slot="children"] {
+        display: none;
+    }
+
+    vaadin-app-layout.drawer-collapsed header[slot="drawer"] {
+        padding: var(--lumo-space-xs);
+        justify-content: center;
+    }
+
+    vaadin-app-layout.drawer-collapsed footer[slot="drawer"] {
+        display: none;
+    }
+
+    vaadin-app-layout.drawer-collapsed vaadin-scroller[slot="drawer"] {
+        padding: var(--lumo-space-xs);
+    }
+
+    .drawer-toggle-mobile {
+        display: none !important;
+    }
+}
+
+@media (max-width: 799px) {
+    .drawer-collapse-toggle {
+        display: none !important;
+    }
+}
+
+/* Collapsed sidebar: group submenu flyout popover */
+.collapsed-nav-popover-content {
+    color: var(--lumo-body-text-color);
+    font-size: var(--lumo-font-size-m);
+}

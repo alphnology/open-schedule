@@ -1,0 +1,20 @@
+/* Form heading — i18n title */
+h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    color: var(--lumo-heading-text-color);
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
+/* Form heading — i18n description */
+p {
+    font-size: 0.9375rem;
+    color: var(--lumo-secondary-text-color);
+    font-weight: 400;
+    line-height: 1.5;
+    margin-top: 0.25rem;
+    margin-bottom: 1.75rem;
+}

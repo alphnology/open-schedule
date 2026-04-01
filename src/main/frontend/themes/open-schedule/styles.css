@@ -2,6 +2,7 @@
 @import url('./views/login.css');
 @import url('./views/change-password.css');
 @import url('./views/speakers-schedule-view.css');
+@import url('./views/admin-catalog.css');
 @import url('./components/vaadin-checkbox.css');
 
 
@@ -17,12 +18,11 @@ html {
     --lumo-disabled-text-color: #6C757D66;
 
     /* Primary (Blue) */
-    --lumo-primary-color: #007BFF;
-    --lumo-primary-color-10pct: #007bff1a;
-    --lumo-primary-color-50pct: #007bff80;
+    --lumo-primary-color: #2563EB;
+    --lumo-primary-color-10pct: #2563eb1a;
+    --lumo-primary-color-50pct: #2563eb80;
     --lumo-primary-contrast-color: #ffffff;
-    --lumo-primary-text-color: #0056b3;
-    --lumo-dark-primary-color: #1976d2;
+    --lumo-primary-text-color: #1d4ed8;
 
     /* Success (Green) */
     --lumo-success-color: #28A745;
@@ -35,7 +35,7 @@ html {
     --lumo-warning-color: #FFC107;
     --lumo-warning-color-10pct: #ffc10733;
     --lumo-warning-text-color: #856404;
-    --lumo-warning-contrast-color: #ffffff;
+    --lumo-warning-contrast-color: #212529;
 
     /* Error */
     --lumo-error-color: #DC3545;
