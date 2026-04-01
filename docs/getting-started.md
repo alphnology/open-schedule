@@ -43,7 +43,7 @@ docker compose up -d
 ```
 
 This starts:
-- **PostgreSQL 15** on port `5432`
+- **PostgreSQL 18** on port `5432`
 - **Mailpit** on ports `1025` (SMTP) and `8025` (web UI)
 - **SeaweedFS** on port `8333` (S3 API)
 
