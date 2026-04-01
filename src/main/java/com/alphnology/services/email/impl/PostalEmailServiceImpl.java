@@ -50,11 +50,10 @@ public class PostalEmailServiceImpl implements EmailService {
 
     public PostalEmailServiceImpl(
             @Value("${application.email.postal.base-url}") String baseUrl,
-            @Value("${application.email.postal.api-key}") String apiKey,
-            RestClient.Builder restClientBuilder) {
+            @Value("${application.email.postal.api-key}") String apiKey) {
 
-        this.restClient = restClientBuilder
-                .baseUrl(baseUrl.stripTrailing("/"))
+        this.restClient = RestClient.builder()
+                .baseUrl(baseUrl.replaceAll("/+$", ""))
                 .defaultHeader("X-Server-API-Key", apiKey)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
@@ -89,8 +88,6 @@ public class PostalEmailServiceImpl implements EmailService {
             log.debug("Email sent via Postal, message_id: {}",
                     response.data() != null ? response.data().messageId() : "unknown");
 
-        } catch (EmailSendException e) {
-            throw e;
         } catch (RestClientException | IOException e) {
             throw new EmailSendException("Failed to send email via Postal", e);
         }
