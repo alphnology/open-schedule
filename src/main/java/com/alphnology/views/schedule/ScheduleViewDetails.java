@@ -4,10 +4,8 @@ import com.alphnology.data.Event;
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
 import com.alphnology.infrastructure.storage.ObjectStorageService;
-import com.alphnology.services.QrService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
-import com.alphnology.services.SpeakerService;
 import com.alphnology.services.UserService;
 import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.DateTimeFormatterUtils;
@@ -28,7 +26,6 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -43,25 +40,21 @@ public class ScheduleViewDetails extends Div {
 
     private final transient SessionService sessionService;
     private final transient SessionRatingService sessionRatingService;
-    private final transient SpeakerService speakerService;
     private final transient UserService userService;
-    private final transient QrService qrService;
     private final transient ObjectStorageService storageService;
 
-    @Autowired
     @Lazy
-    private SpeakersViewDetails speakersViewDetails;
+    private final SpeakersViewDetails speakersViewDetails;
 
     private final Div ratingDiv = new Div();
 
 
-    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
+    public ScheduleViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, UserService userService, ObjectStorageService storageService, SpeakersViewDetails speakersViewDetails) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
-        this.speakerService = speakerService;
         this.userService = userService;
-        this.qrService = qrService;
         this.storageService = storageService;
+        this.speakersViewDetails = speakersViewDetails;
     }
 
     private User getCurrentUser() {
@@ -157,9 +150,9 @@ public class ScheduleViewDetails extends Div {
         attendingButton.addClickListener(e -> {
             String message = """
                     Looking forward to the "%s" session at #%s%s.
-
+                    
                     See you in the %s room!
-
+                    
                     Check out the full schedule: %s
                     """.formatted(sessionName, event.getName().replace(" ", ""), sessionDate.getYear(), room, eventUrl);
             showShareDialog(message, sessionName);
@@ -189,7 +182,7 @@ public class ScheduleViewDetails extends Div {
     private void updateFavoriteButtonState(Button favoriteButton, Session session) {
         User currentUser = getCurrentUser();
         if (currentUser != null) {
-            if (currentUser.getFavoriteSessions() != null && currentUser.getFavoriteSessions().contains(session.getCode())) {
+            if (currentUser.getFavoriteSessions().contains(session.getCode())) {
                 favoriteButton.setText("In Favorites");
                 favoriteButton.setIcon(VaadinIcon.HEART.create());
                 favoriteButton.setTooltipText("Remove from your favorites");
@@ -353,16 +346,13 @@ public class ScheduleViewDetails extends Div {
 
         Image country = new Image();
         country.setWidth("40px");
-        if (session.getLanguage() != null) {
-            country.setSrc("https://flagcdn.com/%s.svg".formatted(session.getLanguage().name().toLowerCase()));
-            country.setAlt(session.getLanguage().getDisplay());
+        country.setSrc("https://flagcdn.com/%s.svg".formatted(session.getLanguage().name().toLowerCase()));
+        country.setAlt(session.getLanguage().getDisplay());
 
-            Tooltip.forComponent(country)
-                    .withText(session.getLanguage().getDisplay())
-                    .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
-        } else {
-            country.setVisible(false);
-        }
+        Tooltip.forComponent(country)
+                .withText(session.getLanguage().getDisplay())
+                .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
+
 
         Div tagSession = tagSession(session);
 

@@ -39,8 +39,7 @@ import java.util.stream.Collectors;
 import static com.alphnology.utils.PredicateUtils.createPredicateForSelectedItems;
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 
-@PageTitle("Charlista")
-//@PageTitle("Speakers")
+@PageTitle("Speakers")
 @Route("speaker")
 @Menu(order = 1, icon = LineAwesomeIconUrl.USERS_SOLID)
 @AnonymousAllowed

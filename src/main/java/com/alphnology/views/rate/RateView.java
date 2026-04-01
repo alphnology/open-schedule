@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-@PageTitle("Calificación")
-//@PageTitle("Rate")
+@PageTitle("Rate")
 @Route("rate")
 @Menu(order = 3, icon = LineAwesomeIconUrl.STAR)
 @AnonymousAllowed

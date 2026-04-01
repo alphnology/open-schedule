@@ -5,7 +5,6 @@ import com.vaadin.flow.component.html.*;
 import org.springframework.util.StringUtils;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import org.springframework.util.StringUtils;
 
 import java.util.function.Consumer;
 

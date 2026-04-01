@@ -6,7 +6,6 @@ import com.alphnology.services.AttenderService;
 import com.alphnology.services.QrService;
 import com.alphnology.services.SpeakerService;
 import com.alphnology.utils.VCardUtil;
-import org.springframework.util.StringUtils;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -23,6 +22,8 @@ import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.DownloadResponse;
 import com.vaadin.flow.server.streams.InputStreamDownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.jspecify.annotations.NonNull;
+import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +44,6 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
     private final transient AttenderService attenderService;
     private final transient QrService qrService;
     private final transient ObjectStorageService storageService;
-    private Optional<Contactable> contactableOpt = Optional.empty();
     private String currentType = "speaker";
 
     public VCardView(SpeakerService speakerService, AttenderService attenderService, QrService qrService, ObjectStorageService storageService) {
@@ -72,10 +72,12 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
         try {
             Long code = Long.parseLong(codeParam);
 
+            Optional<Contactable> contactableOpt;
+
             if ("speaker".equals(currentType)) {
-                this.contactableOpt = speakerService.get(code).map(Contactable::new);
+                contactableOpt = speakerService.get(code).map(Contactable::new);
             } else if ("attender".equals(currentType)) {
-                this.contactableOpt = attenderService.get(code).map(Contactable::new);
+                contactableOpt = attenderService.get(code).map(Contactable::new);
             } else {
                 event.forwardTo(com.alphnology.views.speakers.SpeakersView.class);
                 return;
@@ -88,7 +90,7 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
 
             buildLayout(contactableOpt.get());
 
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             event.forwardTo(SpeakersView.class);
         }
     }
@@ -141,16 +143,7 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
 
     private Anchor createDownloadButton(Contactable contactable) {
         String vcardString = VCardUtil.buildVCard(contactable);
-        InputStreamDownloadHandler vcfResource = DownloadHandler.fromInputStream((event) -> {
-            try {
-                byte[] bytes = vcardString.getBytes(StandardCharsets.UTF_8);
-                return new DownloadResponse(new ByteArrayInputStream(bytes), "contact-%s.vcf".formatted(contactable.fullName().toLowerCase().replace(" ", "-")), "text/vcard", bytes.length);
-            } catch (Exception e) {
-                return DownloadResponse.error(500);
-            }
-        });
-
-        Anchor downloadLink = new Anchor(vcfResource, "");
+        Anchor downloadLink = getAnchor(contactable, vcardString);
         downloadLink.getElement().setAttribute("download", true);
 
         Button button = new Button("Add to Contacts", VaadinIcon.DOWNLOAD_ALT.create());
@@ -158,6 +151,19 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
         downloadLink.add(button);
 
         return downloadLink;
+    }
+
+    private static @NonNull Anchor getAnchor(Contactable contactable, String vcardString) {
+        InputStreamDownloadHandler vcfResource = DownloadHandler.fromInputStream((_) -> {
+            try {
+                byte[] bytes = vcardString.getBytes(StandardCharsets.UTF_8);
+                return new DownloadResponse(new ByteArrayInputStream(bytes), "contact-%s.vcf".formatted(contactable.fullName().toLowerCase().replace(" ", "-")), "text/vcard", bytes.length);
+            } catch (Exception _) {
+                return DownloadResponse.error(500);
+            }
+        });
+
+        return new Anchor(vcfResource, "");
     }
 
     private Button createShareButton(Contactable contactable) {
@@ -176,9 +182,7 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
     private Button createQrButton(Contactable contactable) {
         Button qrButton = new Button("Show QR", VaadinIcon.QRCODE.create());
         qrButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        qrButton.addClickListener(event -> {
-            VCardUtil.openQr(contactable, currentType, qrService);
-        });
+        qrButton.addClickListener(event -> VCardUtil.openQr(contactable, currentType, qrService));
         return qrButton;
     }
 

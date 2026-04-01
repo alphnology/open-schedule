@@ -4,10 +4,8 @@ import com.alphnology.data.Contactable;
 import com.alphnology.data.Speaker;
 import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.QrService;
-import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.SpeakerService;
-import com.alphnology.services.UserService;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.SpeakerHelper;
 import com.alphnology.utils.VCardUtil;
@@ -23,7 +21,6 @@ import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -35,24 +32,20 @@ import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 @Component
 public class SpeakersViewDetails extends Div {
 
-    private final transient SessionRatingService sessionRatingService;
     private final transient SessionService sessionService;
     private final transient SpeakerService speakerService;
-    private final transient UserService userService;
     private final transient QrService qrService;
     private final transient ObjectStorageService storageService;
 
-    @Autowired
     @Lazy
-    private ScheduleViewDetails scheduleViewDetails;
+    private final ScheduleViewDetails scheduleViewDetails;
 
-    public SpeakersViewDetails(SessionService sessionService, SessionRatingService sessionRatingService, SpeakerService speakerService, UserService userService, QrService qrService, ObjectStorageService storageService) {
+    public SpeakersViewDetails(SessionService sessionService, SpeakerService speakerService, QrService qrService, ObjectStorageService storageService, ScheduleViewDetails scheduleViewDetails) {
         this.sessionService = sessionService;
-        this.sessionRatingService = sessionRatingService;
         this.speakerService = speakerService;
-        this.userService = userService;
         this.qrService = qrService;
         this.storageService = storageService;
+        this.scheduleViewDetails = scheduleViewDetails;
     }
 
 

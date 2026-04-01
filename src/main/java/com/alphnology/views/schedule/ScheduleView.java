@@ -45,8 +45,7 @@ import static com.alphnology.utils.PredicateUtils.createPredicateForDateTimeRang
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
 
 
-@PageTitle("Cronograma")
-//@PageTitle("Schedule")
+@PageTitle("Schedule")
 @Route("")
 @RouteAlias("schedule")
 @Menu(order = 0, icon = LineAwesomeIconUrl.CALENDAR)
@@ -87,7 +86,6 @@ public class ScheduleView extends VerticalLayout {
 
         Event event = optionalEvent.get();
         timeZone = ZoneId.of(event.getTimeZone().substring(0, event.getTimeZone().indexOf("(") - 1));
-//        timeZone = ZoneId.of("America/Santo_Domingo");
 
         VaadinSession.getCurrent().setAttribute(Event.class, event);
 
@@ -393,7 +391,6 @@ public class ScheduleView extends VerticalLayout {
             final String search = searchField.getValue().toLowerCase().trim();
 
             Order order = builder.asc(root.get("code"));
-            assert query != null;
             query.orderBy(order);
             query.distinct(true);
 
