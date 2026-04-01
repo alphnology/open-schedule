@@ -118,7 +118,7 @@ public class AdminDashboardView extends VerticalLayout {
         return wrapper;
     }
 
-    private Div createStatCard(VaadinIcon vaadinIcon, String label, long value, String colorVar) {
+    private HorizontalLayout createStatCard(VaadinIcon vaadinIcon, String label, long value, String colorVar) {
         // Icon wrapper with tinted background
         Icon icon = vaadinIcon.create();
         icon.setSize("20px");
