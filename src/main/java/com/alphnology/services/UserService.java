@@ -54,4 +54,8 @@ public class UserService {
         return repository.findByUsername(userCode).isEmpty();
     }
 
+    public long count() {
+        return repository.count();
+    }
+
 }

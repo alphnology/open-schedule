@@ -21,7 +21,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(prefix = "climacall.email.smtp", value = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "application.email.smtp", value = "enabled", havingValue = "true", matchIfMissing = true)
 public class EmailSMTPServiceImpl implements EmailService {
 
     @Value("${application.email.smtp.host}")
@@ -36,6 +36,8 @@ public class EmailSMTPServiceImpl implements EmailService {
     private String fromName;
     @Value("${application.email.smtp.password}")
     private String smtpPassword;
+    @Value("${application.email.smtp.ssl-trust:}")
+    private String sslTrust;
 
     private Properties props;
 
@@ -49,7 +51,9 @@ public class EmailSMTPServiceImpl implements EmailService {
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", smtpHost);
         props.put("mail.smtp.port", smtpPort);
-        props.put("mail.smtp.ssl.trust", smtpHost);
+        if (sslTrust != null && !sslTrust.isBlank()) {
+            props.put("mail.smtp.ssl.trust", sslTrust);
+        }
     }
 
     private Session getSession() {
@@ -64,10 +68,8 @@ public class EmailSMTPServiceImpl implements EmailService {
     @Override
     public void sendEmail(EmailMessage emailMessage) throws EmailSendException {
 
-        log.info("Sending email to: {}", emailMessage.getTo());
-        log.info("From: {}", emailMessage.getFrom());
-        log.info("Subject: {}", emailMessage.getSubject());
-        log.info("Body: {}", emailMessage.getBody());
+        log.info("Sending email to {} recipient(s), subject: '{}'",
+                emailMessage.getTo().size(), emailMessage.getSubject());
 
         try {
             // Create a message

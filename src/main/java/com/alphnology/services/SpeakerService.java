@@ -74,5 +74,8 @@ public class SpeakerService {
         return repository.findAll();
     }
 
+    public long count() {
+        return repository.count();
+    }
 
 }

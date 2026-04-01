@@ -1,175 +1,157 @@
-# Open Schedule
-
 <p align="center">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/badge/version-1.0.11-brightgreen.svg" alt="Version">
-  <!-- TODO: Add a GitHub Actions build status badge once CI is set up -->
-  <img src="https://github.com/alphnology/open-schedule/actions/workflows/.github/workflows/update-readme-version.yml/badge.svg" alt="Build Status">
+  <img src="assets/logo.png" alt="Open Schedule Logo" width="120"/>
 </p>
 
-A modern, open-source conference and event schedule management application. Built with LOVE in Java, Spring Boot, and
-Vaadin, Open Schedule provides a seamless experience for both event organizers and attendees.
+<h1 align="center">Open Schedule</h1>
 
-<!-- TODO: Add a screenshot or GIF of the application in action -->
-<!-- <p align="center">
-  <img src="assets/app-screenshot.png" alt="Application Screenshot" width="700"/>
-</p> -->
+<p align="center">
+  Modern conference schedule management — open source, self-hostable, production-ready.
+</p>
 
-## About The Project
+<p align="center">
+  <a href="https://github.com/alphnology/open-schedule/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+  <img src="https://img.shields.io/badge/version-1.0.11-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Java-25-orange.svg" alt="Java">
+  <img src="https://img.shields.io/badge/Spring%20Boot-4.x-brightgreen.svg" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Vaadin-25-blue.svg" alt="Vaadin">
+  <a href="https://github.com/alphnology/open-schedule/actions/workflows/ci.yml"><img src="https://github.com/alphnology/open-schedule/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
 
-Open Schedule was created to provide a free, robust, and easy-to-deploy solution for managing event agendas. Whether
-you're running a small meetup or a multi-track conference, this tool helps you organize sessions, speakers, and rooms,
-while offering attendees a clean and interactive interface to explore the schedule and rate sessions.
+---
 
-**Built With:**
+## What is Open Schedule?
 
-* Java & Spring Boot
-* Vaadin Flow
-* PostgreSQL
-* Flyway for database migrations
-* Docker & Docker Compose
-* Traefik as a reverse proxy
+Open Schedule is a free, self-hostable web application for managing conference and event agendas. Built with Java 25, Spring Boot 4, and Vaadin 25, it gives organizers a powerful admin interface and attendees a clean, interactive schedule experience — all in a single deployable JAR.
+
+Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is now a general-purpose platform for any event format.
+
+> **Quick look:** sessions, speakers, rooms, tracks, live ratings, favorites, news, QR codes, vCards, PWA support, S3-compatible photo storage, and multi-provider email — all configurable via environment variables.
+
+---
 
 ## Features
 
-### Current Features
+| Category | Features |
+|----------|----------|
+| **Admin** | Session CRUD, speaker management, room & track organization, tag system, attendee tracking, news/announcements |
+| **Public** | Interactive schedule, speaker profiles, session ratings, favorites, QR share, vCard download |
+| **Infrastructure** | PostgreSQL, Flyway migrations, S3-compatible storage (SeaweedFS / MinIO / AWS S3), multi-provider email |
+| **Platform** | Docker deployment, Traefik reverse proxy, Let's Encrypt SSL, PWA, dark mode |
 
-* **Admin Dashboard:** A secure area for event organizers to manage all aspects of the event.
-* **Session Management:** Full CRUD (Create, Read, Update, Delete) functionality for event sessions.
-* **Speaker Profiles:** Manage speaker information, including bios, photos, and assigned sessions.
-* **Room & Track Organization:** Easily assign sessions to specific rooms and thematic tracks.
-* **Tagging System:** Use tags to categorize sessions for better filtering and discovery.
-* **Interactive Public Schedule:** A clean, user-friendly view for attendees to browse the agenda.
-* **Live Session Rating:** Attendees can rate sessions in real-time, providing valuable feedback.
-* **Dockerized Deployment:** Comes with docker-compose files for easy setup in both development and production
-  environments.
-* **PWA (Progressive Web App):** Enhanced mobile experience.
+---
 
-### Future Roadmap & Potential Features
+## Tech Stack
 
-We are always looking to improve! Here are some features we're thinking about, and we
-welcome contributions:
+| Layer | Technology |
+|-------|-----------|
+| Language | Java 25 |
+| Framework | Spring Boot 4.x |
+| UI | Vaadin 25 (server-side) |
+| Database | PostgreSQL 15 + Flyway |
+| Storage | SeaweedFS S3 API (MinIO SDK) |
+| Email | Jakarta Mail · Postal HTTP API |
+| Proxy | Traefik v3 + Let's Encrypt |
+| Container | Docker + Docker Compose |
 
-* **Personalized Schedules:** Allow attendees to "star" or "favorite" sessions to build their own custom agenda.
-* **Comprehensive Testing:** Implement a robust testing suite, including:
-  *   **Unit Tests** to ensure individual components work correctly.
-  *   **End-to-End (E2E) Tests** to validate user flows from start to finish.
-* **Internationalization (i18n) Support:** Add the ability to translate the UI into multiple languages.
-* **Multi-Event Support:** Manage multiple events from a single instance of the application.
-* **Sponsor Management:** A dedicated section to showcase event sponsors.
-* **Enhanced Analytics:** A dashboard for admins to view session popularity, ratings, and other key metrics.
+---
 
-## Getting Started
+## Quick Start
 
-Getting a local instance of Open Schedule running is straightforward.
+### Option A — Run with Docker (self-hosting)
 
-### Prerequisites
-
-* Java 21 or later
-* Apache Maven
-* Docker and Docker Compose
-
-### Development Setup (Recommended)
-
-Getting started is simple thanks to the provided `Makefile`, but it's important to understand the two main workflows for
-an optimal development experience.
-
-This guide explains the two main workflows for an optimal development experience.
-
-**1. Clone the repository:**
-
-```shell
-git clone https://github.com/your-username/open-schedule.git
+```bash
+git clone https://github.com/alphnology/open-schedule.git
 cd open-schedule
+
+cp .env.dist .env
+# Edit .env — set DB_PASSWORD, EMAIL_*, STORAGE_*, EVENT_WEBSITE at minimum
+
+docker compose -f docker-compose-dev.yml up -d
 ```
 
-**2. First-Time Setup**
+Open `http://localhost:51675`
 
-The `make restart` command is the recommended way to start the project for the first time. It's a "one-shot" command
-that handles everything for you:
+### Option B — Local development (IDE)
 
-* Builds the application's Docker image.
-* Launches the complete environment (application, database, and mail server) using Docker Compose.
+```bash
+git clone https://github.com/alphnology/open-schedule.git
+cd open-schedule
 
-```shell
-# This command builds the image and starts all services
-make restart 
+cp .env.dist .env            # Uses Mailpit + SeaweedFS defaults — no edits needed for dev
+
+# Start infrastructure services
+docker compose up -d
+
+# Run the application (hot reload enabled)
+./mvnw spring-boot:run -Pdev
 ```
 
-After this, you can access the application and services:
+**Service URLs:**
 
-* Application: http://localhost:51675
-* MailHog (Email Catcher): http://localhost:8025
+| Service | URL |
+|---------|-----|
+| Application | http://localhost:51675 |
+| Mailpit (email catcher) | http://localhost:8025 |
+| SeaweedFS S3 API | http://localhost:8333 |
 
-**3. Day-to-Day Development (Faster Workflow)**
+---
 
-After the initial setup, you can take advantage of Vaadin's hot-reloading features for a much faster development cycle.
-This involves running the application directly from your IDE (like IntelliJ or VSCode) and using Docker only for the
-background services.
+## Documentation
 
-* **Ensure background services are running:** If you've stopped everything, you can start just the database and mail
-  server with:
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Local dev setup, prerequisites, IDE workflow |
+| [Configuration](docs/configuration.md) | All environment variables with defaults and examples |
+| [Email Setup](docs/email.md) | SMTP, SendGrid, Mailjet, Postal — provider configuration guide |
+| [Storage Setup](docs/storage.md) | SeaweedFS, MinIO, AWS S3 — object storage configuration |
+| [Deployment](docs/deployment.md) | Production deployment with Docker Compose and Traefik |
+| [Architecture](docs/architecture.md) | System design, layers, data model, security |
+| [Contributing](docs/contributing.md) | How to contribute, code style, PR workflow |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
 
-```shell
-    docker compose up -d postgres mailhog
+---
+
+## Configuration at a Glance
+
+All configuration is done through environment variables. Copy `.env.dist` to `.env` and fill in your values.
+
+```bash
+# Minimum required for production
+DB_PASSWORD=your-secure-password
+STORAGE_ENDPOINT=http://your-seaweedfs:8333
+EMAIL_SMTP_HOST=smtp.sendgrid.net
+EMAIL_SMTP_PASSWORD=SG.your-api-key
+EVENT_WEBSITE=https://yourconference.com
+APP_URL=https://schedule.yourconference.com
 ```
 
-* **Run the application from your IDE:** Open the project in your favorite IDE and run the `main` method in the
-  `Application.java` class. The application will start much faster and will automatically connect to the services
-  running in Docker. Any changes you make to the frontend or backend code will be reflected almost instantly without
-  needing to rebuild the Docker image.
+See [docs/configuration.md](docs/configuration.md) for the full reference.
 
-## Configuration & Branding
-
-You can easily customize the application for your event.
-
-### Event Website Link
-
-To link to your event's official website from the main menu, set the following environment variable in your
-`docker-compose.ym`l or deployment environment:
-
-```yml
-environment:
-  - EVENT_WEBSITE=https://your-event-website.com
-  ```
-
-### Event Logo
-
-Event LogoTo display your event's logo in the application header:
-
-1. Create a logo file named `logo.png`
-2. .Place it inside the `assets/` directory at the root of the project.
-3. This directory is mounted as a volume in the Docker container, and the application will automatically pick it up.
+---
 
 ## Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any
-contributions you make are **greatly appreciated**.
+We welcome contributions of all kinds — bug reports, feature requests, documentation improvements, and code.
 
-If you have a suggestion that would make this better, please fork the
-repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+1. **Fork** the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit with [Conventional Commits](https://www.conventionalcommits.org/): `git commit -m "feat: add session export"`
+4. Push and open a Pull Request against `main`
 
-1. **Fork** the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+See [docs/contributing.md](docs/contributing.md) for the full guide including setup, code style, and review expectations.
+
+---
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT — see [LICENSE](LICENSE) for details.
 
-## About This Project
+---
 
-Open Schedule was born from a passion for community and technology. The idea was sparked during the organization of
-[JconfDominicana 2025](https://jconfdominicana.org/), a community-driven Java conference, where we saw a need for a
-modern, free, and open-source tool to
-manage event schedules without the complexity or cost of commercial solutions.
+<p align="center">
+  Built and maintained by <a href="https://alphnology.com">Alphnology</a>
+</p>
 
-Our mission is to provide a beautiful, easy-to-use platform that empowers event organizers and delights attendees.
-
-## Maintained By
-
-Open Schedule is proudly developed and maintained by [Alphnology](https://alphnology.com/).
-
-![image](https://github.com/user-attachments/assets/2148a45c-c922-4e51-8f96-ca492409f7c1)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2148a45c-c922-4e51-8f96-ca492409f7c1" alt="Alphnology" width="160"/>
+</p>

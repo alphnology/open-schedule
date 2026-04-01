@@ -1,6 +1,7 @@
 package com.alphnology.views.admin;
 
 import com.alphnology.components.ConfirmationDialog;
+import com.alphnology.components.EmptyStateComponent;
 import com.alphnology.data.*;
 import com.alphnology.data.enums.Language;
 import com.alphnology.data.enums.Level;
@@ -68,6 +69,9 @@ public class SessionView extends VerticalLayout {
 
     private final TextField searchField = new TextField();
     private final VirtualList<Session> list = new VirtualList<>();
+    private final EmptyStateComponent emptyState = new EmptyStateComponent(
+            VaadinIcon.PRESENTATION, "No sessions found", "Try a different search or create a new session."
+    );
     private final Span countBadge = new Span("0");
     private Session selectedItem;
 
@@ -185,7 +189,9 @@ public class SessionView extends VerticalLayout {
         toolbar.setFlexGrow(1, searchField);
         toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
-        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        emptyState.setVisible(false);
+
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list, emptyState);
         sidebar.setSizeFull();
         sidebar.setPadding(false);
         sidebar.setSpacing(false);
@@ -300,6 +306,9 @@ public class SessionView extends VerticalLayout {
         List<Session> items = service.findAll(createFilterSpecification());
         list.setItems(items);
         countBadge.setText(String.valueOf(items.size()));
+        boolean isEmpty = items.isEmpty();
+        list.setVisible(!isEmpty);
+        emptyState.setVisible(isEmpty);
     }
 
     private VerticalLayout createFormLayout() {
@@ -334,6 +343,7 @@ public class SessionView extends VerticalLayout {
             if (this.element == null) this.element = new Session();
             binder.writeBean(this.element);
             ConfirmationDialog.confirmation(event -> {
+                save.setEnabled(false);
                 try {
                     service.save(element);
                     populateForm(element);
@@ -342,6 +352,8 @@ public class SessionView extends VerticalLayout {
                 } catch (InvalidDataAccessApiUsageException ex) {
                     log.error(ex.getMessage());
                     NotificationUtils.error(ex.getMessage());
+                } finally {
+                    save.setEnabled(true);
                 }
             });
         } catch (ObjectOptimisticLockingFailureException ex) {

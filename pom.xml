@@ -13,7 +13,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <vaadin.version>25.0.7</vaadin.version>
+        <vaadin.version>25.1.1</vaadin.version>
         <hibernate.version>7.2.0.Final</hibernate.version>
     </properties>
 

@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "storage.minio")
+@ConfigurationProperties(prefix = "storage.s3")
 public class StorageProperties {
 
     private String endpoint;

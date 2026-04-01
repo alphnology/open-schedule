@@ -53,5 +53,8 @@ public class AttenderService {
         return repository.findAll();
     }
 
+    public long count() {
+        return repository.count();
+    }
 
 }

@@ -55,5 +55,8 @@ public class SessionService {
         return repository.findUnratedSessionsForUser(user);
     }
 
+    public long count() {
+        return repository.count();
+    }
 
 }

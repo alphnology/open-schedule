@@ -1,0 +1,91 @@
+name: Bug Report
+description: Report something that is not working as expected
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as possible — it helps us fix it faster.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: "When I click Save on a session, the form clears but the session is not saved..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "The session should be saved and appear in the list."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Log in as ADMIN
+        2. Go to Admin → Sessions
+        3. Click "New"
+        4. Fill in title and type
+        5. Click "Save"
+        6. Confirm in the dialog
+        7. See error
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Open Schedule version
+      description: Found in the app footer or `pom.xml`
+      placeholder: "1.0.11"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment type
+      options:
+        - Local development (./mvnw spring-boot:run)
+        - Docker Compose (docker-compose-dev.yml)
+        - Docker Compose (docker-compose-prod.yml)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: java
+    attributes:
+      label: Java version
+      placeholder: "25.0.1"
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 15.4 / Ubuntu 24.04 / Windows 11"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste any relevant error output from the application or Docker logs.
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: I can reliably reproduce this issue
+          required: true
