@@ -61,7 +61,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
     private Button collapseToggle;
     private final List<Popover> groupPopovers = new ArrayList<>();
 
-    private AuthenticatedUser authenticatedUser;
+    private transient AuthenticatedUser authenticatedUser;
 
     private final String eventWebsite;
     private final String appVersion;
@@ -193,6 +193,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         popover.setTarget(target);
         popover.setPosition(PopoverPosition.END_TOP);
         popover.addThemeVariants(PopoverVariant.LUMO_NO_PADDING);
+        popover.setOpenOnClick(false);
         popover.setOpenOnHover(false); // enabled only when sidebar is collapsed
 
         VerticalLayout content = new VerticalLayout();
@@ -213,7 +214,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         content.add(label);
 
         for (MenuEntry entry : entries) {
-            content.add(createSideNavItemFromEntry(entry));
+            content.add(createPopoverNavItem(entry));
         }
 
         popover.add(content);
@@ -241,6 +242,33 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         // This is useful so the parent group remains highlighted when navigating to a child view.
         item.setMatchNested(true);
         item.addClassNames(LumoUtility.Width.FULL);
+        return item;
+    }
+
+    private Div createPopoverNavItem(MenuEntry entry) {
+        Div item = new Div();
+        item.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.AlignItems.CENTER,
+                LumoUtility.Gap.SMALL,
+                LumoUtility.Padding.SMALL,
+                LumoUtility.BorderRadius.MEDIUM,
+                LumoUtility.Width.FULL,
+                "hover:bg-contrast-10",
+                "transition-colors"
+        );
+        item.getStyle().set("cursor", "pointer").set("box-sizing", "border-box");
+        item.addClickListener(e -> UI.getCurrent().navigate(entry.path()));
+
+        if (entry.icon() != null) {
+            SvgIcon icon = new SvgIcon(entry.icon());
+            icon.getStyle()
+                    .set("width", "var(--lumo-icon-size-m)")
+                    .set("height", "var(--lumo-icon-size-m)")
+                    .set("flex-shrink", "0");
+            item.add(icon);
+        }
+        item.add(new Span(entry.title()));
         return item;
     }
 
@@ -388,10 +416,8 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
 
         User user = VaadinSession.getCurrent().getAttribute(User.class);
 
-        if (user != null) {
-            if (user.isOneLogPwd()) {
-                event.forwardTo("change-password");
-            }
+        if (user != null && user.isOneLogPwd()) {
+            event.forwardTo("change-password");
         }
     }
 

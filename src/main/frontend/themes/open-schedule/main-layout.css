@@ -179,17 +179,7 @@ vaadin-side-nav-item > [slot="prefix"] {
 }
 
 /* Collapsed sidebar: group submenu flyout popover */
-.collapsed-nav-popover-content vaadin-side-nav-item::part(link) {
-    border-radius: var(--lumo-border-radius-m);
-    padding: var(--lumo-space-s) var(--lumo-space-m);
-    gap: var(--lumo-space-s);
-}
-
-.collapsed-nav-popover-content vaadin-side-nav-item[current]::part(link) {
-    background-color: var(--lumo-primary-color-10pct);
-    color: var(--lumo-primary-text-color);
-}
-
-.collapsed-nav-popover-content vaadin-side-nav-item::part(link):hover {
-    background-color: var(--lumo-contrast-5pct);
+.collapsed-nav-popover-content {
+    color: var(--lumo-body-text-color);
+    font-size: var(--lumo-font-size-m);
 }
