@@ -22,8 +22,27 @@ storage:
 
 application:
   email:
+    defaults:
+      outbound-enabled: false
+      provider-type: SMTP
+      security-mode: STARTTLS
+      authentication-enabled: true
+      connection-timeout-ms: 5000
+      read-timeout-ms: 5000
     smtp:
+      host: localhost
+      port: 1025
+      username:
+      password:
+      ssl-trust:
+    from:
+      address: no-reply@example.com
+      name: Open Schedule
+    postal:
       enabled: false
+      base-url:
+      api-key:
+      api-key-header: X-Server-API-Key
 
 github:
   api:

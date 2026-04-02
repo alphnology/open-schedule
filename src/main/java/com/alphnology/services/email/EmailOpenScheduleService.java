@@ -15,7 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmailOpenScheduleService {
 
-    private final EmailService emailService;
+    private final MailSenderService mailSenderService;
     private final TemplateService templateService;
 
     @Value("${application.name}")
@@ -48,7 +48,7 @@ public class EmailOpenScheduleService {
 
 
         // Send the email using the email service
-        emailService.sendEmail(emailMessage);
+        mailSenderService.sendEmail(emailMessage);
     }
 
 }

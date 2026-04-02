@@ -49,14 +49,21 @@ See [storage.md](storage.md) for provider-specific examples.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `EMAIL_OUTBOUND_ENABLED` | `true` | Enables or disables all outbound email by default |
+| `EMAIL_PROVIDER_TYPE` | `SMTP` | Default provider type: `SMTP`, `SENDGRID`, `MAILJET`, `POSTAL` |
+| `EMAIL_SECURITY_MODE` | `STARTTLS` | Default SMTP security mode: `NONE`, `STARTTLS`, `SSL_TLS` |
+| `EMAIL_AUTH_ENABLED` | `true` | Whether SMTP auth is enabled by default |
+| `EMAIL_CONNECTION_TIMEOUT_MS` | `10000` | Mail connection timeout in milliseconds |
+| `EMAIL_READ_TIMEOUT_MS` | `10000` | Mail read/write timeout in milliseconds |
 | `EMAIL_FROM_ADDRESS` | _(none)_ | Sender email address |
 | `EMAIL_FROM_NAME` | `Open Schedule` | Sender display name |
+| `EMAIL_SETTINGS_MASTER_KEY` | _(none)_ | Master key used to encrypt secrets persisted from the admin UI |
+| `EMAIL_ALLOW_UI_SECRET_PERSISTENCE` | `false` | Enables encrypted secret persistence from the admin UI when a master key is configured |
 
 ### SMTP Provider
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `EMAIL_SMTP_ENABLED` | `true` | Set to `false` to disable all outbound email |
 | `EMAIL_SMTP_HOST` | _(none)_ | SMTP server hostname |
 | `EMAIL_SMTP_PORT` | `587` | SMTP port (587 = STARTTLS, 465 = SSL) |
 | `EMAIL_SMTP_USERNAME` | _(none)_ | SMTP authentication username |
@@ -70,8 +77,17 @@ See [storage.md](storage.md) for provider-specific examples.
 | `POSTAL_ENABLED` | `false` | Set to `true` to use Postal instead of SMTP |
 | `POSTAL_BASE_URL` | _(none)_ | Postal server base URL, e.g. `https://postal.yourdomain.com` |
 | `POSTAL_API_KEY` | _(none)_ | Postal server API key |
+| `POSTAL_API_KEY_HEADER` | `X-Server-API-Key` | HTTP header used for the Postal API key |
 
-> When `POSTAL_ENABLED=true`, Postal takes precedence over SMTP automatically. Set `EMAIL_SMTP_ENABLED=false` to avoid loading both providers.
+> When `POSTAL_ENABLED=true`, Postal becomes the default provider on first boot. Administrators can still override the provider later from the UI.
+
+### Admin UI behavior
+
+- Route: `Admin → Mail settings`
+- Access: authenticated users with the `ADMIN` role
+- Persists non-sensitive configuration in the database
+- Persists secrets only when `EMAIL_SETTINGS_MASTER_KEY` and `EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true` are configured
+- Sends test emails from the UI after saving
 
 See [email.md](email.md) for complete provider setup guides.
 
@@ -132,6 +148,7 @@ Used by the "Report a Bug" feature in the app. Leave blank to disable it.
 [ ] DB_PASSWORD is a strong, unique password
 [ ] STORAGE_ACCESS_KEY and STORAGE_SECRET_KEY are not default values
 [ ] EMAIL_SMTP_PASSWORD / POSTAL_API_KEY are rotated secrets
+[ ] EMAIL_SETTINGS_MASTER_KEY is set if UI secret persistence is enabled
 [ ] GIT_HUB_API_TOKEN has minimum required scope
 [ ] APP_URL matches your actual public domain
 [ ] EMAIL_FROM_ADDRESS is a verified sender domain

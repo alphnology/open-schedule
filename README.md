@@ -25,7 +25,7 @@ Open Schedule is a free, self-hostable web application for managing conference a
 
 Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is now a general-purpose platform for any event format.
 
-> **Quick look:** sessions, speakers, rooms, tracks, live ratings, favorites, news, QR codes, vCards, PWA support, S3-compatible photo storage, and multi-provider email — all configurable via environment variables.
+> **Quick look:** sessions, speakers, rooms, tracks, live ratings, favorites, news, QR codes, vCards, PWA support, S3-compatible photo storage, and multi-provider email configurable from environment variables and an admin UI.
 
 ---
 
@@ -33,9 +33,9 @@ Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is
 
 | Category | Features |
 |----------|----------|
-| **Admin** | Session CRUD, speaker management, room & track organization, tag system, attendee tracking, news/announcements |
+| **Admin** | Session CRUD, speaker management, room & track organization, tag system, attendee tracking, news/announcements, mail settings |
 | **Public** | Interactive schedule, speaker profiles, session ratings, favorites, QR share, vCard download |
-| **Infrastructure** | PostgreSQL, Flyway migrations, S3-compatible storage (SeaweedFS / MinIO / AWS S3), multi-provider email |
+| **Infrastructure** | PostgreSQL, Flyway migrations, S3-compatible storage (SeaweedFS / MinIO / AWS S3), multi-provider email with admin-managed runtime settings |
 | **Platform** | Docker deployment, Traefik reverse proxy, Let's Encrypt SSL, PWA, dark mode |
 
 ---
@@ -102,7 +102,7 @@ docker compose up -d
 |-------|-------------|
 | [Getting Started](docs/getting-started.md) | Local dev setup, prerequisites, IDE workflow |
 | [Configuration](docs/configuration.md) | All environment variables with defaults and examples |
-| [Email Setup](docs/email.md) | SMTP, SendGrid, Mailjet, Postal — provider configuration guide |
+| [Email Setup](docs/email.md) | SMTP, SendGrid, Mailjet, Postal — provider configuration guide plus admin UI workflow |
 | [Storage Setup](docs/storage.md) | SeaweedFS, MinIO, AWS S3 — object storage configuration |
 | [Deployment](docs/deployment.md) | Production deployment with Docker Compose and Traefik |
 | [Architecture](docs/architecture.md) | System design, layers, data model, security |
@@ -119,8 +119,10 @@ All configuration is done through environment variables. Copy `.env.dist` to `.e
 # Minimum required for production
 DB_PASSWORD=your-secure-password
 STORAGE_ENDPOINT=http://your-seaweedfs:8333
+EMAIL_PROVIDER_TYPE=SENDGRID
 EMAIL_SMTP_HOST=smtp.sendgrid.net
 EMAIL_SMTP_PASSWORD=SG.your-api-key
+EMAIL_FROM_ADDRESS=no-reply@yourconference.com
 EVENT_WEBSITE=https://yourconference.com
 APP_URL=https://schedule.yourconference.com
 ```

@@ -147,8 +147,14 @@ EmailOpenScheduleService
     ▼
 EmailMessage (to, from, subject, html body, attachments)
     │
-    ├── POSTAL_ENABLED=true  → PostalEmailServiceImpl → HTTP POST /api/v1/send/message
-    └── POSTAL_ENABLED=false → EmailSMTPServiceImpl   → Jakarta Mail → SMTP server
+    ▼
+MailSenderService
+    │
+    ▼
+MailSettingsService ──> mail_settings table + application.email defaults
+    │
+    ├── provider = POSTAL   → PostalMailTransport → HTTP POST /api/v1/send/message
+    └── provider = SMTP/*   → SmtpMailTransport   → Jakarta Mail → SMTP server
 ```
 
 ---
