@@ -26,7 +26,7 @@ Traefik (ports 80/443)
 Open Schedule app (port 51675, internal)
     │
     ├── PostgreSQL (internal)
-    └── SeaweedFS (internal)
+    └── MinIO or S3-compatible storage (internal)
 ```
 
 ---
@@ -80,8 +80,8 @@ Minimum required variables for production:
 # Database
 DB_PASSWORD=a-strong-unique-password
 
-# Storage (SeaweedFS running on same host)
-STORAGE_ENDPOINT=http://seaweedfs:8333
+# Storage (MinIO running on same host)
+STORAGE_ENDPOINT=http://minio:9000
 STORAGE_PUBLIC_ENDPOINT=https://storage.yourconference.com   # if publicly accessible
 
 # Email
@@ -202,10 +202,10 @@ gunzip -c backup-20250510.sql.gz | docker exec -i postgres psql -U postgres open
 ```bash
 # Backup all objects
 docker run --rm \
-  -v /opt/open-schedule/seaweedfs-backup:/backup \
+  -v /opt/open-schedule/minio-backup:/backup \
   --network open-schedule_default \
   amazon/aws-cli s3 sync s3://open-schedule /backup \
-  --endpoint-url http://seaweedfs:8333 \
+  --endpoint-url http://minio:9000 \
   --no-sign-request
 ```
 
@@ -218,7 +218,7 @@ docker run --rm \
 [ ] STORAGE credentials are not the dev defaults
 [ ] Let's Encrypt email is valid
 [ ] Traefik dashboard basic auth is set
-[ ] Server firewall: only 80/443 public, 51675/5432/8333 internal only
+[ ] Server firewall: only 80/443 public, 51675/5432/9000/9001 internal only
 [ ] Regular database backups scheduled (cron)
 [ ] APP_URL matches actual public domain
 [ ] .env file permissions: chmod 600 .env
@@ -233,4 +233,4 @@ docker run --rm \
 | SSL certificate not issued | Check DNS propagation: `dig schedule.yourconference.com`. Wait up to 5 min after DNS change |
 | 502 Bad Gateway | App not started. Check `docker compose logs app-open-schedule` |
 | Database migration fails | Check `DB_*` env vars. Run `docker compose logs app-open-schedule \| grep Flyway` |
-| Storage uploads fail | Check `STORAGE_*` env vars and SeaweedFS container status |
+| Storage uploads fail | Check `STORAGE_*` env vars and MinIO container status |

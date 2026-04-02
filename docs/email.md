@@ -170,7 +170,7 @@ For local development, the default configuration points to Mailpit, a lightweigh
 EMAIL_OUTBOUND_ENABLED=true
 EMAIL_PROVIDER_TYPE=SMTP
 EMAIL_SMTP_HOST=localhost
-EMAIL_SMTP_PORT=1025
+EMAIL_SMTP_PORT=1026
 EMAIL_SMTP_USERNAME=dev@example.com
 EMAIL_SMTP_PASSWORD=
 EMAIL_FROM_ADDRESS=no-reply@example.com
@@ -182,7 +182,7 @@ Start Mailpit with Docker:
 docker compose up -d mailpit
 ```
 
-View captured emails at `http://localhost:8025`.
+View captured emails at `http://localhost:8026`.
 
 ---
 

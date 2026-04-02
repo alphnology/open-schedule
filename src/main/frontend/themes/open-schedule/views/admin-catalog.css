@@ -1,12 +1,247 @@
 /* ============================================================
-   ADMIN CATALOG — Two-pane VirtualList design
-   Open Schedule
+   ADMIN CATALOG — Open Schedule
+   Visual reference: Event Configuration Form design system
    ============================================================ */
 
-/* ── 1. Toolbar strip ── */
+/* ══════════════════════════════════════════════════════════
+   1. ADMIN VIEW HEADER
+   Light, clean header replacing the old Lumo.DARK header.
+   Applied by ViewHelper.getSecondaryHeader() via .admin-view-header
+   ══════════════════════════════════════════════════════════ */
+.admin-view-header {
+    background: linear-gradient(
+        135deg,
+        rgba(221, 214, 243, 0.16) 0%,
+        rgba(248, 250, 252, 0.55) 100%
+    );
+    border-bottom-color: rgba(100, 116, 139, 0.12) !important;
+    flex-shrink: 0;
+}
+
+.admin-view-header h2 {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    color: #1E293B !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.admin-view-header span {
+    font-size: 0.8125rem;
+    color: var(--lumo-secondary-text-color) !important;
+    line-height: 1.55;
+}
+
+/* ══════════════════════════════════════════════════════════
+   2. ADMIN FORM PANEL (glass card — right pane / single-form)
+   Applied by ViewHelper.getSecondaryLayout() → .admin-form-panel
+   ══════════════════════════════════════════════════════════ */
+.admin-form-panel {
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(226, 232, 240, 0.90);
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.07) !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   3. FORM FIELD DESIGN TOKENS
+   Both .admin-form-panel (split-layout / EventView) and
+   .admin-form-content (AdminMailSettingsView) scope.
+
+   CSS custom properties cascade through the shadow DOM
+   boundary — Vaadin components read them to apply the style.
+   ══════════════════════════════════════════════════════════ */
+:is(.admin-form-panel, .admin-form-content) {
+    --vaadin-input-field-background:             #EAF0F6;
+    --vaadin-input-field-hover-highlight:        rgba(100, 116, 139, 0.10);
+    --vaadin-input-field-border-color:           transparent;
+    --vaadin-input-field-focused-border-color:   rgba(121, 115, 145, 0.55);
+    --vaadin-input-field-focused-box-shadow:     0 0 0 4px rgba(121, 115, 145, 0.12);
+}
+
+/* ── Inner form content: breathing room between fields ── */
+.admin-form-panel vaadin-scroller > vaadin-vertical-layout {
+    padding: 1.25rem !important;
+    gap: 0.5rem !important;
+}
+
+/* ── Field labels: uppercase, bold, compact ── */
+:is(.admin-form-panel, .admin-form-content) vaadin-text-field::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-text-area::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-email-field::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-password-field::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-integer-field::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-number-field::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-combo-box::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-select::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-date-picker::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-date-time-picker::part(label),
+:is(.admin-form-panel, .admin-form-content) vaadin-multi-select-combo-box::part(label) {
+    font-size: 0.6875rem;           /* 11px */
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4B5563;
+    margin-bottom: 0.1875rem;
+}
+
+/* ── Input container: rounded 12px, adequate height ── */
+:is(.admin-form-panel, .admin-form-content) vaadin-text-field::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-text-area::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-email-field::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-password-field::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-integer-field::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-number-field::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-combo-box::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-select::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-date-picker::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-multi-select-combo-box::part(input-field) {
+    border-radius: 0.75rem;         /* 12px — from reference */
+    min-height: 2.875rem;
+    border: 1px solid transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ── DateTimePicker: target the actual sub-components (light DOM children) ──
+ * vaadin-date-time-picker has no ::part(input-field) — it is a composite
+ * component whose vaadin-date-picker and vaadin-time-picker live in the
+ * light DOM. Both must receive the same height and radius to align correctly. */
+:is(.admin-form-panel, .admin-form-content) vaadin-date-time-picker vaadin-date-picker::part(input-field),
+:is(.admin-form-panel, .admin-form-content) vaadin-date-time-picker vaadin-time-picker::part(input-field) {
+    border-radius: 0.75rem;
+    min-height: 2.875rem;
+    border: 1px solid transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Ensure both sub-pickers stretch to fill the same row height */
+:is(.admin-form-panel, .admin-form-content) vaadin-date-time-picker vaadin-date-picker,
+:is(.admin-form-panel, .admin-form-content) vaadin-date-time-picker vaadin-time-picker {
+    align-self: stretch;
+}
+
+/* ── Helper text: italic, soft ── */
+:is(.admin-form-panel, .admin-form-content) vaadin-text-field::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-text-area::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-email-field::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-password-field::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-integer-field::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-number-field::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-combo-box::part(helper-text),
+:is(.admin-form-panel, .admin-form-content) vaadin-select::part(helper-text) {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--lumo-secondary-text-color);
+}
+
+/* ── Error message ── */
+:is(.admin-form-panel, .admin-form-content) vaadin-text-field::part(error-message),
+:is(.admin-form-panel, .admin-form-content) vaadin-text-area::part(error-message),
+:is(.admin-form-panel, .admin-form-content) vaadin-email-field::part(error-message),
+:is(.admin-form-panel, .admin-form-content) vaadin-password-field::part(error-message),
+:is(.admin-form-panel, .admin-form-content) vaadin-combo-box::part(error-message) {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════
+   4. ADMIN FORM PANEL — FOOTER BAR & ACTION BUTTONS
+   Matching the reference .footer-actions design.
+   ══════════════════════════════════════════════════════════ */
+.admin-form-panel footer vaadin-horizontal-layout.bg-contrast-10 {
+    background: rgba(241, 245, 249, 0.88) !important;
+    border-top: 1px solid rgba(100, 116, 139, 0.12) !important;
+    padding: var(--lumo-space-m) !important;
+    gap: var(--lumo-space-s) !important;
+}
+
+/* Primary button: gradient slate from reference */
+.admin-form-panel footer vaadin-button[theme~="primary"]:not([theme~="error"])::part(button) {
+    background: linear-gradient(135deg, #475569, #1E293B);
+    color: #ffffff;
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 20px rgba(30, 41, 59, 0.22);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.admin-form-panel footer vaadin-button[theme~="primary"]:not([theme~="error"])::part(button):hover {
+    box-shadow: 0 14px 28px rgba(30, 41, 59, 0.28);
+    transform: translateY(-1px);
+}
+
+/* Contrast / ghost button (New, Cancel, Reset) */
+.admin-form-panel footer vaadin-button[theme~="contrast"]:not([theme~="primary"])::part(button) {
+    background: transparent;
+    color: var(--lumo-secondary-text-color);
+    border: 1px solid rgba(100, 116, 139, 0.28);
+    border-radius: 0.75rem;
+    transition: background-color 0.2s ease;
+}
+
+.admin-form-panel footer vaadin-button[theme~="contrast"]:not([theme~="primary"])::part(button):hover {
+    background: rgba(100, 116, 139, 0.08);
+    border-color: rgba(100, 116, 139, 0.40);
+}
+
+/* Danger button (Delete) */
+.admin-form-panel footer vaadin-button[theme~="error"]::part(button) {
+    background: transparent;
+    color: #B4534B;
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: none;
+    transition: background-color 0.2s ease;
+}
+
+.admin-form-panel footer vaadin-button[theme~="error"]::part(button):hover {
+    background: rgba(180, 83, 75, 0.08);
+}
+
+/* ══════════════════════════════════════════════════════════
+   5. ADMIN CARD (glass surface — Dashboard, MailSettings)
+   ══════════════════════════════════════════════════════════ */
+.admin-card {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(226, 232, 240, 0.90);
+    border-radius: 1.25rem !important;           /* 20px */
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.07) !important;
+    box-sizing: border-box;
+}
+
+.admin-card h3 {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #1E293B;
+    margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   6. ADMIN STAT CARD (KPI tiles — Dashboard)
+   ══════════════════════════════════════════════════════════ */
+.admin-stat-card {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(226, 232, 240, 0.90);
+    border-radius: 0.875rem !important;          /* 14px */
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+    flex: 1 1 180px;
+    min-width: 160px;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.admin-stat-card:hover {
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.10) !important;
+    transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════════════════
+   7. SPLIT LAYOUT SIDEBAR (left pane — VirtualList)
+   ══════════════════════════════════════════════════════════ */
 .admin-toolbar {
     flex-shrink: 0;
-    border-bottom: 1px solid var(--lumo-contrast-10pct);
+    border-bottom: 1px solid rgba(100, 116, 139, 0.12);
 }
 
 .admin-count-badge {
@@ -23,7 +258,9 @@
     display: inline-block;
 }
 
-/* ── 2. VirtualList item row ── */
+/* ══════════════════════════════════════════════════════════
+   8. VIRTUAL LIST ITEMS
+   ══════════════════════════════════════════════════════════ */
 .admin-list-item {
     display: flex;
     align-items: center;
@@ -32,22 +269,24 @@
     cursor: pointer;
     border-bottom: 1px solid var(--lumo-contrast-5pct);
     box-shadow: inset 3px 0 0 transparent;
-    transition: background 0.1s ease, box-shadow 0.1s ease;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
     min-height: 66px;
     box-sizing: border-box;
     width: 100%;
 }
 
 .admin-list-item:hover {
-    background: var(--lumo-contrast-5pct);
+    background: rgba(100, 116, 139, 0.06);
 }
 
 .admin-list-item.selected {
-    background: var(--lumo-primary-color-10pct);
-    box-shadow: inset 3px 0 0 var(--lumo-primary-color);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow:
+        inset 3px 0 0 var(--lumo-primary-color),
+        inset 0 0 0 1px rgba(100, 116, 139, 0.10);
 }
 
-/* ── 3. Item icon circle ── */
+/* ── Item icon circle ── */
 .admin-item-icon {
     width: 38px;
     height: 38px;
@@ -59,6 +298,7 @@
     justify-content: center;
     overflow: hidden;
     color: var(--lumo-tertiary-text-color);
+    flex-shrink: 0;
 }
 
 .admin-item-icon img {
@@ -68,7 +308,7 @@
     border-radius: 50%;
 }
 
-/* ── 4. Item text block ── */
+/* ── Item text block ── */
 .admin-item-body {
     flex: 1;
     min-width: 0;
@@ -96,7 +336,7 @@
     line-height: 1.3;
 }
 
-/* ── 5. Item right side ── */
+/* ── Item right side ── */
 .admin-item-side {
     display: flex;
     flex-direction: column;
@@ -106,7 +346,9 @@
     max-width: 86px;
 }
 
-/* ── 6. Status / type badge pill ── */
+/* ══════════════════════════════════════════════════════════
+   9. BADGES & DECORATORS
+   ══════════════════════════════════════════════════════════ */
 .admin-badge {
     font-size: 0.6875rem;
     font-weight: 600;
@@ -140,7 +382,6 @@
     color: var(--lumo-error-text-color);
 }
 
-/* ── 7. Color swatch (Room / Track / Tag) ── */
 .admin-color-swatch {
     width: 14px;
     height: 14px;
@@ -150,10 +391,77 @@
     display: inline-block;
 }
 
-/* ── 8. Country flag ── */
 .admin-item-flag {
     width: 26px;
     height: auto;
     border-radius: 2px;
     display: block;
+}
+
+/* ══════════════════════════════════════════════════════════
+   10. RESPONSIVE
+   Split layout stacks vertically on mobile (< 800px)
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 799px) {
+
+    /* Stack the two panes */
+    vaadin-split-layout {
+        flex-direction: column !important;
+    }
+
+    vaadin-split-layout [slot="primary"],
+    vaadin-split-layout [slot="secondary"] {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        height: auto;
+        min-height: 220px;
+    }
+
+    vaadin-split-layout [slot="primary"] {
+        max-height: 40vh;
+    }
+
+    /* Admin view header: compact on mobile */
+    .admin-view-header {
+        padding-inline-start: var(--lumo-space-m) !important;
+        padding-inline-end: var(--lumo-space-m) !important;
+    }
+
+    .admin-view-header h2 {
+        font-size: 1.125rem !important;
+    }
+
+    /* Stat cards: single column on mobile */
+    .admin-stat-card {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Reduce card radii */
+    .admin-card,
+    .admin-form-panel {
+        border-radius: var(--lumo-border-radius-l) !important;
+    }
+
+    /* Footer: stack buttons */
+    .admin-form-panel footer vaadin-horizontal-layout.bg-contrast-10 {
+        flex-direction: column !important;
+    }
+
+    .admin-form-panel footer vaadin-horizontal-layout.bg-contrast-10 vaadin-button {
+        width: 100% !important;
+    }
+
+    /* Inner form: reduce padding on narrow screens */
+    .admin-form-panel vaadin-scroller > vaadin-vertical-layout {
+        padding: 0.875rem !important;
+    }
+}
+
+/* Medium: 2-column stat card grid */
+@media (min-width: 800px) and (max-width: 1200px) {
+    .admin-stat-card {
+        flex: 1 1 calc(50% - var(--lumo-space-m)) !important;
+    }
 }

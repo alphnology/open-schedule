@@ -326,7 +326,7 @@ public class SpeakerView extends VerticalLayout {
 
         HorizontalLayout linkRow = new HorizontalLayout(linkField, removeLinkButton);
         linkRow.setWidthFull();
-        linkRow.setAlignItems(Alignment.BASELINE);
+        linkRow.setAlignItems(Alignment.CENTER);
         socialLinksLayout.add(linkRow);
     }
 

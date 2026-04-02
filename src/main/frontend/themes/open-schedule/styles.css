@@ -75,6 +75,34 @@ html {
     --light-background-color: #FFFFFF;
     --lumo-user-holiday: #FF1A1A;
 
+    /* ── Design-system tokens (reference: Event Config Form) ── */
+    /* Sidebar / shell palette */
+    --os-primary:           #1E293B;
+    --os-primary-strong:    #0F172A;
+    --os-secondary:         #64748B;
+    --os-secondary-soft:    #94A3B8;
+    --os-tertiary:          #797391;
+    --os-tertiary-soft:     #DDD6F3;
+    --os-surface:           #FFFFFF;
+    --os-surface-soft:      #F1F5F9;
+    --os-border:            rgba(100, 116, 139, 0.18);
+    --os-border-soft:       rgba(100, 116, 139, 0.12);
+
+    /* Shadows */
+    --os-shadow-sm:  0 2px 8px  rgba(15, 23, 42, 0.06);
+    --os-shadow-md:  0 14px 35px rgba(15, 23, 42, 0.07);
+    --os-shadow-lg:  0 30px 80px rgba(15, 23, 42, 0.14);
+
+    /* Radii */
+    --os-radius-xl:  28px;
+    --os-radius-lg:  20px;
+    --os-radius-md:  14px;
+    --os-radius-sm:  10px;
+
+    /* Preferred font stack */
+    --lumo-font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                        'Segoe UI', Roboto, sans-serif;
+
 }
 
 [theme~="dark"] {

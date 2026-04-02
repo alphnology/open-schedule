@@ -36,7 +36,7 @@
 └───────────┼────────────────────────┼──────────────────┘
             │                        │
      ┌──────▼──────┐         ┌───────▼──────┐
-     │  SeaweedFS  │         │  SMTP server │
+     │   MinIO     │         │  SMTP server │
      │  (S3 API)   │         │  or Postal   │
      └─────────────┘         └──────────────┘
             │
@@ -76,7 +76,7 @@ External integrations isolated from business logic:
 
 | Package | Responsibility |
 |---------|----------------|
-| `infrastructure.storage` | S3-compatible object storage (SeaweedFS / MinIO) |
+| `infrastructure.storage` | S3-compatible object storage (MinIO / AWS S3 / SeaweedFS / R2) |
 | `services.email` | Email dispatch (SMTP + Postal HTTP API) |
 | `services.template` | Thymeleaf template rendering for emails |
 
@@ -171,7 +171,7 @@ SpeakerView (Vaadin Upload component)
 ObjectStorageService.upload(key, inputStream, size, contentType)
     │
     ▼
-MinioObjectStorageService → MinIO SDK → SeaweedFS S3 API
+S3ObjectStorageService → MinIO SDK → MinIO S3 API
     │
     ▼
 key stored in speakers.photo_key (PostgreSQL)
@@ -194,6 +194,6 @@ Photo retrieval:
 | PostgreSQL | 15 | |
 | Flyway | (Spring Boot managed) | |
 | MinIO SDK | 8.5.17 | Used as S3 client |
-| SeaweedFS | latest | S3-compatible storage |
+| MinIO | latest | S3-compatible storage for local development |
 | Traefik | 3.4 | Reverse proxy |
 | Jakarta Mail | (Spring Boot managed) | SMTP client |

@@ -107,7 +107,7 @@ public class AdminMailSettingsView extends VerticalLayout {
         );
         content.setPadding(false);
         content.setSpacing(false);
-        content.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.Gap.MEDIUM);
+        content.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.Gap.MEDIUM, "admin-form-content");
         content.setWidthFull();
 
         Scroller scroller = ViewHelper.getScrollerVertical();
@@ -276,9 +276,7 @@ public class AdminMailSettingsView extends VerticalLayout {
 
         Div card = new Div(header, copy);
         card.addClassNames(
-                LumoUtility.Background.BASE,
-                LumoUtility.BorderRadius.LARGE,
-                LumoUtility.BoxShadow.XSMALL,
+                "admin-card",
                 LumoUtility.Padding.LARGE,
                 LumoUtility.Display.FLEX,
                 LumoUtility.FlexDirection.COLUMN,

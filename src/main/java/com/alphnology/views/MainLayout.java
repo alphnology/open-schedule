@@ -1,7 +1,10 @@
 package com.alphnology.views;
 
+import com.alphnology.data.Event;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.data.User;
 import com.alphnology.security.AuthenticatedUser;
+import com.alphnology.services.EventService;
 import com.alphnology.utils.ImageUtils;
 import com.alphnology.views.login.ChangePasswordView;
 import com.alphnology.views.login.LogoutView;
@@ -62,16 +65,22 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
     private final List<Popover> groupPopovers = new ArrayList<>();
 
     private transient AuthenticatedUser authenticatedUser;
+    private final transient EventService eventService;
+    private final transient ObjectStorageService storageService;
 
     private final String eventWebsite;
     private final String appVersion;
 
     public MainLayout(
             AuthenticatedUser authenticatedUser,
+            EventService eventService,
+            ObjectStorageService storageService,
             @Value("${event.website}") String eventWebsite,
             @Value("${application.version}") String appVersion
     ) {
         this.authenticatedUser = authenticatedUser;
+        this.eventService = eventService;
+        this.storageService = storageService;
         this.eventWebsite = eventWebsite;
         this.appVersion = appVersion;
 
@@ -105,7 +114,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
     }
 
     private void addDrawerContent() {
-        Image image = ImageUtils.getMainImage();
+        Image image = createDrawerImage();
         image.addClassNames(LumoUtility.AlignSelf.CENTER, LumoUtility.Margin.Top.SMALL);
         image.setWidth("100%");
 
@@ -122,6 +131,21 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             groupPopovers.forEach(popoverHost::add);
             addToDrawer(popoverHost);
         }
+    }
+
+    private Image createDrawerImage() {
+        Optional<Event> currentEvent = eventService.findCurrentEvent();
+        if (currentEvent.isPresent()) {
+            String photoKey = currentEvent.get().getPhotoKey();
+            if (photoKey != null && !photoKey.isBlank()) {
+                try {
+                    return new Image(storageService.getSignedUrl(photoKey), currentEvent.get().getName());
+                } catch (Exception e) {
+                    log.warn("Could not load event image from storage: {}", photoKey, e);
+                }
+            }
+        }
+        return ImageUtils.getDefaultMainImage();
     }
 
     private Button createCollapseToggle() {

@@ -93,9 +93,7 @@ public class AdminDashboardView extends VerticalLayout {
 
         Div card = new Div(nameSpan, meta);
         card.addClassNames(
-                LumoUtility.Background.BASE,
-                LumoUtility.BorderRadius.LARGE,
-                LumoUtility.BoxShadow.XSMALL,
+                "admin-card",
                 LumoUtility.Padding.MEDIUM,
                 LumoUtility.Display.FLEX,
                 LumoUtility.FlexDirection.COLUMN,
@@ -161,13 +159,10 @@ public class AdminDashboardView extends VerticalLayout {
         card.setAlignItems(FlexComponent.Alignment.CENTER);
         card.setSpacing(false);
         card.addClassNames(
-                LumoUtility.Background.BASE,
-                LumoUtility.BorderRadius.LARGE,
-                LumoUtility.BoxShadow.XSMALL,
+                "admin-stat-card",
                 LumoUtility.Padding.MEDIUM,
                 LumoUtility.Gap.MEDIUM
         );
-        card.getStyle().set("flex", "1 1 180px").set("min-width", "160px");
         return card;
     }
 }

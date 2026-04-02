@@ -20,6 +20,10 @@ public class ImageUtils {
     }
 
     public static Image getMainImage() {
+        return getDefaultMainImage();
+    }
+
+    public static Image getDefaultMainImage() {
         Image drawerImage = null;
 
         Path headerImage = Paths.get("assets/logo.png");

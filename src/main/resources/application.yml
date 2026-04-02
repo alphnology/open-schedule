@@ -50,7 +50,7 @@ spring:
   datasource:
     password: ${DB_PASSWORD:postgres}
     username: ${DB_USER:postgres}
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:open-schedule}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:open-schedule}
     driver-class-name: org.postgresql.Driver
 
   thymeleaf:
@@ -109,9 +109,9 @@ application:
 
 storage:
   s3:
-    endpoint: ${STORAGE_ENDPOINT:http://localhost:8333}
-    access-key: ${STORAGE_ACCESS_KEY:any}
-    secret-key: ${STORAGE_SECRET_KEY:any}
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
     bucket: ${STORAGE_BUCKET:open-schedule}
     public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:}
     signed-url-expiry-seconds: ${STORAGE_SIGNED_URL_EXPIRY:3600}

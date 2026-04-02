@@ -35,7 +35,7 @@ Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is
 |----------|----------|
 | **Admin** | Session CRUD, speaker management, room & track organization, tag system, attendee tracking, news/announcements, mail settings |
 | **Public** | Interactive schedule, speaker profiles, session ratings, favorites, QR share, vCard download |
-| **Infrastructure** | PostgreSQL, Flyway migrations, S3-compatible storage (SeaweedFS / MinIO / AWS S3), multi-provider email with admin-managed runtime settings |
+| **Infrastructure** | PostgreSQL, Flyway migrations, S3-compatible storage (MinIO / AWS S3 / SeaweedFS), multi-provider email with admin-managed runtime settings |
 | **Platform** | Docker deployment, Traefik reverse proxy, Let's Encrypt SSL, PWA, dark mode |
 
 ---
@@ -48,7 +48,7 @@ Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is
 | Framework | Spring Boot 4.x |
 | UI | Vaadin 25 (server-side) |
 | Database | PostgreSQL 15 + Flyway |
-| Storage | SeaweedFS S3 API (MinIO SDK) |
+| Storage | MinIO (default dev) via S3-compatible client |
 | Email | Jakarta Mail · Postal HTTP API |
 | Proxy | Traefik v3 + Let's Encrypt |
 | Container | Docker + Docker Compose |
@@ -77,7 +77,7 @@ Open `http://localhost:51675`
 git clone https://github.com/alphnology/open-schedule.git
 cd open-schedule
 
-cp .env.dist .env            # Uses Mailpit + SeaweedFS defaults — no edits needed for dev
+cp .env.dist .env            # Uses Mailpit + MinIO defaults — no edits needed for dev
 
 # Start infrastructure services
 docker compose up -d
@@ -92,7 +92,8 @@ docker compose up -d
 |---------|-----|
 | Application | http://localhost:51675 |
 | Mailpit (email catcher) | http://localhost:8025 |
-| SeaweedFS S3 API | http://localhost:8333 |
+| MinIO S3 API | http://localhost:9000 |
+| MinIO Console | http://localhost:9001 |
 
 ---
 
@@ -103,7 +104,7 @@ docker compose up -d
 | [Getting Started](docs/getting-started.md) | Local dev setup, prerequisites, IDE workflow |
 | [Configuration](docs/configuration.md) | All environment variables with defaults and examples |
 | [Email Setup](docs/email.md) | SMTP, SendGrid, Mailjet, Postal — provider configuration guide plus admin UI workflow |
-| [Storage Setup](docs/storage.md) | SeaweedFS, MinIO, AWS S3 — object storage configuration |
+| [Storage Setup](docs/storage.md) | MinIO, AWS S3, SeaweedFS — object storage configuration |
 | [Deployment](docs/deployment.md) | Production deployment with Docker Compose and Traefik |
 | [Architecture](docs/architecture.md) | System design, layers, data model, security |
 | [Contributing](docs/contributing.md) | How to contribute, code style, PR workflow |
@@ -118,7 +119,7 @@ All configuration is done through environment variables. Copy `.env.dist` to `.e
 ```bash
 # Minimum required for production
 DB_PASSWORD=your-secure-password
-STORAGE_ENDPOINT=http://your-seaweedfs:8333
+STORAGE_ENDPOINT=http://your-minio:9000
 EMAIL_PROVIDER_TYPE=SENDGRID
 EMAIL_SMTP_HOST=smtp.sendgrid.net
 EMAIL_SMTP_PASSWORD=SG.your-api-key

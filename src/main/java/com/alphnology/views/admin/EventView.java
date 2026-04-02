@@ -2,6 +2,7 @@ package com.alphnology.views.admin;
 
 import com.alphnology.components.ConfirmationDialog;
 import com.alphnology.data.Event;
+import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.EventService;
 import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.CountryUtils;
@@ -18,8 +19,10 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.HasClearButton;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -36,6 +39,8 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.io.ByteArrayInputStream;
+import java.util.UUID;
 import static com.alphnology.utils.ViewHelper.*;
 
 @Slf4j
@@ -51,19 +56,26 @@ public class EventView extends VerticalLayout {
     private final ComboBox<String> timeZone = new ComboBox<>("Select a time zone");
     private final TextArea location = new TextArea("Location");
     private final Paragraph hint = new Paragraph();
+    private final Image image = new Image();
+    private Upload imageUpload;
+    private Button removeImageButton;
 
     private final Button cancel = new Button("Reset", VaadinIcon.REFRESH.create());
     private final Button save = new Button("Save", VaadinIcon.HARDDRIVE_O.create());
     private final Button delete = new Button("Delete", VaadinIcon.TRASH.create());
 
     private final transient EventService service;
+    private final transient ObjectStorageService storageService;
     private Event element;
+    private transient String photoKeyPendingDeletion;
 
     private final Binder<Event> binder = new BeanValidationBinder<>(Event.class);
 
     public EventView(EventService service,
+                     ObjectStorageService storageService,
                      @Value("${application.formatter.date:unknown}") String formatterDate) {
         this.service = service;
+        this.storageService = storageService;
 
         timeZone.setItems(CountryUtils.getAvailableZoneIds());
         timeZone.setPlaceholder("Choose a time zone");
@@ -111,6 +123,41 @@ public class EventView extends VerticalLayout {
         timeZone.setWidthFull();
         location.setWidthFull();
         hint.addClassNames(LumoUtility.Margin.NONE, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+        image.setWidthFull();
+        image.setVisible(false);
+        image.getStyle().set("max-height", "220px").set("object-fit", "contain");
+
+        var handler = UploadHandler.inMemory((meta, bytes) -> UI.getCurrent().access(() -> {
+            if (element == null) element = new Event();
+            if (element.getPhotoKey() != null) {
+                photoKeyPendingDeletion = element.getPhotoKey();
+            }
+            String key = "events/" + UUID.randomUUID();
+            String contentType = meta.contentType() != null ? meta.contentType() : "image/jpeg";
+            storageService.upload(key, new ByteArrayInputStream(bytes), bytes.length, contentType);
+            element.setPhotoKey(key);
+            image.setSrc(storageService.getSignedUrl(key));
+            image.setVisible(true);
+            removeImageButton.setVisible(true);
+        }));
+        imageUpload = new Upload(handler);
+        imageUpload.setAcceptedFileTypes("image/*");
+        imageUpload.setMaxFiles(1);
+        imageUpload.setDropLabel(new Span("Drag your event image here"));
+        imageUpload.setWidthFull();
+
+        removeImageButton = new Button("Remove image", VaadinIcon.TRASH.create(), event -> {
+            if (element != null && element.getPhotoKey() != null) {
+                photoKeyPendingDeletion = element.getPhotoKey();
+                element.setPhotoKey(null);
+            }
+            image.setSrc("");
+            image.setVisible(false);
+            imageUpload.clearFileList();
+            removeImageButton.setVisible(false);
+        });
+        removeImageButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_ERROR);
+        removeImageButton.setVisible(false);
 
         CommonUtils.commentsFormat(location, 100);
 
@@ -119,8 +166,8 @@ public class EventView extends VerticalLayout {
         formLayout.setPadding(false);
         formLayout.setSpacing(false);
         formLayout.setMargin(false);
-        formLayout.addClassNames(LumoUtility.Padding.SMALL);
-        formLayout.add(header, hint, name, startDate, endDate, timeZone, location);
+        formLayout.addClassNames(LumoUtility.Padding.SMALL, "admin-form-layout");
+        formLayout.add(header, hint, name, startDate, endDate, timeZone, location, imageUpload, image, removeImageButton);
         return formLayout;
     }
 
@@ -130,6 +177,15 @@ public class EventView extends VerticalLayout {
             binder.writeBean(this.element);
             ConfirmationDialog.confirmation(event -> {
                 service.save(element);
+                final String keyToDelete = photoKeyPendingDeletion;
+                if (keyToDelete != null && !keyToDelete.equals(element.getPhotoKey())) {
+                    try {
+                        storageService.delete(keyToDelete);
+                    } catch (Exception ex) {
+                        log.warn("Could not delete old event image: {}", keyToDelete, ex);
+                    }
+                }
+                photoKeyPendingDeletion = null;
                 populateForm(element);
                 updateHint();
                 NotificationUtils.success();
@@ -165,13 +221,14 @@ public class EventView extends VerticalLayout {
         HorizontalLayout buttonLayout = new HorizontalLayout(save, cancel, delete);
         buttonLayout.setFlexGrow(1, save, cancel, delete);
         buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM,
-                LumoUtility.Background.CONTRAST_10);
+                LumoUtility.Background.CONTRAST_10, "admin-form-footer");
         buttonLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         return buttonLayout;
     }
 
     private void clearForm() {
-        Event current = service.findAll().stream().findFirst().orElse(null);
+        discardUnsavedImageChanges();
+        Event current = service.findCurrentEvent().orElse(null);
         populateForm(current);
         updateHint();
 
@@ -181,11 +238,33 @@ public class EventView extends VerticalLayout {
     private void populateForm(Event value) {
         this.element = value;
         binder.readBean(this.element);
+        photoKeyPendingDeletion = null;
         delete.setEnabled(element != null);
+        if (imageUpload != null) {
+            imageUpload.clearFileList();
+        }
+        if (value != null && value.getPhotoKey() != null) {
+            try {
+                image.setSrc(storageService.getSignedUrl(value.getPhotoKey()));
+                image.setVisible(true);
+                removeImageButton.setVisible(true);
+            } catch (Exception e) {
+                log.warn("Could not load event image: {}", value.getPhotoKey(), e);
+                image.setSrc("");
+                image.setVisible(false);
+                removeImageButton.setVisible(false);
+            }
+        } else {
+            image.setSrc("");
+            image.setVisible(false);
+            if (removeImageButton != null) {
+                removeImageButton.setVisible(false);
+            }
+        }
     }
 
     private void loadEvent() {
-        Event current = service.findAll().stream().findFirst().orElse(null);
+        Event current = service.findCurrentEvent().orElse(null);
         populateForm(current);
         updateHint();
         if (current == null) {
@@ -209,7 +288,22 @@ public class EventView extends VerticalLayout {
                         ZonedDateTime now = ZonedDateTime.now(zoneId);
                         ZoneOffset offset = now.getOffset();
                         timeZone.setValue(String.format("%s (UTC%s)", id, offset));
-                    }
-                });
+            }
+        });
+    }
+
+    private void discardUnsavedImageChanges() {
+        Event persisted = service.findCurrentEvent().orElse(null);
+        String persistedPhotoKey = persisted != null ? persisted.getPhotoKey() : null;
+        String currentPhotoKey = element != null ? element.getPhotoKey() : null;
+
+        if (currentPhotoKey != null && !currentPhotoKey.equals(persistedPhotoKey)) {
+            try {
+                storageService.delete(currentPhotoKey);
+            } catch (Exception e) {
+                log.warn("Could not delete unsaved event image: {}", currentPhotoKey, e);
+            }
+        }
+        photoKeyPendingDeletion = null;
     }
 }

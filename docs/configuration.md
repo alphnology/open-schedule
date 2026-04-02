@@ -19,7 +19,7 @@ All configuration is done through environment variables. Copy `.env.dist` to `.e
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
 | `DB_HOST` | `localhost` | Yes | PostgreSQL hostname |
-| `DB_PORT` | `5432` | Yes | PostgreSQL port |
+| `DB_PORT` | `5433` | Yes | PostgreSQL port |
 | `DB_NAME` | `open-schedule` | Yes | Database name |
 | `DB_USER` | `postgres` | Yes | Database username |
 | `DB_PASSWORD` | `postgres` | **Yes** | Database password — change in production |
@@ -32,9 +32,9 @@ Open Schedule uses any S3-compatible object storage backend for speaker photos a
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STORAGE_ENDPOINT` | `http://localhost:8333` | S3 API endpoint (SeaweedFS default for dev) |
-| `STORAGE_ACCESS_KEY` | `any` | Access key (SeaweedFS unauthenticated in dev) |
-| `STORAGE_SECRET_KEY` | `any` | Secret key |
+| `STORAGE_ENDPOINT` | `http://localhost:9000` | S3 API endpoint (MinIO default for dev) |
+| `STORAGE_ACCESS_KEY` | `minioadmin` | Access key (MinIO default for dev) |
+| `STORAGE_SECRET_KEY` | `minioadmin` | Secret key |
 | `STORAGE_BUCKET` | `open-schedule` | Bucket / collection name |
 | `STORAGE_PUBLIC_ENDPOINT` | _(same as STORAGE_ENDPOINT)_ | Public URL for signed URLs. Set this when storage is behind a separate public hostname |
 | `STORAGE_SIGNED_URL_EXPIRY` | `3600` | Signed URL expiry in seconds |
