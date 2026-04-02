@@ -73,6 +73,14 @@ public class MailSettingsFormData {
     }
 
     public MailSettingsService.MailSettingsUpdateRequest toUpdateRequest() {
+        return toUpdateRequest(secret);
+    }
+
+    public MailSettingsService.MailSettingsUpdateRequest toUpdateRequestWithoutSecret() {
+        return toUpdateRequest(null);
+    }
+
+    private MailSettingsService.MailSettingsUpdateRequest toUpdateRequest(String secretValue) {
         return new MailSettingsService.MailSettingsUpdateRequest(
                 outboundEnabled,
                 providerType,
@@ -81,7 +89,7 @@ public class MailSettingsFormData {
                 host,
                 port,
                 username,
-                secret,
+                secretValue,
                 clearStoredSecret,
                 fromAddress,
                 fromName,

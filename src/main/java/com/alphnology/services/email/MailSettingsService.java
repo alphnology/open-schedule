@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -33,17 +34,17 @@ public class MailSettingsService {
         settings.setProviderType(request.providerType());
         settings.setSecurityMode(request.securityMode());
         settings.setAuthenticationEnabled(request.authenticationEnabled());
-        settings.setHost(trimToNull(request.host()));
+        settings.setHost(Objects.requireNonNull(trimToNull(request.host())));
         settings.setPort(request.port());
-        settings.setUsername(trimToNull(request.username()));
-        settings.setFromAddress(trimToNull(request.fromAddress()));
-        settings.setFromName(trimToNull(request.fromName()));
-        settings.setPostalBaseUrl(trimToNull(request.postalBaseUrl()));
-        settings.setPostalApiKeyHeader(trimToNull(request.postalApiKeyHeader()));
-        settings.setSslTrust(trimToNull(request.sslTrust()));
+        settings.setUsername(Objects.requireNonNull(trimToNull(request.username())));
+        settings.setFromAddress(Objects.requireNonNull(trimToNull(request.fromAddress())));
+        settings.setFromName(Objects.requireNonNull(trimToNull(request.fromName())));
+        settings.setPostalBaseUrl(Objects.requireNonNull(trimToNull(request.postalBaseUrl())));
+        settings.setPostalApiKeyHeader(Objects.requireNonNull(trimToNull(request.postalApiKeyHeader())));
+        settings.setSslTrust(Objects.requireNonNull(trimToNull(request.sslTrust())));
         settings.setConnectionTimeoutMs(request.connectionTimeoutMs());
         settings.setReadTimeoutMs(request.readTimeoutMs());
-        settings.setTestRecipient(trimToNull(request.testRecipient()));
+        settings.setTestRecipient(Objects.requireNonNull(trimToNull(request.testRecipient())));
 
         if (request.clearStoredSecret()) {
             settings.setEncryptedSecret(null);
