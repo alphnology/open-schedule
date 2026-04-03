@@ -4,7 +4,7 @@ services:
     volumes:
       - db_postgres:/var/lib/postgresql
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -19,27 +19,29 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1026:1025"
+      - "8026:8025"
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: "1"
       MP_SMTP_AUTH_ALLOW_INSECURE: "1"
 
-  seaweedfs:
-    image: chrislusf/seaweedfs:latest
-    command: server -s3 -s3.port=8333 -dir=/data -master.volumeSizeLimitMB=1024 -ip.bind=0.0.0.0
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
     ports:
-      - "9333:9333"   # master API
-      - "8080:8080"   # volume API
-      - "8333:8333"   # S3-compatible API
+      - "9000:9000"   # S3-compatible API
+      - "9001:9001"   # MinIO console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
     volumes:
-      - seaweedfs_data:/data
+      - minio_data:/data
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://localhost:9333/cluster/status || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
 
 volumes:
   db_postgres:
-  seaweedfs_data:
+  minio_data:

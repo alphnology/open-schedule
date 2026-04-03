@@ -50,7 +50,7 @@ spring:
   datasource:
     password: ${DB_PASSWORD:postgres}
     username: ${DB_USER:postgres}
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:open-schedule}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:open-schedule}
     driver-class-name: org.postgresql.Driver
 
   thymeleaf:
@@ -82,11 +82,19 @@ application:
     email: '^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$'
 
   email:
+    settings-master-key: ${EMAIL_SETTINGS_MASTER_KEY:}
+    allow-ui-secret-persistence: ${EMAIL_ALLOW_UI_SECRET_PERSISTENCE:false}
+    defaults:
+      outbound-enabled: ${EMAIL_OUTBOUND_ENABLED:${EMAIL_SMTP_ENABLED:true}}
+      provider-type: ${EMAIL_PROVIDER_TYPE:SMTP}
+      security-mode: ${EMAIL_SECURITY_MODE:STARTTLS}
+      authentication-enabled: ${EMAIL_AUTH_ENABLED:true}
+      connection-timeout-ms: ${EMAIL_CONNECTION_TIMEOUT_MS:10000}
+      read-timeout-ms: ${EMAIL_READ_TIMEOUT_MS:10000}
     from:
       address: ${EMAIL_FROM_ADDRESS:#{null}}
       name: ${EMAIL_FROM_NAME:Open Schedule}
     smtp:
-      enabled: ${EMAIL_SMTP_ENABLED:true}
       host: ${EMAIL_SMTP_HOST:}
       port: ${EMAIL_SMTP_PORT:587}
       username: ${EMAIL_SMTP_USERNAME:}
@@ -96,13 +104,14 @@ application:
       enabled: ${POSTAL_ENABLED:false}
       base-url: ${POSTAL_BASE_URL:}
       api-key: ${POSTAL_API_KEY:}
+      api-key-header: ${POSTAL_API_KEY_HEADER:X-Server-API-Key}
 
 
 storage:
   s3:
-    endpoint: ${STORAGE_ENDPOINT:http://localhost:8333}
-    access-key: ${STORAGE_ACCESS_KEY:any}
-    secret-key: ${STORAGE_SECRET_KEY:any}
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
     bucket: ${STORAGE_BUCKET:open-schedule}
     public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:}
     signed-url-expiry-seconds: ${STORAGE_SIGNED_URL_EXPIRY:3600}

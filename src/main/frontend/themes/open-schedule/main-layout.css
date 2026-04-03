@@ -1,12 +1,38 @@
+/* ============================================================
+   MAIN LAYOUT  — Open Schedule
+   Visual reference: Event Configuration Form design system
+   Design tokens: slate primary (#1E293B), secondary (#64748B),
+                  tertiary (#797391), border rgba(100,116,139,.12)
+   ============================================================ */
+
+/* ── 0. App-level background ─────────────────────────────── */
+html, body {
+    background:
+        radial-gradient(circle at top left, rgba(121, 115, 145, 0.09), transparent 30%),
+        linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
+    min-height: 100%;
+}
+
+/* ── 1. Drawer container (sidebar) ───────────────────────── */
+vaadin-app-layout::part(drawer) {
+    background: linear-gradient(
+        180deg,
+        rgba(100, 116, 139, 0.07) 0%,
+        rgba(30, 41, 59, 0.02) 100%
+    );
+    border-right: 1px solid rgba(100, 116, 139, 0.12);
+    transition:
+        width     0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 2. Drawer scroller ──────────────────────────────────── */
 vaadin-scroller[slot="drawer"] {
     padding: var(--lumo-space-s);
     overflow-y: auto;
 }
 
-vaadin-side-nav-item vaadin-icon {
-    padding: 0;
-}
-
+/* ── 3. Drawer header & footer slots ─────────────────────── */
 [slot="drawer"]:is(header, footer) {
     display: flex;
     align-items: center;
@@ -20,6 +46,118 @@ vaadin-side-nav-item vaadin-icon {
     display: none;
 }
 
+/* ── 4. SideNav icon baseline ─────────────────────────────── */
+vaadin-side-nav-item vaadin-icon {
+    padding: 0;
+}
+
+/* ── 5. SideNav item — base link ──────────────────────────── */
+vaadin-side-nav-item::part(link) {
+    border-radius: 0.75rem;         /* 12 px — from reference */
+    font-size: 0.875rem;            /* 14 px */
+    font-weight: 600;
+    color: var(--lumo-secondary-text-color);
+    padding: 0.75rem 0.875rem;
+    gap: 0.75rem;
+    transition:
+        background-color  0.2s ease,
+        color             0.2s ease,
+        box-shadow        0.2s ease,
+        font-size         0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        padding           0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 6. SideNav hover ────────────────────────────────────── */
+vaadin-side-nav-item::part(link):hover {
+    background: rgba(100, 116, 139, 0.10);
+    color: var(--lumo-body-text-color);
+}
+
+/* ── 7. SideNav active / current item ────────────────────── */
+vaadin-side-nav-item[current]::part(link) {
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--lumo-body-text-color);
+    box-shadow:
+        inset 0 0 0 1px rgba(100, 116, 139, 0.14),
+        0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+/* ── 8. SideNav prefix icon transition ───────────────────── */
+vaadin-side-nav-item > [slot="prefix"] {
+    transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 9. Group toggle button ──────────────────────────────── */
+vaadin-side-nav-item::part(toggle-button) {
+    color: var(--lumo-secondary-text-color);
+}
+
+/* ── 10. External nav links ──────────────────────────────── */
+vaadin-side-nav-item.external::part(link) {
+    color: var(--lumo-primary-text-color);
+}
+
+vaadin-side-nav-item.external > vaadin-icon {
+    color: var(--lumo-primary-color);
+}
+
+vaadin-side-nav-item.external::part(link):hover {
+    color: var(--lumo-primary-text-color);
+    text-decoration: underline;
+}
+
+/* ── 11. Navbar (topbar) — glass effect ──────────────────── */
+[slot="navbar"] {
+    background: rgba(248, 250, 252, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(100, 116, 139, 0.10);
+    box-shadow: none;
+}
+
+/* ── 12. User menu popover header ───────────────────────── */
+.userMenuHeader {
+    background: var(--lumo-contrast-5pct);
+    padding: var(--lumo-space-s);
+    padding-inline-end: var(--lumo-space-l);
+    margin: 2px;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    line-height: var(--lumo-line-height-s);
+
+    & .userMenuNickname {
+        font-size: var(--lumo-font-size-s);
+        color: var(--lumo-secondary-text-color);
+    }
+}
+
+/* ── 13. Collapsed sidebar popover content ───────────────── */
+.collapsed-nav-popover-content {
+    color: var(--lumo-body-text-color);
+    font-size: var(--lumo-font-size-m);
+}
+
+/* ── 14. Utility: no-underline, hover, transition ────────── */
+.no-underline {
+    text-decoration: none !important;
+}
+
+.transition-colors {
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.hover\:bg-contrast-10:hover {
+    background-color: var(--lumo-contrast-10pct);
+}
+
+/* ── 15. Collapse toggle button ──────────────────────────── */
+.drawer-collapse-toggle {
+    cursor: pointer;
+    min-width: var(--lumo-size-s) !important;
+    width: var(--lumo-size-s) !important;
+}
+
+/* ── 16. Global Vaadin form-field sizing ─────────────────── */
 vaadin-grid,
 vaadin-upload,
 vaadin-select,
@@ -39,6 +177,7 @@ vaadin-multi-select-combo-box {
     --lumo-text-field-size: var(--lumo-size-s);
 }
 
+/* ── 17. Responsive flex-wrap helper ─────────────────────── */
 @media screen and (max-width: 1400px) {
     .flex-wrap-layout {
         flex-wrap: wrap;
@@ -46,89 +185,23 @@ vaadin-multi-select-combo-box {
     }
 }
 
-.userMenuHeader {
-    background: var(--lumo-contrast-5pct);
-    padding: var(--lumo-space-s);
-    padding-inline-end: var(--lumo-space-l);
-    margin: 2px;
-    align-items: center;
-    gap: var(--lumo-space-s);
-    line-height: var(--lumo-line-height-s);
-
-    & .userMenuNickname {
-        font-size: var(--lumo-font-size-s);
-        color: var(--lumo-secondary-text-color);
-    }
-}
-
-vaadin-side-nav-item.external::part(link) {
-    color: var(--lumo-primary-text-color);
-}
-
-vaadin-side-nav-item.external > vaadin-icon {
-    color: var(--lumo-primary-color);
-}
-
-vaadin-side-nav-item.external::part(link):hover {
-    color: var(--lumo-primary-text-color);
-    text-decoration: underline;
-}
-
-/* Popover menu item hover & transition */
-.no-underline {
-    text-decoration: none !important;
-}
-
-.transition-colors {
-    transition: background-color 150ms ease, color 150ms ease;
-}
-
-.hover\:bg-contrast-10:hover {
-    background-color: var(--lumo-contrast-10pct);
-}
-
-/* SideNav admin group label */
-vaadin-side-nav-item::part(toggle-button) {
-    color: var(--lumo-secondary-text-color);
-}
-
-/* Navbar shadow */
-[slot="navbar"] {
-    box-shadow: 0 1px 0 var(--lumo-contrast-10pct);
-}
-
-vaadin-app-layout::part(drawer) {
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-vaadin-side-nav-item::part(link) {
-    transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-vaadin-side-nav-item > [slot="prefix"] {
-    transition: font-size 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.drawer-collapse-toggle {
-    cursor: pointer;
-    min-width: var(--lumo-size-s) !important;
-    width: var(--lumo-size-s) !important;
-}
-
+/* ══════════════════════════════════════════════════════════
+   COLLAPSED SIDEBAR  (desktop only, ≥ 800 px)
+   All collapse/expand behavior preserved exactly as before.
+   ══════════════════════════════════════════════════════════ */
 @media (min-width: 800px) {
+    /* narrow the drawer */
     vaadin-app-layout.drawer-collapsed {
         --vaadin-app-layout-drawer-width: 72px;
     }
 
+    /* icon-only items: text hidden, icon centred */
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(link) {
         font-size: 0;
         gap: 0;
         justify-content: center;
         padding: var(--lumo-space-s);
-        border-radius: var(--lumo-border-radius-m);
+        border-radius: 0.625rem;
     }
 
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item > [slot="prefix"] {
@@ -138,14 +211,18 @@ vaadin-side-nav-item > [slot="prefix"] {
         flex-shrink: 0;
     }
 
+    /* active icon in collapsed state */
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item[current]::part(link) {
-        background-color: var(--lumo-primary-color-10pct);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.14);
     }
 
+    /* hover in collapsed state */
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(link):hover {
-        background-color: var(--lumo-contrast-5pct);
+        background: rgba(100, 116, 139, 0.10);
     }
 
+    /* hide toggle arrow & children in collapsed state */
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(toggle-button) {
         display: none;
     }
@@ -154,6 +231,7 @@ vaadin-side-nav-item > [slot="prefix"] {
         display: none;
     }
 
+    /* compact drawer header/footer when collapsed */
     vaadin-app-layout.drawer-collapsed header[slot="drawer"] {
         padding: var(--lumo-space-xs);
         justify-content: center;
@@ -167,19 +245,15 @@ vaadin-side-nav-item > [slot="prefix"] {
         padding: var(--lumo-space-xs);
     }
 
+    /* hide mobile toggle on desktop */
     .drawer-toggle-mobile {
         display: none !important;
     }
 }
 
+/* ── Mobile: hide the collapse toggle ───────────────────── */
 @media (max-width: 799px) {
     .drawer-collapse-toggle {
         display: none !important;
     }
-}
-
-/* Collapsed sidebar: group submenu flyout popover */
-.collapsed-nav-popover-content {
-    color: var(--lumo-body-text-color);
-    font-size: var(--lumo-font-size-m);
 }

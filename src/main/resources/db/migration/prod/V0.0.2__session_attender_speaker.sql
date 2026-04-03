@@ -19,8 +19,8 @@ CREATE INDEX idx_3646bc2ee8b2214d4cac8693c ON attender (name);
 CREATE INDEX idx_b3f7cb5284c093a7bfe65731e ON attender (last_name);
 
 
--- Migrate binary photo storage to MinIO object storage.
--- photo_key stores the MinIO object key (e.g., "speakers/{uuid}", "news/{uuid}").
+-- Migrate binary photo storage to S3-compatible object storage.
+-- photo_key stores the object key (e.g., "speakers/{uuid}", "news/{uuid}").
 -- Existing BYTEA data is dropped; photos must be re-uploaded via the admin UI.
 
 ALTER TABLE speakers

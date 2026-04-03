@@ -30,7 +30,7 @@ cd open-schedule
 cp .env.dist .env
 ```
 
-For local development the defaults in `.env.dist` work out of the box — Mailpit handles email and SeaweedFS handles storage with no credentials required. You do not need to edit `.env` to start developing.
+For local development the defaults in `.env.dist` work out of the box — Mailpit handles email and MinIO handles storage with known credentials. You do not need to edit `.env` to start developing.
 
 See [configuration.md](configuration.md) for the full variable reference.
 
@@ -43,9 +43,10 @@ docker compose up -d
 ```
 
 This starts:
-- **PostgreSQL 18** on port `5432`
-- **Mailpit** on ports `1025` (SMTP) and `8025` (web UI)
-- **SeaweedFS** on port `8333` (S3 API)
+- **PostgreSQL 18** on port `5433`
+- **Mailpit** on ports `1026` (SMTP) and `8026` (web UI)
+- **MinIO** on port `9000` (S3 API)
+- **MinIO Console** on port `9001`
 
 Wait ~10 seconds for PostgreSQL to be ready. Check status with:
 
@@ -80,8 +81,9 @@ Open the project in IntelliJ IDEA or VS Code and run `Application.java` with the
 | URL | Description |
 |-----|-------------|
 | `http://localhost:51675` | Application |
-| `http://localhost:8025` | Mailpit — all outbound emails appear here |
-| `http://localhost:8333` | SeaweedFS S3 API |
+| `http://localhost:8026` | Mailpit — all outbound emails appear here |
+| `http://localhost:9000` | MinIO S3 API |
+| `http://localhost:9001` | MinIO Console |
 
 ---
 

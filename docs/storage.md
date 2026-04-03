@@ -2,68 +2,73 @@
 
 Open Schedule uses any S3-compatible object storage backend to store speaker photos and file attachments. The storage layer is fully abstracted — switching providers requires only environment variable changes.
 
-**Default for local dev:** SeaweedFS (included in `docker-compose.yml`)
-**Recommended for production:** SeaweedFS, MinIO, AWS S3, or Cloudflare R2
+**Default for local dev:** MinIO (included in `docker-compose.yml`)
+**Recommended for production:** MinIO, AWS S3, SeaweedFS, or Cloudflare R2
 
 ---
 
 ## How it works
 
-The app uses the MinIO Java SDK as its S3 client. Because SeaweedFS, MinIO, AWS S3, and most S3-compatible services implement the same API, the SDK works identically against any of them — only the endpoint and credentials differ.
+The app uses the MinIO Java SDK as its S3-compatible client. Because SeaweedFS, MinIO, AWS S3, and most S3-compatible services implement the same API, the SDK works identically against any of them — only the endpoint and credentials differ.
 
 Objects are stored with a generated key (`speakers/{uuid}.jpg`). Signed URLs with configurable expiry are used for public access.
 
 ---
 
-## Provider 1 — SeaweedFS (recommended for self-hosting)
+## Provider 1 — MinIO (default for local development)
 
-SeaweedFS is a lightweight, high-performance distributed object store with a built-in S3-compatible API. It is the default in the development `docker-compose.yml`.
+MinIO is the default in the development `docker-compose.yml`. It is simple, explicit, and predictable for local testing.
 
 **Local dev (Docker):**
 
 ```bash
-docker compose up -d seaweedfs
-# S3 API available at http://localhost:8333
+docker compose up -d minio
+# S3 API available at http://localhost:9000
+# Console available at http://localhost:9001
 ```
 
 ```bash
-STORAGE_ENDPOINT=http://localhost:8333
-STORAGE_ACCESS_KEY=any
-STORAGE_SECRET_KEY=any
+STORAGE_ENDPOINT=http://localhost:9000
+STORAGE_ACCESS_KEY=minioadmin
+STORAGE_SECRET_KEY=minioadmin
 STORAGE_BUCKET=open-schedule
 STORAGE_PUBLIC_ENDPOINT=
 STORAGE_SIGNED_URL_EXPIRY=3600
 ```
 
-SeaweedFS runs without authentication by default. For production, enable IAM authentication in the SeaweedFS configuration and set real credentials.
+For production, replace the default development credentials with real ones and restrict network access.
 
 **Production Docker Compose snippet:**
 
 ```yaml
-seaweedfs:
-  image: chrislusf/seaweedfs:latest
-  command: server -s3 -s3.port=8333 -dir=/data -master.volumeSizeLimitMB=30000 -ip.bind=0.0.0.0
+minio:
+  image: minio/minio:latest
+  command: server /data --console-address ":9001"
   ports:
-    - "8333:8333"
+    - "9000:9000"
+    - "9001:9001"
+  environment:
+    - MINIO_ROOT_USER=minioadmin
+    - MINIO_ROOT_PASSWORD=minioadmin
   volumes:
-    - seaweedfs_data:/data
+    - minio_data:/data
   restart: unless-stopped
 ```
 
 ---
 
-## Provider 2 — MinIO
+## Provider 2 — SeaweedFS
 
 ```bash
-STORAGE_ENDPOINT=http://minio.yourdomain.com:9000
-STORAGE_ACCESS_KEY=your-minio-access-key
-STORAGE_SECRET_KEY=your-minio-secret-key
+STORAGE_ENDPOINT=http://localhost:8333
+STORAGE_ACCESS_KEY=your-seaweedfs-access-key
+STORAGE_SECRET_KEY=your-seaweedfs-secret-key
 STORAGE_BUCKET=open-schedule
-STORAGE_PUBLIC_ENDPOINT=https://minio-public.yourdomain.com
+STORAGE_PUBLIC_ENDPOINT=
 STORAGE_SIGNED_URL_EXPIRY=3600
 ```
 
-Create the bucket before starting the app, or let the app create it automatically on first upload (`ensureBucketExists()`).
+SeaweedFS can also work, but bucket/IAM behavior depends on how you configure auth on the server.
 
 ---
 
@@ -121,7 +126,7 @@ rclone ls old-provider:open-schedule | wc -l
 rclone ls new-provider:open-schedule | wc -l
 
 # 3. Update .env to point to new provider
-STORAGE_ENDPOINT=http://new-provider:8333
+STORAGE_ENDPOINT=http://new-provider:9000
 STORAGE_ACCESS_KEY=new-key
 STORAGE_SECRET_KEY=new-secret
 
@@ -137,12 +142,12 @@ No database changes are needed. Object keys are stored as-is in the `speakers.ph
 
 ```bash
 # Backup all objects to local directory using rclone
-rclone copy seaweedfs:open-schedule ./backup-$(date +%Y%m%d)/
+rclone copy minio:open-schedule ./backup-$(date +%Y%m%d)/
 
 # Or using AWS CLI pointed at your S3-compatible endpoint
-AWS_ACCESS_KEY_ID=any AWS_SECRET_ACCESS_KEY=any \
+AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin \
   aws s3 sync s3://open-schedule ./backup-$(date +%Y%m%d) \
-  --endpoint-url http://localhost:8333
+  --endpoint-url http://localhost:9000
 ```
 
 ---
@@ -154,5 +159,5 @@ AWS_ACCESS_KEY_ID=any AWS_SECRET_ACCESS_KEY=any \
 | Speaker photo not showing | Wrong `STORAGE_PUBLIC_ENDPOINT` | Set it to the publicly accessible URL |
 | Upload fails silently | Bucket doesn't exist and auto-create failed | Check `STORAGE_ACCESS_KEY` permissions and logs |
 | Signed URL expired | `STORAGE_SIGNED_URL_EXPIRY` too low | Increase value (e.g. `86400` for 24 hours) |
-| `Connection refused` to storage | SeaweedFS not running | `docker compose up -d seaweedfs` |
+| `Connection refused` to storage | MinIO not running | `docker compose up -d minio` |
 | `Invalid credentials` | Wrong access/secret key | Verify `STORAGE_ACCESS_KEY` and `STORAGE_SECRET_KEY` |

@@ -50,7 +50,7 @@ public class ConfirmationDialogBuilder {
 
     public ConfirmationDialogBuilder withConfirmText(String confirmText) {
         confirmDialog.setConfirmText(confirmText);
-        confirmDialog.setConfirmButtonTheme("tertiary primary");
+        confirmDialog.setConfirmButtonTheme("primary");
         return this;
     }
 

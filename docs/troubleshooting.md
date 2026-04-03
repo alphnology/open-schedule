@@ -53,7 +53,7 @@ The database has a migration that doesn't match the scripts. This usually means 
 ### `Connection refused` to PostgreSQL
 
 ```
-Connection to localhost:5432 refused.
+Connection to localhost:5433 refused.
 ```
 
 PostgreSQL is not running or not ready yet.
@@ -83,7 +83,7 @@ docker compose exec postgres psql -U postgres -c "\du"
 
 1. Check `STORAGE_PUBLIC_ENDPOINT` — this must be reachable from the browser, not just from the server.
 2. Check signed URL expiry: if `STORAGE_SIGNED_URL_EXPIRY` is very low (< 60s), URLs may expire before the browser loads them.
-3. Check SeaweedFS is running: `docker compose ps seaweedfs`
+3. Check MinIO is running: `docker compose ps minio`
 
 ### Upload fails silently
 
@@ -95,7 +95,7 @@ docker compose logs app-open-schedule | grep -i "Failed to upload\|storage"
 Common causes:
 - `STORAGE_ACCESS_KEY` / `STORAGE_SECRET_KEY` incorrect
 - Bucket does not exist and auto-creation failed (permissions issue)
-- SeaweedFS master is not ready
+- MinIO is not ready
 
 ---
 
@@ -105,7 +105,7 @@ Common causes:
 
 1. Confirm `EMAIL_SMTP_ENABLED=true` in your `.env`
 2. Check application logs: `grep -i email` in the logs
-3. If using Mailpit locally: ensure Mailpit container is running and check `http://localhost:8025`
+3. If using Mailpit locally: ensure Mailpit container is running and check `http://localhost:8026`
 4. If using Postal: verify `POSTAL_ENABLED=true` and the API key is valid
 
 ### `Authentication failed` (SMTP)
@@ -163,7 +163,7 @@ npm install -g pnpm
 
 ### Port already in use
 
-Another process is using port `51675`, `5432`, `8025`, or `8333`.
+Another process is using port `51675`, `5433`, `8026`, `9000`, or `9001`.
 
 ```bash
 # Find what's using port 51675
