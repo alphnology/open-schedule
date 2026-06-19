@@ -4,7 +4,6 @@ import com.alphnology.data.News;
 import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.NewsService;
 import com.alphnology.utils.DateTimeFormatterUtils;
-import org.springframework.util.StringUtils;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
@@ -13,16 +12,12 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.util.List;
 
-/**
- * @author me@fredpena.dev
- * @created 19/10/2025  - 08:56
- */
 @PageTitle("Noticias")
-//@PageTitle("News")
 @Route("news")
 @Menu(order = 2, icon = LineAwesomeIconUrl.NEWSPAPER)
 @AnonymousAllowed
@@ -37,10 +32,16 @@ public class NewsView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
 
         H1 header = new H1("Latest News");
-        header.addClassNames(LumoUtility.FontSize.XXXLARGE, LumoUtility.Margin.Bottom.LARGE);
+        header.addClassNames("public-page-header", LumoUtility.Margin.Bottom.LARGE);
 
         Div newsContainer = new Div();
-        newsContainer.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.LARGE, LumoUtility.MaxWidth.SCREEN_XLARGE);
+        newsContainer.addClassNames(
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.Gap.LARGE,
+                LumoUtility.MaxWidth.SCREEN_XLARGE
+        );
+
         Specification<News> spec = (root, query, cb) -> {
             assert query != null;
             query.orderBy(cb.desc(root.get("publishedAt")));
@@ -58,39 +59,51 @@ public class NewsView extends VerticalLayout {
 
     private Div createNewsCard(News news) {
         Div card = new Div();
-        card.addClassNames(LumoUtility.Background.BASE, LumoUtility.BorderRadius.LARGE, LumoUtility.BoxShadow.SMALL, LumoUtility.Padding.MEDIUM);
-        card.getStyle().set("overflow", "auto");
+        card.addClassName("news-card");
 
-        H2 title = new H2(news.getTitle());
-        title.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD);
+        // Body: flex row (image left + text right), collapses to column on mobile
+        Div body = new Div();
+        body.addClassNames(
+                "news-card-body",
+                LumoUtility.Display.FLEX,
+                LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.FlexDirection.Breakpoint.Medium.ROW
+        );
 
-        Image image = new Image();
         if (StringUtils.hasText(news.getPhotoKey())) {
-            image.setSrc(storageService.getSignedUrl(news.getPhotoKey()));
-            image.setAlt(news.getTitle());
-            image.getStyle().set("float", "left");
-            image.addClassNames(LumoUtility.Margin.Right.AUTO,
-                    LumoUtility.Margin.Bottom.SMALL,
-                    LumoUtility.Padding.MEDIUM,
-                    LumoUtility.AlignSelf.CENTER
-            );
-            image.setWidth("300px");
-            image.getStyle().set("object-fit", "cover");
-            image.addClassNames(LumoUtility.BorderRadius.MEDIUM);
-        } else {
-            image.setVisible(false);
+            Div imageWrap = new Div();
+            imageWrap.addClassName("news-image-wrap");
+            Image image = new Image(storageService.getSignedUrl(news.getPhotoKey()), news.getTitle());
+            image.addClassName("news-image");
+            imageWrap.add(image);
+            body.add(imageWrap);
         }
 
+        // Text section
+        H2 title = new H2(news.getTitle());
+        title.addClassName("news-card-title");
+
         Span author = new Span("By " + news.getAuthor().getName());
+        author.addClassName("news-meta-author");
+
+        Div dot = new Div();
+        dot.addClassName("news-meta-dot");
+
         Span date = new Span(news.getPublishedAt().format(DateTimeFormatterUtils.dateTimeFormatter));
-        Div metaInfo = new Div(author, date);
-        metaInfo.addClassNames(LumoUtility.Display.FLEX, LumoUtility.JustifyContent.BETWEEN, LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL, LumoUtility.Gap.LARGE);
+        date.addClassName("news-meta-date");
+
+        Div meta = new Div(author, dot, date);
+        meta.addClassName("news-card-meta");
 
         Div content = new Div();
         content.getElement().setProperty("innerHTML", news.getContent().replace("\n", "<br>"));
-        content.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.LineHeight.MEDIUM);
+        content.addClassName("news-card-content");
 
-        card.add(title, metaInfo, image, content);
+        Div textSection = new Div(title, meta, content);
+        textSection.addClassName("news-text-section");
+
+        body.add(textSection);
+        card.add(body);
         return card;
     }
 }

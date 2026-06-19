@@ -78,8 +78,7 @@ public class SpeakersView extends VerticalLayout {
         headerContainer.addClassNames(LumoUtility.Padding.NONE);
 
         H2 headerTitle = new H2("Speakers");
-        headerTitle.getStyle().set("color", "#17222F");
-        headerTitle.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.FontSize.XXXLARGE, LumoUtility.Padding.NONE);
+        headerTitle.addClassNames("public-page-header", LumoUtility.Margin.Bottom.NONE, LumoUtility.Padding.NONE);
 
         headerContainer.add(headerTitle);
 

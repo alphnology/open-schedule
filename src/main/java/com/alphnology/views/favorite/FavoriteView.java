@@ -58,7 +58,7 @@ public class FavoriteView extends Div {
         contentWrapper.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN, LumoUtility.Gap.LARGE);
 
         H2 title = new H2("My Favorite Sessions");
-        title.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.TextColor.PRIMARY);
+        title.addClassName("favorites-title");
 
         contentWrapper.add(title);
 
