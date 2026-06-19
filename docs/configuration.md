@@ -99,6 +99,23 @@ See [email.md](email.md) for complete provider setup guides.
 |----------|---------|-------------|
 | `APP_URL` | `https://alphnology.com` | Public base URL of the application — used in email links |
 | `APP_NAME` | `Open Schedule` | Application display name |
+| `BRANDING_EXTERNAL_CSS_PATH` | _(none)_ | Optional filesystem path to an external CSS file that overrides bundled theme tokens. Supports relative paths such as `./branding-overrides.css` |
+
+### External branding CSS
+
+Use this when you want the same build artifact to keep the default theme in dev while loading customer-specific colors in production.
+
+1. Copy `branding-overrides.example.css` to a real file next to your deployment, for example `branding-overrides.css`
+2. Override only the CSS variables or selectors you need
+3. Set `BRANDING_EXTERNAL_CSS_PATH` to that file path
+
+Example:
+
+```bash
+BRANDING_EXTERNAL_CSS_PATH=./branding-overrides.css
+```
+
+If the file is missing or the variable is blank, the bundled theme remains the only stylesheet.
 
 ---
 

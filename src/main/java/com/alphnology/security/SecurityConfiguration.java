@@ -23,7 +23,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/images/*.png", "/icons/**", "/line-awesome/**")
+                        .requestMatchers("/images/*.png", "/icons/**", "/line-awesome/**", "/branding-overrides/**")
                         .permitAll()
                         .requestMatchers("/share/**")
                         .anonymous())

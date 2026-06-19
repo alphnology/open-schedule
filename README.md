@@ -5,38 +5,81 @@
 <h1 align="center">Open Schedule</h1>
 
 <p align="center">
-  Modern conference schedule management — open source, self-hostable, production-ready.
+  Conference schedule management with a public attendee experience and an authenticated administrative back office.
 </p>
 
 <p align="center">
   <a href="https://github.com/alphnology/open-schedule/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/version-1.0.11-brightgreen.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.12-brightgreen.svg" alt="Version">
   <img src="https://img.shields.io/badge/Java-25-orange.svg" alt="Java">
   <img src="https://img.shields.io/badge/Spring%20Boot-4.x-brightgreen.svg" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/Vaadin-25-blue.svg" alt="Vaadin">
-  <a href="https://github.com/alphnology/open-schedule/actions/workflows/ci.yml"><img src="https://github.com/alphnology/open-schedule/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Vaadin-25.1.6-blue.svg" alt="Vaadin">
 </p>
 
 ---
 
-## What is Open Schedule?
+## Overview
 
-Open Schedule is a free, self-hostable web application for managing conference and event agendas. Built with Java 25, Spring Boot 4, and Vaadin 25, it gives organizers a powerful admin interface and attendees a clean, interactive schedule experience — all in a single deployable JAR.
+Open Schedule is a self-hostable event application built with Java 25, Spring Boot 4, and Vaadin 25. It combines:
 
-Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is now a general-purpose platform for any event format.
+- A public schedule and speaker experience
+- A protected admin area for operating the event
+- S3-compatible media storage for event, speaker, and news images
+- Runtime-configurable outbound email with an admin UI
+- PostgreSQL persistence with Flyway migrations
 
-> **Quick look:** sessions, speakers, rooms, tracks, live ratings, favorites, news, QR codes, vCards, PWA support, S3-compatible photo storage, and multi-provider email configurable from environment variables and an admin UI.
+The current application model is centered around a single active event record. The admin event screen intentionally manages one event configuration, not a list of events.
 
 ---
 
-## Features
+## Current Capabilities
 
-| Category | Features |
-|----------|----------|
-| **Admin** | Session CRUD, speaker management, room & track organization, tag system, attendee tracking, news/announcements, mail settings |
-| **Public** | Interactive schedule, speaker profiles, session ratings, favorites, QR share, vCard download |
-| **Infrastructure** | PostgreSQL, Flyway migrations, S3-compatible storage (MinIO / AWS S3 / SeaweedFS), multi-provider email with admin-managed runtime settings |
-| **Platform** | Docker deployment, Traefik reverse proxy, Let's Encrypt SSL, PWA, dark mode |
+### Public experience
+
+- Schedule browsing
+- Speaker directory and speaker detail views
+- News / announcements
+- Session rating for authenticated users
+- Favorite sessions for authenticated users
+- vCard / QR-based speaker sharing
+- Report issue view
+- About page
+
+### Admin area
+
+All admin views are protected with `ADMIN` role checks.
+
+- Dashboard
+- Event configuration
+- Speaker management
+- Session management
+- Room management
+- Track management
+- Tag management
+- News management
+- Attendee management
+- User management
+- Mail settings
+
+### Media and branding
+
+- Speaker images stored in S3-compatible object storage
+- News images stored in S3-compatible object storage
+- Event image stored in S3-compatible object storage
+- The drawer / sidebar logo uses the current event image when available
+- Falls back to `assets/logo.png` when no event image exists
+- Optional external CSS override file for customer-specific branding in production
+
+### Email
+
+- SMTP transport
+- Provider presets for SMTP, SendGrid, and Mailjet
+- Postal HTTP API transport
+- Admin UI for runtime mail settings
+- Optional encrypted secret persistence for mail credentials
+- Test email action from the admin panel
+- Sign-up welcome email
+- Forgot-password flow using a temporary password emailed to the user
 
 ---
 
@@ -45,55 +88,173 @@ Originally built for [JconfDominicana 2025](https://jconfdominicana.org/), it is
 | Layer | Technology |
 |-------|-----------|
 | Language | Java 25 |
-| Framework | Spring Boot 4.x |
-| UI | Vaadin 25 (server-side) |
-| Database | PostgreSQL 15 + Flyway |
-| Storage | MinIO (default dev) via S3-compatible client |
-| Email | Jakarta Mail · Postal HTTP API |
-| Proxy | Traefik v3 + Let's Encrypt |
-| Container | Docker + Docker Compose |
+| Backend | Spring Boot 4.0.6 |
+| UI | Vaadin Flow 25.1.6 |
+| Security | Spring Security + Vaadin Security |
+| Database | PostgreSQL 18 + Flyway |
+| Storage | S3-compatible object storage via MinIO Java client |
+| Email | Angus Mail + Postal HTTP API |
+| Templates | Thymeleaf |
+| Charts | ApexCharts |
+| Build | Maven |
+| Containers | Docker / Docker Compose |
 
 ---
 
-## Quick Start
+## Running the Project
 
-### Option A — Run with Docker (self-hosting)
+### Recommended local development
+
+This is the most accurate local workflow for the current repository state.
+
+1. Copy environment defaults:
 
 ```bash
-git clone https://github.com/alphnology/open-schedule.git
-cd open-schedule
-
 cp .env.dist .env
-# Edit .env — set DB_PASSWORD, EMAIL_*, STORAGE_*, EVENT_WEBSITE at minimum
-
-docker compose -f docker-compose-dev.yml up -d
 ```
 
-Open `http://localhost:51675`
-
-### Option B — Local development (IDE)
+2. Start local infrastructure:
 
 ```bash
-git clone https://github.com/alphnology/open-schedule.git
-cd open-schedule
-
-cp .env.dist .env            # Uses Mailpit + MinIO defaults — no edits needed for dev
-
-# Start infrastructure services
 docker compose up -d
-
-# Run the application (hot reload enabled)
-./mvnw spring-boot:run -Pdev
 ```
 
-**Service URLs:**
+This starts:
 
-| Service | URL |
-|---------|-----|
-| Application | http://localhost:51675 |
-| Mailpit (email catcher) | http://localhost:8025 |
-| MinIO S3 API | http://localhost:9000 |
-| MinIO Console | http://localhost:9001 |
+- PostgreSQL on `localhost:5433`
+- Mailpit SMTP on `localhost:1026`
+- Mailpit UI on `http://localhost:8026`
+- MinIO S3 API on `http://localhost:9000`
+- MinIO Console on `http://localhost:9001`
+
+3. Run the application:
+
+```bash
+./mvnw spring-boot:run
+```
+
+4. Open:
+
+- App: [http://localhost:51675](http://localhost:51675)
+- Mailpit UI: [http://localhost:8026](http://localhost:8026)
+- MinIO Console: [http://localhost:9001](http://localhost:9001)
+
+### Production-style build
+
+```bash
+make build
+```
+
+This produces the packaged JAR in `target/`.
+
+### Docker image build
+
+```bash
+make build-image
+```
+
+For AMD64:
+
+```bash
+make build-image-amd64
+```
+
+---
+
+## Configuration Highlights
+
+All configuration is environment-driven. The main areas are:
+
+- Database: `DB_*`
+- Application URLs and naming: `APP_*`, `EVENT_*`
+- Storage: `STORAGE_*`
+- Email: `EMAIL_*`, `POSTAL_*`
+- Optional external branding CSS: `BRANDING_EXTERNAL_CSS_PATH`
+
+Use these docs for full details:
+
+- [docs/configuration.md](docs/configuration.md)
+- [docs/email.md](docs/email.md)
+- [docs/storage.md](docs/storage.md)
+- [docs/deployment.md](docs/deployment.md)
+
+---
+
+## External Branding CSS
+
+The bundled theme is always the default. You can optionally load a CSS file from disk to override visual tokens without rebuilding the JAR.
+
+Example:
+
+```bash
+cp branding-overrides.example.css branding-overrides.css
+export BRANDING_EXTERNAL_CSS_PATH=./branding-overrides.css
+```
+
+How it works:
+
+- If `BRANDING_EXTERNAL_CSS_PATH` is empty, only the internal theme is used
+- If the file exists, the app injects it after the bundled theme
+- It is served from `/branding-overrides/<filename>`
+
+Example local URL:
+
+- [http://localhost:51675/branding-overrides/branding-overrides.css](http://localhost:51675/branding-overrides/branding-overrides.css)
+
+---
+
+## Storage Behavior
+
+Open Schedule currently uses object storage for:
+
+- Event header image
+- Speaker profile photos
+- News images
+
+The application targets S3-compatible APIs and works well with MinIO for development. Other compatible providers can be used as long as the endpoint and credentials are valid.
+
+When the current event has an uploaded image, that image is shown in the main layout drawer. If not, the app falls back to `assets/logo.png`.
+
+---
+
+## Authentication and Access
+
+Public routes are available for schedule browsing and related attendee flows.
+
+Administrative routes require authenticated users with `ADMIN` role.
+
+Important current behaviors:
+
+- Sign-up is publicly accessible
+- Forgot password sends a temporary password by email
+- Session rating and favorites require a logged-in user session
+- Mail settings are admin-only
+
+---
+
+## Repository Structure
+
+| Path | Purpose |
+|------|---------|
+| `src/main/java/com/alphnology/views` | Vaadin views, including public and admin UI |
+| `src/main/java/com/alphnology/services` | Application services |
+| `src/main/java/com/alphnology/services/email` | Mail settings, sending, provider abstraction |
+| `src/main/java/com/alphnology/infrastructure/storage` | S3-compatible object storage integration |
+| `src/main/resources/db/migration` | Flyway migrations |
+| `src/main/frontend/themes/open-schedule` | Theme and CSS |
+| `docs/` | Project documentation |
+
+---
+
+## Notable Current Features
+
+- Single-event admin form with image upload
+- Admin mail settings with provider switching and test email
+- Postal support via HTTP API
+- External branding CSS loaded from filesystem
+- Responsive admin shell with collapsible sidebar
+- Public speaker vCard generation
+- QR export for speakers from admin
 
 ---
 
@@ -101,60 +262,26 @@ docker compose up -d
 
 | Guide | Description |
 |-------|-------------|
-| [Getting Started](docs/getting-started.md) | Local dev setup, prerequisites, IDE workflow |
-| [Configuration](docs/configuration.md) | All environment variables with defaults and examples |
-| [Email Setup](docs/email.md) | SMTP, SendGrid, Mailjet, Postal — provider configuration guide plus admin UI workflow |
-| [Storage Setup](docs/storage.md) | MinIO, AWS S3, SeaweedFS — object storage configuration |
-| [Deployment](docs/deployment.md) | Production deployment with Docker Compose and Traefik |
-| [Architecture](docs/architecture.md) | System design, layers, data model, security |
-| [Contributing](docs/contributing.md) | How to contribute, code style, PR workflow |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+| [docs/getting-started.md](docs/getting-started.md) | Local setup and development workflow |
+| [docs/configuration.md](docs/configuration.md) | Environment variables and configuration reference |
+| [docs/email.md](docs/email.md) | SMTP, SendGrid, Mailjet, Postal, and admin mail settings |
+| [docs/storage.md](docs/storage.md) | S3-compatible storage configuration |
+| [docs/deployment.md](docs/deployment.md) | Production deployment notes |
+| [docs/architecture.md](docs/architecture.md) | Application structure and technical overview |
+| [docs/contributing.md](docs/contributing.md) | Contribution workflow |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common issues and fixes |
 
 ---
 
-## Configuration at a Glance
+## Notes
 
-All configuration is done through environment variables. Copy `.env.dist` to `.env` and fill in your values.
-
-```bash
-# Minimum required for production
-DB_PASSWORD=your-secure-password
-STORAGE_ENDPOINT=http://your-minio:9000
-EMAIL_PROVIDER_TYPE=SENDGRID
-EMAIL_SMTP_HOST=smtp.sendgrid.net
-EMAIL_SMTP_PASSWORD=SG.your-api-key
-EMAIL_FROM_ADDRESS=no-reply@yourconference.com
-EVENT_WEBSITE=https://yourconference.com
-APP_URL=https://schedule.yourconference.com
-```
-
-See [docs/configuration.md](docs/configuration.md) for the full reference.
-
----
-
-## Contributing
-
-We welcome contributions of all kinds — bug reports, feature requests, documentation improvements, and code.
-
-1. **Fork** the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit with [Conventional Commits](https://www.conventionalcommits.org/): `git commit -m "feat: add session export"`
-4. Push and open a Pull Request against `main`
-
-See [docs/contributing.md](docs/contributing.md) for the full guide including setup, code style, and review expectations.
+- `docker-compose.yml` is the best local-dev compose entrypoint today because it includes PostgreSQL, Mailpit, and MinIO.
+- The app depends on valid S3-compatible storage configuration for image upload features.
+- The current password recovery flow is temporary-password based, not magic-link based.
+- The branding override mechanism is optional and safe to leave disabled.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">
-  Built and maintained by <a href="https://alphnology.com">Alphnology</a>
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/2148a45c-c922-4e51-8f96-ca492409f7c1" alt="Alphnology" width="160"/>
-</p>
+MIT — see [LICENSE](LICENSE).

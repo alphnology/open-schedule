@@ -64,6 +64,8 @@ application:
   url: ${APP_URL:https://alphnology.com}
   name: ${APP_NAME:@project.description@}
   version: @project.version@
+  branding:
+    external-css-path: ${BRANDING_EXTERNAL_CSS_PATH:}
 
 
   formatter:

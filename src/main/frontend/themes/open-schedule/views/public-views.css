@@ -16,8 +16,8 @@
 .schedule-notice {
     font-size: 0.8125rem;
     color: var(--os-secondary);
-    background: rgba(100, 116, 139, 0.06);
-    border: 1px solid rgba(100, 116, 139, 0.12);
+    background: color-mix(in srgb, var(--os-secondary) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--os-secondary) 12%, transparent);
     border-radius: 0.5rem;
     padding: 0.3rem 0.75rem;
     align-self: center;
