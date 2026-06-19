@@ -1,10 +1,13 @@
-.PHONY: help build image image-amd64 clean logs restart build-image build-image-amd64 build-push-image build-push-image-amd64
+.PHONY: default test help
 
 default: help
 
 PROJECT_VERSION := $(shell mvn help:evaluate -q -DforceStdout -D"expression=project.version")
 PROJECT_NAME=$(shell mvn help:evaluate -q -DforceStdout -D"expression=project.name")
 PROJECT_DOCKER_REPOSITORY=alphnology/${PROJECT_NAME}
+LATEST=latest
+
+COMMIT := $(shell git rev-parse --short HEAD)
 
 # COLORS
 GREEN  := $(shell tput -Txterm setaf 2)
@@ -13,8 +16,8 @@ WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
 
-TARGET_MAX_CHAR_NUM=22
-## Show this help.
+TARGET_MAX_CHAR_NUM=20
+# Show this help.
 help:
 	@echo ''
 	@echo '       ${YELLOW}Project ${GREEN}${PROJECT_NAME}${RESET}'
@@ -33,10 +36,9 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
+## Clean and build
 PROJECT_DEPENDENCY=dependency:go-offline -Pproduction
 PROJECT_CLEAN_PACKAGE=clean package -DskipTests -Pproduction
-
-## Clean and build the project.
 build:
 	@echo '${GREEN}Building the project: ${RESET}'$(PROJECT_NAME)
 ifeq ($(OS),Windows_NT)
@@ -54,51 +56,51 @@ endif
 image:
 	@echo '${GREEN}building ${RESET}'$(PROJECT_NAME)
 	@echo '${GREEN}PROJECT_DOCKER_REPOSITORY ${RESET}'$(PROJECT_DOCKER_REPOSITORY):$(PROJECT_VERSION)
-	@docker build -t ${PROJECT_DOCKER_REPOSITORY} .
+	@docker build -t ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION} -t ${PROJECT_DOCKER_REPOSITORY}:${LATEST} -t ${PROJECT_DOCKER_REPOSITORY} .
 
-## Create the docker image for amd64 platform.
 image-amd64:
 	@echo '${GREEN}building ${RESET}'$(PROJECT_NAME)
 	@echo '${GREEN}PROJECT_DOCKER_REPOSITORY ${RESET}'$(PROJECT_DOCKER_REPOSITORY):$(PROJECT_VERSION)
 ifeq ($(OS),Windows_NT)
-	@docker build -t ${PROJECT_DOCKER_REPOSITORY} .
+	@docker build -t ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION} -t ${PROJECT_DOCKER_REPOSITORY}:${LATEST} -t ${PROJECT_DOCKER_REPOSITORY} .
 else
-	@docker buildx build --platform linux/amd64 -o type=docker -t ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION} .
+	@docker buildx build --platform linux/amd64 -o type=docker -t ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION} -t ${PROJECT_DOCKER_REPOSITORY}:${LATEST} -t ${PROJECT_DOCKER_REPOSITORY} .
 endif
 
-## Clean docker images and restart containers.
+## Clean docker image
 clean:
 	@echo '${GREEN}Clean docker image ${RESET}'$(PROJECT_NAME)
 	docker compose down -v
 	docker compose up -d
 
-## Show logs from Docker containers.
-logs:
-	@echo '${GREEN}Show logs docker image ${RESET}'$(PROJECT_NAME)
-	@docker compose logs -f
-
-## Clean and restart docker containers and run the application.
-restart: clean
-	@echo '${GREEN}Restart docker image ${RESET}'$(PROJECT_NAME)
 ifeq ($(OS),Windows_NT)
 	@.\mvnw.cmd
 else
 	@./mvnw
 endif
 
-## Build the project and create the docker image.
+## start full docker app (Using flyway)
+start-app:
+	@echo "Starting app (Using flyway)"
+	@docker compose up -d
+	@docker compose -f docker-compose-app.yml up -d
+
+## Create the docker image [build, image]
 build-image: build image
 
-## Build the project and create the docker image for amd64 platform.
 build-image-amd64: build image-amd64
 
-## Build, create, and push the docker image to DockerHub.
+## Push images to dockerhub
+build-push-image: build-image
+	@echo Pushing image to ECR
+	@echo '${GREEN}PROJECT_DOCKER_REPOSITORY ${RESET}'$(PROJECT_DOCKER_REPOSITORY):${PROJECT_VERSION}
+	@docker push ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION}
+	@docker push ${PROJECT_DOCKER_REPOSITORY}:${LATEST}
 
-## Build, create, and push the amd64 docker image to DockerHub.
+## Push images to dockerhub
 build-push-image-amd64: build-image-amd64
 	@echo Pushing image to ECR
 	@echo '${GREEN}PROJECT_DOCKER_REPOSITORY ${RESET}'$(PROJECT_DOCKER_REPOSITORY):${PROJECT_VERSION}
 	@docker push ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION}
-	@docker tag ${PROJECT_DOCKER_REPOSITORY}:${PROJECT_VERSION} ${PROJECT_DOCKER_REPOSITORY}:latest
-    @docker push ${PROJECT_DOCKER_REPOSITORY}:latest
+	@docker push ${PROJECT_DOCKER_REPOSITORY}:${LATEST}
 

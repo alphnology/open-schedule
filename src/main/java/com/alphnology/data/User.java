@@ -72,6 +72,11 @@ public class User implements Serializable {
 
     private boolean locked;
 
+    @PostLoad
+    private void postLoad() {
+        if (favoriteSessions == null) favoriteSessions = new HashSet<>();
+    }
+
     public void addToFavorite(Long session) {
         if (favoriteSessions == null) {
             favoriteSessions = new HashSet<>();

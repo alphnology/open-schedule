@@ -84,6 +84,7 @@ public class SpeakerView extends VerticalLayout {
     private Upload imageUpload;
     private final TextArea bio = new TextArea("Biography");
     private final ComboBox<Country> countryField = new ComboBox<>("Select a country");
+    private final List<Country> availableCountries = CountryUtils.getCountryNamesWithCodes();
 
     private final VerticalLayout socialLinksLayout = new VerticalLayout();
     private final Button addSocialLinkButton = new Button("Add social link", VaadinIcon.PLUS.create());
@@ -111,18 +112,15 @@ public class SpeakerView extends VerticalLayout {
         this.qrService = qrService;
         this.storageService = storageService;
 
-        countryField.setItems(CountryUtils.getCountryNamesWithCodes());
+        countryField.setItems(availableCountries);
         countryField.setPlaceholder("Choose a country");
+        countryField.setItemLabelGenerator(Country::getName);
 
-        binder.bindInstanceFields(this);
-        binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
-        });
         binder.forField(countryField)
                 .bind(speaker -> {
                             if (speaker == null) return null;
                             String code = speaker.getCountry();
-                            return CountryUtils.getCountryNamesWithCodes().stream()
+                            return availableCountries.stream()
                                     .filter(c -> Objects.equals(code, c.getCode()))
                                     .findFirst().orElse(null);
                         },
@@ -130,6 +128,10 @@ public class SpeakerView extends VerticalLayout {
                             if (speaker != null)
                                 speaker.setCountry(selected != null ? selected.getCode() : null);
                         });
+        binder.bindInstanceFields(this);
+        binder.getFields().forEach(field -> {
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
+        });
 
         initList();
 

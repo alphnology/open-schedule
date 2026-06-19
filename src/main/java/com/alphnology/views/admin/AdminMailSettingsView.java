@@ -14,13 +14,13 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Header;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -140,7 +140,10 @@ public class AdminMailSettingsView extends VerticalLayout {
             case SSL_TLS -> "SSL/TLS";
         });
 
+        providerType.setWidthFull();
+        securityMode.setWidthFull();
         host.setWidthFull();
+        port.setWidthFull();
         username.setWidthFull();
         fromAddress.setWidthFull();
         fromName.setWidthFull();
@@ -198,72 +201,73 @@ public class AdminMailSettingsView extends VerticalLayout {
     }
 
     private Component buildProviderSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("680px", 2),
-                new FormLayout.ResponsiveStep("980px", 3)
-        );
+        HorizontalLayout toggles = new HorizontalLayout(outboundEnabled, authenticationEnabled);
+        toggles.setWidthFull();
+        toggles.setWrap(true);
+        toggles.setAlignItems(FlexComponent.Alignment.CENTER);
+        toggles.addClassNames(LumoUtility.Gap.LARGE, LumoUtility.Padding.Bottom.SMALL);
 
-        formLayout.add(outboundEnabled, providerType, authenticationEnabled, securityMode, host, port, username, secret,
-                clearStoredSecret, postalBaseUrl, postalApiKeyHeader, sslTrust);
-        formLayout.setColspan(secret, 2);
-        formLayout.setColspan(postalBaseUrl, 2);
+        Div providerGrid = createMailSettingsGrid(providerType, securityMode);
+        Div smtpRow = createMailSettingsGrid(host, port);
+        Div credentialsRow = createMailSettingsGrid(username, sslTrust);
+        Div secretRow = createMailSettingsSingleColumn(secret);
+        Div postalBaseRow = createMailSettingsSingleColumn(postalBaseUrl);
+        Div postalHeaderRow = createMailSettingsGrid(postalApiKeyHeader);
+
+        VerticalLayout content = new VerticalLayout(
+                toggles,
+                providerGrid,
+                smtpRow,
+                credentialsRow,
+                secretRow,
+                postalBaseRow,
+                postalHeaderRow,
+                clearStoredSecret
+        );
+        content.setPadding(false);
+        content.setSpacing(false);
+        content.addClassNames(LumoUtility.Gap.SMALL, "admin-mail-section");
 
         Div card = createCard(
                 "Provider and credentials",
                 "Switch between SMTP, SendGrid, Mailjet, and Postal. Provider-specific defaults are applied without exposing secrets in the UI."
         );
-        card.add(formLayout);
+        card.add(content);
         return card;
     }
 
     private Component buildSenderSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("680px", 2)
-        );
-        formLayout.add(fromAddress, fromName);
+        Div senderGrid = createMailSettingsGrid(fromAddress, fromName);
 
         Div card = createCard(
                 "Sender identity",
                 "These values are used in transactional emails. Keep the sender aligned with your verified domain."
         );
-        card.add(formLayout);
+        card.add(senderGrid);
         return card;
     }
 
     private Component buildTimeoutSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("680px", 2)
-        );
-        formLayout.add(connectionTimeoutMs, readTimeoutMs);
+        connectionTimeoutMs.setWidthFull();
+        readTimeoutMs.setWidthFull();
+        Div timeoutGrid = createMailSettingsGrid(connectionTimeoutMs, readTimeoutMs);
 
         Div card = createCard(
                 "Timeouts and delivery behavior",
                 "Use conservative timeout values so the UI fails fast when a provider is unavailable."
         );
-        card.add(formLayout);
+        card.add(timeoutGrid);
         return card;
     }
 
     private Component buildTestSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
-        formLayout.add(testRecipient);
+        Div testGrid = createMailSettingsSingleColumn(testRecipient);
 
         Div card = createCard(
                 "Test email",
                 "Save the current settings and send a verification email to confirm the provider, credentials, and sender identity are working."
         );
-        card.add(formLayout);
+        card.add(testGrid);
         return card;
     }
 
@@ -284,6 +288,18 @@ public class AdminMailSettingsView extends VerticalLayout {
         );
         card.setWidthFull();
         return card;
+    }
+
+    private Div createMailSettingsGrid(Component... components) {
+        Div grid = new Div(components);
+        grid.addClassName("admin-mail-grid");
+        return grid;
+    }
+
+    private Div createMailSettingsSingleColumn(Component component) {
+        Div grid = new Div(component);
+        grid.addClassNames("admin-mail-grid", "admin-mail-grid-single");
+        return grid;
     }
 
     private void loadSettings() {

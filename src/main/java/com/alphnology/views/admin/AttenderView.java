@@ -101,10 +101,6 @@ public class AttenderView extends VerticalLayout {
         countryField.setItems(CountryUtils.getCountryNamesWithCodes());
         countryField.setPlaceholder("Choose a country");
 
-        binder.bindInstanceFields(this);
-        binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
-        });
         binder.forField(countryField)
                 .bind(attender -> {
                             if (attender == null) return null;
@@ -117,6 +113,10 @@ public class AttenderView extends VerticalLayout {
                             if (attender != null)
                                 attender.setCountry(selected != null ? selected.getCode() : null);
                         });
+        binder.bindInstanceFields(this);
+        binder.getFields().forEach(field -> {
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
+        });
 
         initList();
 

@@ -217,6 +217,31 @@
     margin: 0;
 }
 
+.admin-mail-section {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-mail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-mail-grid-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-mail-grid > * {
+    min-width: 0;
+}
+
+.admin-mail-section vaadin-checkbox {
+    margin-top: 0.25rem;
+}
+
 /* ══════════════════════════════════════════════════════════
    6. ADMIN STAT CARD (KPI tiles — Dashboard)
    ══════════════════════════════════════════════════════════ */
@@ -436,6 +461,10 @@
    Split layout stacks vertically on mobile (< 800px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 799px) {
+
+    .admin-mail-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 
     /* Stack the two panes */
     vaadin-split-layout {

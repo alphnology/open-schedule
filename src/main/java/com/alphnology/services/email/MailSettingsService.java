@@ -73,14 +73,14 @@ public class MailSettingsService {
     }
 
     private MailSettingsSnapshot toSnapshot(MailSettings settings) {
-        String fallbackHost = properties.getSmtp().getHost();
+        String fallbackHost = normalizePropertyValue(properties.getSmtp().getHost());
         Integer fallbackPort = properties.getSmtp().getPort();
-        String fallbackUser = properties.getSmtp().getUsername();
-        String fallbackFromAddress = properties.getFrom().getAddress();
-        String fallbackFromName = properties.getFrom().getName();
-        String fallbackPostalUrl = properties.getPostal().getBaseUrl();
-        String fallbackPostalHeader = properties.getPostal().getApiKeyHeader();
-        String fallbackSslTrust = properties.getSmtp().getSslTrust();
+        String fallbackUser = normalizePropertyValue(properties.getSmtp().getUsername());
+        String fallbackFromAddress = normalizePropertyValue(properties.getFrom().getAddress());
+        String fallbackFromName = normalizePropertyValue(properties.getFrom().getName());
+        String fallbackPostalUrl = normalizePropertyValue(properties.getPostal().getBaseUrl());
+        String fallbackPostalHeader = normalizePropertyValue(properties.getPostal().getApiKeyHeader());
+        String fallbackSslTrust = normalizePropertyValue(properties.getSmtp().getSslTrust());
         boolean secretPersisted = StringUtils.hasText(settings.getEncryptedSecret());
 
         return new MailSettingsSnapshot(
@@ -112,14 +112,14 @@ public class MailSettingsService {
         settings.setProviderType(resolveDefaultProvider());
         settings.setSecurityMode(properties.getDefaults().getSecurityMode());
         settings.setAuthenticationEnabled(properties.getDefaults().isAuthenticationEnabled());
-        settings.setHost(properties.getSmtp().getHost());
+        settings.setHost(normalizePropertyValue(properties.getSmtp().getHost()));
         settings.setPort(properties.getSmtp().getPort());
-        settings.setUsername(properties.getSmtp().getUsername());
-        settings.setFromAddress(properties.getFrom().getAddress());
-        settings.setFromName(properties.getFrom().getName());
-        settings.setPostalBaseUrl(properties.getPostal().getBaseUrl());
-        settings.setPostalApiKeyHeader(properties.getPostal().getApiKeyHeader());
-        settings.setSslTrust(properties.getSmtp().getSslTrust());
+        settings.setUsername(normalizePropertyValue(properties.getSmtp().getUsername()));
+        settings.setFromAddress(normalizePropertyValue(properties.getFrom().getAddress()));
+        settings.setFromName(normalizePropertyValue(properties.getFrom().getName()));
+        settings.setPostalBaseUrl(normalizePropertyValue(properties.getPostal().getBaseUrl()));
+        settings.setPostalApiKeyHeader(normalizePropertyValue(properties.getPostal().getApiKeyHeader()));
+        settings.setSslTrust(normalizePropertyValue(properties.getSmtp().getSslTrust()));
         settings.setConnectionTimeoutMs(properties.getDefaults().getConnectionTimeoutMs());
         settings.setReadTimeoutMs(properties.getDefaults().getReadTimeoutMs());
         applyProviderDefaults(settings);
@@ -170,6 +170,14 @@ public class MailSettingsService {
 
     private static String coalesce(String primary, String fallback) {
         return StringUtils.hasText(primary) ? primary : fallback;
+    }
+
+    private static String normalizePropertyValue(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return "#{null}".equals(trimmed) ? null : trimmed;
     }
 
     public record MailSettingsUpdateRequest(

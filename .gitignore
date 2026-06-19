@@ -31,5 +31,6 @@ webpack.generated.js
 
 # Production-only seed files (not committed to repo)
 speakers-seed.sql
+data-seed.sql
 letsencrypt/
 db_postgres/

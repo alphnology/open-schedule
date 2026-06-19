@@ -97,8 +97,11 @@ public class SpeakersViewDetails extends Div {
 
             String starDate = session.getStartTime().format(DateTimeFormatterUtils.dateFormatter);
             String startTime = session.getStartTime().format(DateTimeFormatterUtils.timeFormatter);
+            String roomName = session.getRoom() != null && StringUtils.hasText(session.getRoom().getName())
+                    ? session.getRoom().getName()
+                    : "Room TBD";
 
-            Span sessionSubtitle = new Span("%s - %s at %s".formatted(starDate, startTime, session.getRoom().getName()));
+            Span sessionSubtitle = new Span("%s - %s at %s".formatted(starDate, startTime, roomName));
             sessionSubtitle.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.TextColor.SECONDARY);
 
             Div tagSession = tagSession(session);
