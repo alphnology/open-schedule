@@ -1,6 +1,7 @@
 package com.alphnology.views.admin;
 
 import com.alphnology.components.ConfirmationDialog;
+import com.alphnology.components.EmptyStateComponent;
 import com.alphnology.data.Track;
 import com.alphnology.exceptions.DeleteConstraintViolationException;
 import com.alphnology.services.TrackService;
@@ -57,6 +58,9 @@ public class TrackView extends VerticalLayout {
     private final TextField searchField = new TextField();
     private final VirtualList<Track> list = new VirtualList<>();
     private final Span countBadge = new Span("0");
+    private final EmptyStateComponent emptyState = new EmptyStateComponent(
+            VaadinIcon.TAGS, "No tracks found", "Add a new track to get started."
+    );
     private Track selectedItem;
 
     private final TextField name = new TextField("Name");
@@ -92,7 +96,8 @@ public class TrackView extends VerticalLayout {
         toolbar.setFlexGrow(1, searchField);
         toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
-        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        emptyState.setVisible(false);
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list, emptyState);
         sidebar.setSizeFull();
         sidebar.setPadding(false);
         sidebar.setSpacing(false);
@@ -192,6 +197,9 @@ public class TrackView extends VerticalLayout {
         List<Track> items = service.findAll(createFilterSpecification());
         list.setItems(items);
         countBadge.setText(String.valueOf(items.size()));
+        boolean isEmpty = items.isEmpty();
+        list.setVisible(!isEmpty);
+        emptyState.setVisible(isEmpty);
     }
 
     private VerticalLayout createFormLayout() {

@@ -162,7 +162,7 @@ public class SpeakersViewDetails extends Div {
 
         Image country = new Image();
         country.setWidth("10%");
-        if (!speaker.getCountry().isEmpty()) {
+        if (StringUtils.hasText(speaker.getCountry())) {
             country.setSrc("https://flagcdn.com/%s.svg".formatted(speaker.getCountry().toLowerCase()));
             country.setAlt(speaker.getCountry());
 

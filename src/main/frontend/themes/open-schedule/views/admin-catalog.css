@@ -223,7 +223,7 @@
 .admin-stat-card {
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(226, 232, 240, 0.90);
-    border-radius: 0.875rem !important;          /* 14px */
+    border-radius: 1.25rem !important;           /* 20px — matches admin-card */
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
     flex: 1 1 180px;
     min-width: 160px;
@@ -280,10 +280,14 @@
 }
 
 .admin-list-item.selected {
-    background: rgba(255, 255, 255, 0.72);
+    background: linear-gradient(
+        to right,
+        var(--lumo-primary-color-10pct) 0%,
+        rgba(255, 255, 255, 0.82) 55%
+    );
     box-shadow:
-        inset 3px 0 0 var(--lumo-primary-color),
-        inset 0 0 0 1px rgba(100, 116, 139, 0.10);
+        inset 5px 0 0 var(--lumo-primary-color),
+        0 1px 4px rgba(15, 23, 42, 0.05);
 }
 
 /* ── Item icon circle ── */
@@ -399,7 +403,36 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   10. RESPONSIVE
+   10. EMPTY STATE
+   ══════════════════════════════════════════════════════════ */
+.admin-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    padding: 3rem 1.5rem;
+    color: var(--lumo-secondary-text-color);
+    text-align: center;
+}
+
+.admin-empty-state vaadin-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--lumo-contrast-30pct);
+}
+
+.admin-empty-state p {
+    font-size: 0.875rem;
+    margin: 0;
+    max-width: 220px;
+    line-height: 1.5;
+    color: var(--lumo-tertiary-text-color);
+}
+
+/* ══════════════════════════════════════════════════════════
+   11. RESPONSIVE
    Split layout stacks vertically on mobile (< 800px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 799px) {
