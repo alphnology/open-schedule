@@ -181,7 +181,9 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
                 SideNavItem parentItem = parentItems.computeIfAbsent(groupName, key -> {
                     String parentTitle = key.substring(0, 1).toUpperCase() + key.substring(1);
                     SideNavItem newParent = new SideNavItem(parentTitle);
-                    newParent.setPrefixComponent(new SvgIcon("line-awesome/svg/cog-solid.svg"));
+                    newParent.setPrefixComponent("admin".equals(key)
+                            ? LineAwesomeIcon.USER_SHIELD_SOLID.create()
+                            : LineAwesomeIcon.LAYER_GROUP_SOLID.create());
                     nav.addItem(newParent);
                     return newParent;
                 });

@@ -8,8 +8,8 @@
 /* ── 0. App-level background ─────────────────────────────── */
 html, body {
     background:
-        radial-gradient(circle at top left, rgba(121, 115, 145, 0.09), transparent 30%),
-        linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
+        radial-gradient(circle at top left, color-mix(in srgb, var(--os-tertiary) 9%, transparent), transparent 30%),
+        linear-gradient(180deg, var(--lumo-base-color) 0%, color-mix(in srgb, var(--lumo-base-color) 72%, var(--os-surface-soft)) 100%);
     min-height: 100%;
 }
 
@@ -17,10 +17,10 @@ html, body {
 vaadin-app-layout::part(drawer) {
     background: linear-gradient(
         180deg,
-        rgba(100, 116, 139, 0.07) 0%,
-        rgba(30, 41, 59, 0.02) 100%
+        color-mix(in srgb, var(--os-secondary) 7%, transparent) 0%,
+        color-mix(in srgb, var(--os-primary) 2%, transparent) 100%
     );
-    border-right: 1px solid rgba(100, 116, 139, 0.12);
+    border-right: 1px solid color-mix(in srgb, var(--os-secondary) 12%, transparent);
     transition:
         width     0.3s cubic-bezier(0.4, 0, 0.2, 1),
         min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -69,16 +69,16 @@ vaadin-side-nav-item::part(link) {
 
 /* ── 6. SideNav hover ────────────────────────────────────── */
 vaadin-side-nav-item::part(link):hover {
-    background: rgba(100, 116, 139, 0.10);
+    background: color-mix(in srgb, var(--os-secondary) 10%, transparent);
     color: var(--lumo-body-text-color);
 }
 
 /* ── 7. SideNav active / current item ────────────────────── */
 vaadin-side-nav-item[current]::part(link) {
-    background: rgba(255, 255, 255, 0.78);
+    background: color-mix(in srgb, var(--os-surface) 78%, transparent);
     color: var(--lumo-body-text-color);
     box-shadow:
-        inset 0 0 0 1px rgba(100, 116, 139, 0.14),
+        inset 0 0 0 1px color-mix(in srgb, var(--os-secondary) 14%, transparent),
         0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
@@ -108,10 +108,10 @@ vaadin-side-nav-item.external::part(link):hover {
 
 /* ── 11. Navbar (topbar) — glass effect ──────────────────── */
 [slot="navbar"] {
-    background: rgba(248, 250, 252, 0.92);
+    background: color-mix(in srgb, var(--lumo-base-color) 92%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(100, 116, 139, 0.10);
+    border-bottom: 1px solid color-mix(in srgb, var(--os-secondary) 10%, transparent);
     box-shadow: none;
 }
 
@@ -213,13 +213,13 @@ vaadin-multi-select-combo-box {
 
     /* active icon in collapsed state */
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item[current]::part(link) {
-        background: rgba(255, 255, 255, 0.78);
-        box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.14);
+        background: color-mix(in srgb, var(--os-surface) 78%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--os-secondary) 14%, transparent);
     }
 
     /* hover in collapsed state */
     vaadin-app-layout.drawer-collapsed vaadin-side-nav-item::part(link):hover {
-        background: rgba(100, 116, 139, 0.10);
+        background: color-mix(in srgb, var(--os-secondary) 10%, transparent);
     }
 
     /* hide toggle arrow & children in collapsed state */
@@ -253,6 +253,20 @@ vaadin-multi-select-combo-box {
 
 /* ── Mobile: hide the collapse toggle ───────────────────── */
 @media (max-width: 799px) {
+    vaadin-app-layout::part(drawer) {
+        background: var(--lumo-base-color);
+        border-right: 1px solid color-mix(in srgb, var(--os-secondary) 14%, transparent);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    vaadin-scroller[slot="drawer"],
+    header[slot="drawer"],
+    footer[slot="drawer"] {
+        background: var(--lumo-base-color);
+    }
+
     .drawer-collapse-toggle {
         display: none !important;
     }

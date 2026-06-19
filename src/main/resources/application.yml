@@ -64,6 +64,8 @@ application:
   url: ${APP_URL:https://alphnology.com}
   name: ${APP_NAME:@project.description@}
   version: @project.version@
+  branding:
+    external-css-path: ${BRANDING_EXTERNAL_CSS_PATH:}
 
 
   formatter:
@@ -92,7 +94,7 @@ application:
       connection-timeout-ms: ${EMAIL_CONNECTION_TIMEOUT_MS:10000}
       read-timeout-ms: ${EMAIL_READ_TIMEOUT_MS:10000}
     from:
-      address: ${EMAIL_FROM_ADDRESS:#{null}}
+      address: ${EMAIL_FROM_ADDRESS:}
       name: ${EMAIL_FROM_NAME:Open Schedule}
     smtp:
       host: ${EMAIL_SMTP_HOST:}

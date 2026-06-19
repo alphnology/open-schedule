@@ -32,7 +32,7 @@ public class SessionHelper {
             Span span = new Span(tag.getName());
             span.addClassNames(LumoUtility.FontSize.MEDIUM);
             span.addClassNames(LumoUtility.Padding.Horizontal.SMALL, LumoUtility.Margin.Vertical.XSMALL, LumoUtility.BorderRadius.MEDIUM);
-            span.getStyle().set("background-color", tag.getColor()).set("color", "white");
+//            span.getStyle().set("background-color", tag.getColor()).set("color", "white");
             span.getStyle().setCursor("pointer");
             span.addClickListener(event -> {
             });

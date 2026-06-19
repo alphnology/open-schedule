@@ -90,11 +90,7 @@ public class ScheduleView extends VerticalLayout {
         VaadinSession.getCurrent().setAttribute(Event.class, event);
 
         Span notice = new Span("Notice: Agenda topics are subject to change.");
-        notice.addClassNames(
-                LumoUtility.TextColor.SECONDARY,
-                LumoUtility.FontSize.SMALL,
-                LumoUtility.AlignSelf.CENTER
-        );
+        notice.addClassName("schedule-notice");
 
         searchField.focus();
         searchField.addClassNames(LumoUtility.Flex.GROW, LumoUtility.MinWidth.NONE);

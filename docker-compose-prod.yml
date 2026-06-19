@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: "traefik:v3.4"
+    image: "traefik:v3.7.5"
     container_name: "traefik"
     restart: unless-stopped
     command:
@@ -35,10 +35,10 @@ services:
       #- # htpasswd echo $(htpasswd -nb admin "your_password")
 
   postgres:
-    image: postgres:15
+    image: postgres:18.1
     restart: unless-stopped
     volumes:
-      - ./db_postgres:/var/lib/postgresql/data
+      - ./db_postgres:/var/lib/postgresql
     ports:
       - "5432:5432"
     environment:
@@ -67,6 +67,13 @@ services:
       - ./assets:/assets
     networks:
       - alphnology-traefik
+    healthcheck:
+      # Port 51675 becomes available only after Spring Boot + Flyway complete startup
+      test: ["CMD-SHELL", "timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/51675' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.openschedule.rule=Host(`openschedule.alphnology.com`)"

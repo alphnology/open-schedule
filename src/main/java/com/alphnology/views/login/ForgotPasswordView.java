@@ -6,7 +6,6 @@ import com.alphnology.services.email.EmailOpenScheduleService;
 import com.alphnology.utils.ImageUtils;
 import com.alphnology.utils.NotificationUtils;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.Uses;
@@ -52,30 +51,29 @@ public class ForgotPasswordView extends VerticalLayout {
         setSizeFull();
         setJustifyContentMode(JustifyContentMode.CENTER);
         setAlignItems(Alignment.CENTER);
-        setPadding(true);
-        setSpacing(true);
+        setPadding(false);
+        addClassName("auth-page-bg");
 
         this.userService = userService;
 
         Image logo = ImageUtils.getMainImage();
-        logo.setHeight("100px");
+        logo.addClassName("auth-logo");
 
         H2 title = new H2("Forgot Your Password?");
-        title.getStyle().set("color", "#17222F");
+        title.addClassName("auth-title");
 
-        Span instructions = new Span("Enter your email address. We'll send you a temporary password if your account exists.");
-        instructions.getStyle().set("color", "#1B3A4B");
+        Span instructions = new Span("Enter your email and we'll send you a temporary password if your account exists.");
+        instructions.addClassName("auth-subtitle");
 
-        usernameField.setPlaceholder("you@open-schedule.com");
+        usernameField.setPlaceholder("you@example.com");
         usernameField.setClearButtonVisible(true);
-        usernameField.setWidth(300, Unit.PIXELS);
+        usernameField.setWidthFull();
 
-        sendResetButton.setWidth(300, Unit.PIXELS);
+        sendResetButton.setWidthFull();
         sendResetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
-        backToLoginButton.setWidth(300, Unit.PIXELS);
+        backToLoginButton.setWidthFull();
         backToLoginButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-
 
         binder.forField(usernameField)
                 .asRequired("Email is required")
@@ -110,18 +108,13 @@ public class ForgotPasswordView extends VerticalLayout {
 
         backToLoginButton.addClickListener(e -> UI.getCurrent().navigate(LoginView.class));
 
+        VerticalLayout card = new VerticalLayout(logo, title, instructions, usernameField, sendResetButton, backToLoginButton);
+        card.setAlignItems(Alignment.CENTER);
+        card.setSpacing(true);
+        card.setPadding(false);
+        card.addClassName("auth-card");
 
-        VerticalLayout formLayout = new VerticalLayout(logo, title, instructions, usernameField, sendResetButton, backToLoginButton);
-
-        formLayout.setAlignItems(Alignment.CENTER);
-        formLayout.setSpacing(true);
-        formLayout.getStyle()
-                .set("background", "#FFFFFF")
-                .set("padding", "40px")
-                .set("border-radius", "8px")
-                .set("box-shadow", "0 0 12px rgba(23, 34, 47, 0.1)");
-
-        add(formLayout);
+        add(card);
     }
 
     private Optional<User> validateAndSendTemporaryPassword(String email) {
@@ -132,7 +125,5 @@ public class ForgotPasswordView extends VerticalLayout {
     @Getter
     public static class ForgotPasswordModel {
         private String email;
-
     }
-
 }

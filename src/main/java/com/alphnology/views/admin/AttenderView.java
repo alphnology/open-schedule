@@ -1,6 +1,7 @@
 package com.alphnology.views.admin;
 
 import com.alphnology.components.ConfirmationDialog;
+import com.alphnology.components.EmptyStateComponent;
 import com.alphnology.data.Attender;
 import com.alphnology.data.Contactable;
 import com.alphnology.data.Country;
@@ -66,6 +67,9 @@ public class AttenderView extends VerticalLayout {
     private final TextField searchField = new TextField();
     private final VirtualList<Attender> list = new VirtualList<>();
     private final Span countBadge = new Span("0");
+    private final EmptyStateComponent emptyState = new EmptyStateComponent(
+            VaadinIcon.USER, "No attendees found", "No one has registered yet."
+    );
     private Attender selectedItem;
 
     private final TextField name = new TextField("Name");
@@ -97,10 +101,6 @@ public class AttenderView extends VerticalLayout {
         countryField.setItems(CountryUtils.getCountryNamesWithCodes());
         countryField.setPlaceholder("Choose a country");
 
-        binder.bindInstanceFields(this);
-        binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
-        });
         binder.forField(countryField)
                 .bind(attender -> {
                             if (attender == null) return null;
@@ -113,6 +113,10 @@ public class AttenderView extends VerticalLayout {
                             if (attender != null)
                                 attender.setCountry(selected != null ? selected.getCode() : null);
                         });
+        binder.bindInstanceFields(this);
+        binder.getFields().forEach(field -> {
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
+        });
 
         initList();
 
@@ -130,7 +134,8 @@ public class AttenderView extends VerticalLayout {
         toolbar.setFlexGrow(1, searchField);
         toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
-        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        emptyState.setVisible(false);
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list, emptyState);
         sidebar.setSizeFull();
         sidebar.setPadding(false);
         sidebar.setSpacing(false);
@@ -281,6 +286,9 @@ public class AttenderView extends VerticalLayout {
         List<Attender> items = service.findAll(createFilterSpecification());
         list.setItems(items);
         countBadge.setText(String.valueOf(items.size()));
+        boolean isEmpty = items.isEmpty();
+        list.setVisible(!isEmpty);
+        emptyState.setVisible(isEmpty);
     }
 
     private VerticalLayout createFormLayout() {

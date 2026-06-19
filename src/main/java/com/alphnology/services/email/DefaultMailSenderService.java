@@ -32,6 +32,11 @@ public class DefaultMailSenderService implements MailSenderService {
     @Override
     public void sendTestEmail(String recipient) throws EmailSendException {
         MailSettingsSnapshot settings = mailSettingsService.getEffectiveSettings();
+        sendTestEmail(recipient, settings);
+    }
+
+    @Override
+    public void sendTestEmail(String recipient, MailSettingsSnapshot settings) throws EmailSendException {
         if (!settings.outboundEnabled()) {
             throw new EmailSendException("Outbound email is disabled");
         }

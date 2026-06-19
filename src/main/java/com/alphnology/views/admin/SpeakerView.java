@@ -1,6 +1,7 @@
 package com.alphnology.views.admin;
 
 import com.alphnology.components.ConfirmationDialog;
+import com.alphnology.components.EmptyStateComponent;
 import com.alphnology.data.Contactable;
 import com.alphnology.data.Country;
 import com.alphnology.data.Speaker;
@@ -69,6 +70,9 @@ public class SpeakerView extends VerticalLayout {
     private final TextField searchField = new TextField();
     private final VirtualList<Speaker> list = new VirtualList<>();
     private final Span countBadge = new Span("0");
+    private final EmptyStateComponent emptyState = new EmptyStateComponent(
+            VaadinIcon.USER, "No speakers found", "Add your first speaker to get started."
+    );
     private Speaker selectedItem;
 
     private final TextField name = new TextField("Name");
@@ -80,6 +84,7 @@ public class SpeakerView extends VerticalLayout {
     private Upload imageUpload;
     private final TextArea bio = new TextArea("Biography");
     private final ComboBox<Country> countryField = new ComboBox<>("Select a country");
+    private final List<Country> availableCountries = CountryUtils.getCountryNamesWithCodes();
 
     private final VerticalLayout socialLinksLayout = new VerticalLayout();
     private final Button addSocialLinkButton = new Button("Add social link", VaadinIcon.PLUS.create());
@@ -107,18 +112,15 @@ public class SpeakerView extends VerticalLayout {
         this.qrService = qrService;
         this.storageService = storageService;
 
-        countryField.setItems(CountryUtils.getCountryNamesWithCodes());
+        countryField.setItems(availableCountries);
         countryField.setPlaceholder("Choose a country");
+        countryField.setItemLabelGenerator(Country::getName);
 
-        binder.bindInstanceFields(this);
-        binder.getFields().forEach(field -> {
-            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
-        });
         binder.forField(countryField)
                 .bind(speaker -> {
                             if (speaker == null) return null;
                             String code = speaker.getCountry();
-                            return CountryUtils.getCountryNamesWithCodes().stream()
+                            return availableCountries.stream()
                                     .filter(c -> Objects.equals(code, c.getCode()))
                                     .findFirst().orElse(null);
                         },
@@ -126,6 +128,10 @@ public class SpeakerView extends VerticalLayout {
                             if (speaker != null)
                                 speaker.setCountry(selected != null ? selected.getCode() : null);
                         });
+        binder.bindInstanceFields(this);
+        binder.getFields().forEach(field -> {
+            if (field instanceof HasClearButton clear) clear.setClearButtonVisible(true);
+        });
 
         initList();
 
@@ -143,7 +149,8 @@ public class SpeakerView extends VerticalLayout {
         toolbar.setFlexGrow(1, searchField);
         toolbar.addClassNames(LumoUtility.Padding.SMALL, "admin-toolbar");
 
-        VerticalLayout sidebar = new VerticalLayout(toolbar, list);
+        emptyState.setVisible(false);
+        VerticalLayout sidebar = new VerticalLayout(toolbar, list, emptyState);
         sidebar.setSizeFull();
         sidebar.setPadding(false);
         sidebar.setSpacing(false);
@@ -311,6 +318,9 @@ public class SpeakerView extends VerticalLayout {
         List<Speaker> items = service.findAll(createFilterSpecification());
         list.setItems(items);
         countBadge.setText(String.valueOf(items.size()));
+        boolean isEmpty = items.isEmpty();
+        list.setVisible(!isEmpty);
+        emptyState.setVisible(isEmpty);
     }
 
     private void addSocialLinkField(String url) {

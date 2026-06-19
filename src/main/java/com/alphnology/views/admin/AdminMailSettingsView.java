@@ -14,13 +14,13 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Header;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -68,7 +68,7 @@ public class AdminMailSettingsView extends VerticalLayout {
     private final TextField fromName = new TextField("From name");
 
     private final TextField postalBaseUrl = new TextField("Postal base URL");
-    private final TextField postalApiKeyHeader = new TextField("Postal API key header");
+    private final TextField postalApiKeyHeader = new TextField("Postal API key header name");
     private final TextField sslTrust = new TextField("Trusted TLS host");
     private final IntegerField connectionTimeoutMs = new IntegerField("Connection timeout (ms)");
     private final IntegerField readTimeoutMs = new IntegerField("Read timeout (ms)");
@@ -140,7 +140,10 @@ public class AdminMailSettingsView extends VerticalLayout {
             case SSL_TLS -> "SSL/TLS";
         });
 
+        providerType.setWidthFull();
+        securityMode.setWidthFull();
         host.setWidthFull();
+        port.setWidthFull();
         username.setWidthFull();
         fromAddress.setWidthFull();
         fromName.setWidthFull();
@@ -159,7 +162,7 @@ public class AdminMailSettingsView extends VerticalLayout {
         secret.setRevealButtonVisible(false);
         clearStoredSecret.setHelperText("Only clears the encrypted secret stored in the application database.");
         postalBaseUrl.setHelperText("Example: https://postal.yourdomain.com");
-        postalApiKeyHeader.setHelperText("Postal default is X-Server-API-Key.");
+        postalApiKeyHeader.setHelperText("This is the header name, not the secret value. Default: X-Server-API-Key.");
         sslTrust.setHelperText("Only needed for self-signed SMTP certificates.");
         testRecipient.setHelperText("The test email is sent using the current saved configuration.");
 
@@ -168,7 +171,7 @@ public class AdminMailSettingsView extends VerticalLayout {
             refreshProviderFieldState();
         });
         authenticationEnabled.addValueChangeListener(event -> refreshProviderFieldState());
-        clearStoredSecret.addValueChangeListener(event -> secret.setEnabled(!event.getValue() && isSecretEditable()));
+        clearStoredSecret.addValueChangeListener(event -> secret.setEnabled(!event.getValue()));
     }
 
     private void configureActions() {
@@ -198,72 +201,73 @@ public class AdminMailSettingsView extends VerticalLayout {
     }
 
     private Component buildProviderSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("680px", 2),
-                new FormLayout.ResponsiveStep("980px", 3)
-        );
+        HorizontalLayout toggles = new HorizontalLayout(outboundEnabled, authenticationEnabled);
+        toggles.setWidthFull();
+        toggles.setWrap(true);
+        toggles.setAlignItems(FlexComponent.Alignment.CENTER);
+        toggles.addClassNames(LumoUtility.Gap.LARGE, LumoUtility.Padding.Bottom.SMALL);
 
-        formLayout.add(outboundEnabled, providerType, authenticationEnabled, securityMode, host, port, username, secret,
-                clearStoredSecret, postalBaseUrl, postalApiKeyHeader, sslTrust);
-        formLayout.setColspan(secret, 2);
-        formLayout.setColspan(postalBaseUrl, 2);
+        Div providerGrid = createMailSettingsGrid(providerType, securityMode);
+        Div smtpRow = createMailSettingsGrid(host, port);
+        Div credentialsRow = createMailSettingsGrid(username, sslTrust);
+        Div secretRow = createMailSettingsSingleColumn(secret);
+        Div postalBaseRow = createMailSettingsSingleColumn(postalBaseUrl);
+        Div postalHeaderRow = createMailSettingsGrid(postalApiKeyHeader);
+
+        VerticalLayout content = new VerticalLayout(
+                toggles,
+                providerGrid,
+                smtpRow,
+                credentialsRow,
+                secretRow,
+                postalBaseRow,
+                postalHeaderRow,
+                clearStoredSecret
+        );
+        content.setPadding(false);
+        content.setSpacing(false);
+        content.addClassNames(LumoUtility.Gap.SMALL, "admin-mail-section");
 
         Div card = createCard(
                 "Provider and credentials",
                 "Switch between SMTP, SendGrid, Mailjet, and Postal. Provider-specific defaults are applied without exposing secrets in the UI."
         );
-        card.add(formLayout);
+        card.add(content);
         return card;
     }
 
     private Component buildSenderSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("680px", 2)
-        );
-        formLayout.add(fromAddress, fromName);
+        Div senderGrid = createMailSettingsGrid(fromAddress, fromName);
 
         Div card = createCard(
                 "Sender identity",
                 "These values are used in transactional emails. Keep the sender aligned with your verified domain."
         );
-        card.add(formLayout);
+        card.add(senderGrid);
         return card;
     }
 
     private Component buildTimeoutSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("680px", 2)
-        );
-        formLayout.add(connectionTimeoutMs, readTimeoutMs);
+        connectionTimeoutMs.setWidthFull();
+        readTimeoutMs.setWidthFull();
+        Div timeoutGrid = createMailSettingsGrid(connectionTimeoutMs, readTimeoutMs);
 
         Div card = createCard(
                 "Timeouts and delivery behavior",
                 "Use conservative timeout values so the UI fails fast when a provider is unavailable."
         );
-        card.add(formLayout);
+        card.add(timeoutGrid);
         return card;
     }
 
     private Component buildTestSection() {
-        FormLayout formLayout = new FormLayout();
-        formLayout.setWidthFull();
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
-        formLayout.add(testRecipient);
+        Div testGrid = createMailSettingsSingleColumn(testRecipient);
 
         Div card = createCard(
                 "Test email",
                 "Save the current settings and send a verification email to confirm the provider, credentials, and sender identity are working."
         );
-        card.add(formLayout);
+        card.add(testGrid);
         return card;
     }
 
@@ -286,11 +290,31 @@ public class AdminMailSettingsView extends VerticalLayout {
         return card;
     }
 
+    private Div createMailSettingsGrid(Component... components) {
+        Div grid = new Div(components);
+        grid.addClassName("admin-mail-grid");
+        return grid;
+    }
+
+    private Div createMailSettingsSingleColumn(Component component) {
+        Div grid = new Div(component);
+        grid.addClassNames("admin-mail-grid", "admin-mail-grid-single");
+        return grid;
+    }
+
     private void loadSettings() {
+        loadSettings(null);
+    }
+
+    private void loadSettings(String transientSecretValue) {
         snapshot = mailSettingsService.getEffectiveSettings();
         binder.readBean(MailSettingsFormData.fromSnapshot(snapshot));
         clearStoredSecret.setValue(false);
-        secret.clear();
+        if (StringUtils.hasText(transientSecretValue) && !snapshot.uiSecretPersistenceAvailable()) {
+            secret.setValue(transientSecretValue);
+        } else {
+            secret.clear();
+        }
         secretState.setText(buildSecretState(snapshot));
         secretState.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
         runtimeInfo.setText(buildRuntimeInfo(snapshot));
@@ -301,6 +325,9 @@ public class AdminMailSettingsView extends VerticalLayout {
         try {
             MailSettingsFormData formData = new MailSettingsFormData();
             binder.writeBean(formData);
+            boolean transientSecretOnly = StringUtils.hasText(formData.getSecret())
+                    && snapshot != null
+                    && !snapshot.uiSecretPersistenceAvailable();
 
             List<String> issues = validateForm(formData, sendTestAfterSave);
             if (!issues.isEmpty()) {
@@ -308,17 +335,22 @@ public class AdminMailSettingsView extends VerticalLayout {
                 return;
             }
 
-            mailSettingsService.save(formData.toUpdateRequest());
+            mailSettingsService.save(transientSecretOnly ? formData.toUpdateRequestWithoutSecret() : formData.toUpdateRequest());
             snapshot = mailSettingsService.getEffectiveSettings();
 
             if (sendTestAfterSave) {
-                mailSenderService.sendTestEmail(formData.getTestRecipient());
-                NotificationUtils.success("Mail settings saved and a test email was sent successfully.");
+                MailSettingsSnapshot runtimeSettings = transientSecretOnly ? buildTransientSnapshot(formData, snapshot) : snapshot;
+                mailSenderService.sendTestEmail(formData.getTestRecipient(), runtimeSettings);
+                NotificationUtils.success(transientSecretOnly
+                        ? "Mail settings saved. A test email was sent using the API key entered in the form. The secret was not persisted."
+                        : "Mail settings saved and a test email was sent successfully.");
             } else {
-                NotificationUtils.success("Mail settings saved successfully.");
+                NotificationUtils.success(transientSecretOnly
+                        ? "Mail settings saved. The API key entered in the form was not persisted because encrypted UI secret persistence is disabled."
+                        : "Mail settings saved successfully.");
             }
 
-            loadSettings();
+            loadSettings(transientSecretOnly ? formData.getSecret() : null);
         } catch (ValidationException ex) {
             NotificationUtils.error("Please review the highlighted fields.", ex);
         } catch (EmailSendException ex) {
@@ -343,7 +375,7 @@ public class AdminMailSettingsView extends VerticalLayout {
             if (!StringUtils.hasText(data.getPostalBaseUrl())) {
                 issues.add("Postal base URL is required.");
             }
-            if (needsRuntimeSecret(data)) {
+            if (sendTestAfterSave && needsRuntimeSecret(data)) {
                 issues.add("A Postal API key is required. Configure it via environment variables or enable encrypted UI secret persistence.");
             }
             return issues;
@@ -388,14 +420,12 @@ public class AdminMailSettingsView extends VerticalLayout {
         authenticationEnabled.setVisible(!postal);
 
         username.setEnabled(!postal && auth);
-        secret.setEnabled(!clearStoredSecret.getValue() && isSecretEditable());
+        secret.setEnabled(!clearStoredSecret.getValue());
 
         postalBaseUrl.setVisible(postal);
         postalApiKeyHeader.setVisible(postal);
-    }
-
-    private boolean isSecretEditable() {
-        return snapshot != null && snapshot.uiSecretPersistenceAvailable();
+        clearStoredSecret.setEnabled(snapshot != null && snapshot.secretPersisted());
+        updateSecretFieldPresentation(postal);
     }
 
     private void applyProviderDefaults(MailProviderType type) {
@@ -440,6 +470,48 @@ public class AdminMailSettingsView extends VerticalLayout {
         }
     }
 
+    private void updateSecretFieldPresentation(boolean postal) {
+        if (postal) {
+            secret.setLabel("Postal API key");
+            secret.setHelperText(secret.isEnabled()
+                    ? "Enter the Postal API key value. It will be sent in the header name configured below."
+                    : "Postal uses an API key value plus a header name. The active secret must come from environment variables or encrypted UI persistence.");
+            return;
+        }
+
+        MailProviderType currentProvider = providerType.getValue();
+        if (currentProvider == null) {
+            currentProvider = MailProviderType.SMTP;
+        }
+
+        switch (currentProvider) {
+            case SENDGRID -> {
+                secret.setLabel("SendGrid API key");
+                secret.setHelperText(secret.isEnabled()
+                        ? "Enter the SendGrid API key value."
+                        : "The active secret must come from environment variables or encrypted UI persistence.");
+            }
+            case MAILJET -> {
+                secret.setLabel("Mailjet secret key");
+                secret.setHelperText(secret.isEnabled()
+                        ? "Enter the Mailjet secret key. The username field should contain the Mailjet API key."
+                        : "The active secret must come from environment variables or encrypted UI persistence.");
+            }
+            case SMTP -> {
+                secret.setLabel("Password / token / API key");
+                secret.setHelperText(secret.isEnabled()
+                        ? "Enter the SMTP password or provider token."
+                        : "The active secret must come from environment variables or encrypted UI persistence.");
+            }
+            default -> {
+                secret.setLabel("Password / token / API key");
+                secret.setHelperText(secret.isEnabled()
+                        ? "Enter the provider secret."
+                        : "The active secret must come from environment variables or encrypted UI persistence.");
+            }
+        }
+    }
+
     private String buildRuntimeInfo(MailSettingsSnapshot effective) {
         return "Runtime provider: " + effective.providerType()
                 + " | outbound: " + (effective.outboundEnabled() ? "enabled" : "disabled")
@@ -448,18 +520,52 @@ public class AdminMailSettingsView extends VerticalLayout {
     }
 
     private String buildSecretState(MailSettingsSnapshot effective) {
+        boolean postal = effective.providerType() == MailProviderType.POSTAL;
         if (effective.uiSecretPersistenceAvailable()) {
             if (effective.secretPersisted()) {
-                return "An encrypted secret is stored in the database. Enter a new value only when you want to replace it.";
+                return postal
+                        ? "A Postal API key is stored encrypted in the database. Enter a new value only when you want to replace it."
+                        : "An encrypted secret is stored in the database. Enter a new value only when you want to replace it.";
             }
             if (StringUtils.hasText(effective.secret())) {
-                return "The active secret is coming from environment variables. You can replace it from the UI and store it encrypted.";
+                return postal
+                        ? "The active Postal API key is coming from environment variables. You can replace it from the UI and store it encrypted."
+                        : "The active secret is coming from environment variables. You can replace it from the UI and store it encrypted.";
             }
-            return "No secret is configured yet. Enter one to persist it securely in the database.";
+            return postal
+                    ? "No Postal API key is configured yet. Enter one to persist it securely in the database."
+                    : "No secret is configured yet. Enter one to persist it securely in the database.";
         }
         if (StringUtils.hasText(effective.secret())) {
-            return "The active secret is provided by environment variables. UI secret persistence is disabled until EMAIL_SETTINGS_MASTER_KEY and EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true are configured.";
+            return postal
+                    ? "The active Postal API key is provided by environment variables. UI secret persistence is disabled until EMAIL_SETTINGS_MASTER_KEY and EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true are configured."
+                    : "The active secret is provided by environment variables. UI secret persistence is disabled until EMAIL_SETTINGS_MASTER_KEY and EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true are configured.";
         }
-        return "UI secret persistence is disabled. Configure the provider secret from environment variables and restart the application.";
+        return postal
+                ? "UI secret persistence is disabled. Entered Postal API keys remain only in the current form session. Configure POSTAL_API_KEY from environment variables or enable encrypted UI secret persistence for permanent storage."
+                : "UI secret persistence is disabled. Entered secrets remain only in the current form session. Configure the provider secret from environment variables and restart the application, or enable encrypted UI secret persistence.";
+    }
+
+    private MailSettingsSnapshot buildTransientSnapshot(MailSettingsFormData formData, MailSettingsSnapshot persistedSnapshot) {
+        return new MailSettingsSnapshot(
+                formData.isOutboundEnabled(),
+                formData.getProviderType(),
+                formData.getSecurityMode(),
+                formData.isAuthenticationEnabled(),
+                persistedSnapshot.host(),
+                persistedSnapshot.port(),
+                persistedSnapshot.username(),
+                formData.getSecret(),
+                persistedSnapshot.fromAddress(),
+                persistedSnapshot.fromName(),
+                persistedSnapshot.postalBaseUrl(),
+                persistedSnapshot.postalApiKeyHeader(),
+                persistedSnapshot.sslTrust(),
+                persistedSnapshot.connectionTimeoutMs(),
+                persistedSnapshot.readTimeoutMs(),
+                persistedSnapshot.testRecipient(),
+                persistedSnapshot.secretPersisted(),
+                persistedSnapshot.uiSecretPersistenceAvailable()
+        );
     }
 }

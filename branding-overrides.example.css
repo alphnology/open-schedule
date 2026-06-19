@@ -1,0 +1,15 @@
+html {
+  --lumo-primary-color: #0f766e;
+  --lumo-primary-color-10pct: #0f766e1a;
+  --lumo-primary-color-50pct: #0f766e80;
+  --lumo-primary-text-color: #115e59;
+
+  --os-primary: #0f172a;
+  --os-primary-strong: #020617;
+  --os-secondary: #0f766e;
+  --os-secondary-soft: #5eead4;
+  --os-tertiary: #0f766e;
+  --os-tertiary-soft: #ccfbf1;
+  --os-border: rgba(15, 118, 110, 0.18);
+  --os-border-soft: rgba(15, 118, 110, 0.12);
+}

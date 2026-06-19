@@ -28,6 +28,7 @@ import com.vaadin.flow.theme.lumo.Lumo;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -143,7 +144,7 @@ public class ScheduleViewDetails extends Div {
         Event event = VaadinSession.getCurrent().getAttribute(Event.class);
 
         String sessionName = session.getTitle();
-        String room = session.getRoom().getName();
+        String room = getRoomName(session);
         LocalDateTime sessionDate = session.getStartTime();
         String eventUrl = CommonUtils.getBaseUrl();
 
@@ -281,7 +282,7 @@ public class ScheduleViewDetails extends Div {
 
             Image country = new Image();
             country.setWidth("30px");
-            if (!speaker.getCountry().isEmpty()) {
+            if (StringUtils.hasText(speaker.getCountry())) {
                 country.setSrc("https://flagcdn.com/%s.svg".formatted(speaker.getCountry().toLowerCase()));
                 country.setAlt(speaker.getCountry());
                 Tooltip.forComponent(country)
@@ -333,7 +334,7 @@ public class ScheduleViewDetails extends Div {
         String starDate = session.getStartTime().format(DateTimeFormatterUtils.dateFormatter);
         String startTime = session.getStartTime().format(DateTimeFormatterUtils.timeFormatter);
 
-        Span sessionDate = new Span("%s - %s at %s".formatted(starDate, startTime, session.getRoom().getName()));
+        Span sessionDate = new Span("%s - %s at %s".formatted(starDate, startTime, getRoomName(session)));
         sessionDate.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.EXTRABOLD);
 
         Span sessionType = new Span(session.getType().getDisplay());
@@ -417,6 +418,12 @@ public class ScheduleViewDetails extends Div {
 
         dialog.add(textArea, bottomBar);
         dialog.open();
+    }
+
+    private String getRoomName(Session session) {
+        return session.getRoom() != null && StringUtils.hasText(session.getRoom().getName())
+                ? session.getRoom().getName()
+                : "Room TBD";
     }
 
 
