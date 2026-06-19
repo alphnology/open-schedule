@@ -7,20 +7,19 @@
     <groupId>com.alphnology</groupId>
     <artifactId>open-schedule</artifactId>
     <name>open-schedule</name>
-    <version>1.0.11</version>
+    <version>1.0.12</version>
     <description>Open Schedule</description>
     <packaging>jar</packaging>
 
     <properties>
         <java.version>25</java.version>
-        <vaadin.version>25.1.1</vaadin.version>
-        <hibernate.version>7.2.0.Final</hibernate.version>
+        <vaadin.version>25.1.6</vaadin.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.4</version>
+        <version>4.0.6</version>
     </parent>
 
     <repositories>
@@ -100,7 +99,12 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>${hibernate.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-processor</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -218,6 +222,10 @@
                 <configuration>
                     <release>25</release>
                     <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.hibernate.orm</groupId>
+                            <artifactId>hibernate-processor</artifactId>
+                        </path>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>

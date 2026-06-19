@@ -144,6 +144,17 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver, Afte
             NotificationUtils.success("Password changed successfully.");
         }
 
+        // Check sessionStorage flag set by ChangePasswordView after a successful change
+        getUI().ifPresent(ui -> ui.getPage().executeJs(
+                "var f = sessionStorage.getItem('os_pwd_changed');" +
+                "sessionStorage.removeItem('os_pwd_changed');" +
+                "return f || '';"
+        ).then(String.class, flag -> {
+            if ("1".equals(flag)) {
+                NotificationUtils.success("Password changed successfully. Please sign in again.");
+            }
+        }));
+
         if (params.containsKey("signup") && "true".equalsIgnoreCase(params.get("signup").getFirst())) {
             NotificationUtils.success("Sign up was successful, you can now log in.");
         }

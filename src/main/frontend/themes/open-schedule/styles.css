@@ -1,5 +1,6 @@
 @import url('./main-layout.css');
 @import url('./views/login.css');
+@import url('./views/forgot-password.css');
 @import url('./views/change-password.css');
 @import url('./views/speakers-schedule-view.css');
 @import url('./views/admin-catalog.css');

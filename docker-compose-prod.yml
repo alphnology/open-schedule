@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: "traefik:v3.4"
+    image: "traefik:v3.7.5"
     container_name: "traefik"
     restart: unless-stopped
     command:
@@ -35,10 +35,10 @@ services:
       #- # htpasswd echo $(htpasswd -nb admin "your_password")
 
   postgres:
-    image: postgres:15
+    image: postgres:18.1
     restart: unless-stopped
     volumes:
-      - ./db_postgres:/var/lib/postgresql/data
+      - ./db_postgres:/var/lib/postgresql
     ports:
       - "5432:5432"
     environment:
