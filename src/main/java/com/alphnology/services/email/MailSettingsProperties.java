@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "application.email")
 public class MailSettingsProperties {
 
-    private String settingsMasterKey;
-    private boolean allowUiSecretPersistence = false;
     private final Defaults defaults = new Defaults();
     private final Smtp smtp = new Smtp();
     private final Postal postal = new Postal();

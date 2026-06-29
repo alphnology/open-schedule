@@ -26,6 +26,7 @@ Open Schedule is a self-hostable event application built with Java 25, Spring Bo
 - A protected admin area for operating the event
 - S3-compatible media storage for event, speaker, and news images
 - Runtime-configurable outbound email with an admin UI
+- Public workshop registration validated against alf.io
 - PostgreSQL persistence with Flyway migrations
 
 The current application model is centered around a single active event record. The admin event screen intentionally manages one event configuration, not a list of events.
@@ -39,6 +40,7 @@ The current application model is centered around a single active event record. T
 - Schedule browsing
 - Speaker directory and speaker detail views
 - News / announcements
+- Public workshop registration via alf.io ticket validation
 - Session rating for authenticated users
 - Favorite sessions for authenticated users
 - vCard / QR-based speaker sharing
@@ -60,6 +62,7 @@ All admin views are protected with `ADMIN` role checks.
 - Attendee management
 - User management
 - Mail settings
+- Workshop registration settings and registration management
 
 ### Media and branding
 
@@ -177,6 +180,34 @@ Use these docs for full details:
 - [docs/email.md](docs/email.md)
 - [docs/storage.md](docs/storage.md)
 - [docs/deployment.md](docs/deployment.md)
+- [docs/workshop-registration.md](docs/workshop-registration.md)
+
+---
+
+## Workshop Registration
+
+Open Schedule includes a workshop-registration flow for events that sell tickets through alf.io.
+
+What it supports:
+
+- Public route: `/workshop-registration`
+- Ticket validation against the alf.io admin reservation API
+- Workshop discovery from sessions marked as `SessionType.W`
+- Capacity enforcement from `room.capacity`
+- Duplicate prevention with one active registration per ticket
+- Admin management to search, move, and delete registrations
+
+Operational notes:
+
+- The attendee must enter the ticket PDF value shown as `Número de referencia`
+- The admin configures the alf.io base URL, event slug, and bearer token from `Admin -> Workshop registration`
+- The alf.io token is encrypted before being stored in the database
+- Encrypted UI secret persistence requires:
+
+```bash
+APP_SECRETS_MASTER_KEY=replace-with-a-strong-random-secret
+APP_SECRETS_ALLOW_UI_PERSISTENCE=true
+```
 
 ---
 

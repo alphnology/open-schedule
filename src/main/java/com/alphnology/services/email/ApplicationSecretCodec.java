@@ -1,5 +1,6 @@
 package com.alphnology.services.email;
 
+import com.alphnology.configurations.ApplicationSecretsProperties;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,17 +18,17 @@ import java.util.Base64;
 
 @Component
 @RequiredArgsConstructor
-public class MailSecretCodec {
+public class ApplicationSecretCodec {
 
     private static final String PREFIX = "{aes-gcm}";
     private static final int IV_LENGTH = 12;
     private static final int TAG_LENGTH = 128;
 
-    private final MailSettingsProperties properties;
+    private final ApplicationSecretsProperties properties;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public boolean canPersistSecrets() {
-        return properties.isAllowUiSecretPersistence() && StringUtils.hasText(properties.getSettingsMasterKey());
+        return properties.isAllowUiPersistence() && StringUtils.hasText(properties.getMasterKey());
     }
 
     public String encrypt(String raw) {
@@ -36,7 +37,7 @@ public class MailSecretCodec {
         }
         if (!canPersistSecrets()) {
             throw new IllegalStateException(
-                    "UI secret persistence requires application.email.settings-master-key and allow-ui-secret-persistence=true");
+                    "UI secret persistence requires application.secrets.master-key and allow-ui-persistence=true");
         }
         try {
             byte[] iv = new byte[IV_LENGTH];
@@ -63,7 +64,7 @@ public class MailSecretCodec {
         if (!encrypted.startsWith(PREFIX)) {
             return encrypted;
         }
-        if (!StringUtils.hasText(properties.getSettingsMasterKey())) {
+        if (!StringUtils.hasText(properties.getMasterKey())) {
             throw new IllegalStateException("Mail settings master key is required to decrypt persisted secrets");
         }
         try {
@@ -84,7 +85,7 @@ public class MailSecretCodec {
 
     private SecretKey buildKey() throws Exception {
         byte[] digest = MessageDigest.getInstance("SHA-256")
-                .digest(properties.getSettingsMasterKey().getBytes(StandardCharsets.UTF_8));
+                .digest(properties.getMasterKey().getBytes(StandardCharsets.UTF_8));
         return new SecretKeySpec(digest, "AES");
     }
 }

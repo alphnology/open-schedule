@@ -19,7 +19,7 @@ public class MailSettingsService {
 
     private final MailSettingsRepository repository;
     private final MailSettingsProperties properties;
-    private final MailSecretCodec secretCodec;
+    private final ApplicationSecretCodec secretCodec;
 
     @Transactional
     public MailSettingsSnapshot getEffectiveSettings() {

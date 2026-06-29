@@ -242,6 +242,29 @@
     margin-top: 0.25rem;
 }
 
+.admin-workshop-toolbar {
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.workshop-admin-public-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.625rem;
+    padding: 0 1rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, #475569, #1E293B);
+    box-shadow: 0 10px 20px rgba(30, 41, 59, 0.22);
+}
+
+.workshop-admin-public-link:hover {
+    box-shadow: 0 14px 28px rgba(30, 41, 59, 0.28);
+    transform: translateY(-1px);
+}
+
 /* ══════════════════════════════════════════════════════════
    6. ADMIN STAT CARD (KPI tiles — Dashboard)
    ══════════════════════════════════════════════════════════ */

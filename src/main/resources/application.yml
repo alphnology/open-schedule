@@ -84,8 +84,6 @@ application:
     email: '^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$'
 
   email:
-    settings-master-key: ${EMAIL_SETTINGS_MASTER_KEY:}
-    allow-ui-secret-persistence: ${EMAIL_ALLOW_UI_SECRET_PERSISTENCE:false}
     defaults:
       outbound-enabled: ${EMAIL_OUTBOUND_ENABLED:${EMAIL_SMTP_ENABLED:true}}
       provider-type: ${EMAIL_PROVIDER_TYPE:SMTP}
@@ -107,6 +105,10 @@ application:
       base-url: ${POSTAL_BASE_URL:}
       api-key: ${POSTAL_API_KEY:}
       api-key-header: ${POSTAL_API_KEY_HEADER:X-Server-API-Key}
+
+  secrets:
+    master-key: ${APP_SECRETS_MASTER_KEY:${EMAIL_SETTINGS_MASTER_KEY:}}
+    allow-ui-persistence: ${APP_SECRETS_ALLOW_UI_PERSISTENCE:${EMAIL_ALLOW_UI_SECRET_PERSISTENCE:false}}
 
 
 storage:

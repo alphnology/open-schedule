@@ -27,7 +27,7 @@ class MailSettingsServiceTest {
     private MailSettingsRepository repository;
 
     @Mock
-    private MailSecretCodec secretCodec;
+    private ApplicationSecretCodec secretCodec;
 
     private MailSettingsProperties properties;
     private MailSettingsService service;

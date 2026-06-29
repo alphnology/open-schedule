@@ -2,6 +2,7 @@ package com.alphnology.data.repository;
 
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
+import com.alphnology.data.enums.SessionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,4 +34,7 @@ public interface SessionRepository extends JpaRepository<Session, Long>, JpaSpec
     @Query("SELECT s FROM Session s WHERE s.code NOT IN " +
            "(SELECT sr.session.code FROM SessionRating sr WHERE sr.users = :user)")
     List<Session> findUnratedSessionsForUser(@Param("user") User user);
+
+    @EntityGraph("Session.withDisplayAssociations")
+    List<Session> findByTypeOrderByStartTimeAsc(SessionType type);
 }

@@ -30,7 +30,7 @@ Open Schedule resolves mail settings in this order:
 3. Provider-specific safe defaults for SendGrid and Mailjet
 
 Secrets are handled differently:
-- if `EMAIL_SETTINGS_MASTER_KEY` and `EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true` are configured, admins can store secrets encrypted from the UI
+- if `APP_SECRETS_MASTER_KEY` and `APP_SECRETS_ALLOW_UI_PERSISTENCE=true` are configured, admins can store secrets encrypted from the UI
 - otherwise, secrets must come from environment variables such as `EMAIL_SMTP_PASSWORD` or `POSTAL_API_KEY`
 - the UI never displays the raw secret value
 
@@ -219,10 +219,10 @@ For Postal, the Postal web UI shows message delivery status, bounces, and logs p
 
 ## Security considerations
 
-- Store `EMAIL_SMTP_PASSWORD`, `POSTAL_API_KEY`, and `EMAIL_SETTINGS_MASTER_KEY` in a secrets manager, not in plain `.env` files on the server
+- Store `EMAIL_SMTP_PASSWORD`, `POSTAL_API_KEY`, and `APP_SECRETS_MASTER_KEY` in a secrets manager, not in plain `.env` files on the server
 - Verify your sending domain with SPF, DKIM, and DMARC records to avoid spam filtering
 - Do not set `EMAIL_SMTP_SSL_TRUST` in production unless you genuinely need to bypass certificate validation
-- Only enable `EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true` when you also provide a strong `EMAIL_SETTINGS_MASTER_KEY`
+- Only enable `APP_SECRETS_ALLOW_UI_PERSISTENCE=true` when you also provide a strong `APP_SECRETS_MASTER_KEY`
 - Rotate API keys periodically
 
 ---
@@ -238,4 +238,4 @@ For Postal, the Postal web UI shows message delivery status, bounces, and logs p
 | SendGrid 403 | Sender not verified | Verify sender in SendGrid dashboard |
 | Postal `non-success status` | Invalid API key or server URL | Check `POSTAL_BASE_URL` (no trailing slash) and `POSTAL_API_KEY` |
 | Self-signed TLS error | Cert not trusted | Set `EMAIL_SMTP_SSL_TRUST=your-smtp-host` |
-| UI cannot store the secret | Secret persistence disabled | Configure `EMAIL_SETTINGS_MASTER_KEY` and `EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true`, or keep the secret in environment variables |
+| UI cannot store the secret | Secret persistence disabled | Configure `APP_SECRETS_MASTER_KEY` and `APP_SECRETS_ALLOW_UI_PERSISTENCE=true`, or keep the secret in environment variables |

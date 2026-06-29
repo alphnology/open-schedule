@@ -1,22 +1,24 @@
 services:
-
   traefik:
-    image: "traefik:v3.7.5"
-    container_name: "traefik"
+    image: traefik:v3.6.7
+    container_name: traefik
     restart: unless-stopped
     command:
-      #- "--log.level=DEBUG"
+      - "--log.level=INFO"
       - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.network=alphnology-traefik"
+      - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.email=info@alphnology.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--api.insecure=true"
     ports:
       - "80:80"
       - "443:443"
@@ -26,65 +28,82 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
       - alphnology-traefik
-    labels:
-      - "traefik.http.routers.api.rule=Host(`traefik.openschedule.alphnology.com`)"
-      - "traefik.http.routers.api.service=api@internal"
-      - "traefik.http.routers.api.middlewares=auth"
-      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$your_hash_here$$"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      #- # htpasswd echo $(htpasswd -nb admin "your_password")
 
-  postgres:
+  db-open-schedule:
     image: postgres:18.1
+    container_name: open-schedule-db
     restart: unless-stopped
-    volumes:
-      - ./db_postgres:/var/lib/postgresql
-    ports:
-      - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=p@ssw0rd
-      - POSTGRES_DB=open-schedule
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: open-schedule
+    volumes:
+      - ./data_open_schedule/postgres:/var/lib/postgresql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d open-schedule" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks:
       - alphnology-traefik
 
   app-open-schedule:
     image: alphnology/open-schedule:latest
+    container_name: open-schedule-app
     restart: unless-stopped
-    ports:
-      - "51675:51675"
     environment:
-      - DB_HOST=postgres
-      - DB_PASSWORD=p@ssw0rd
-      - DB_NAME=open-schedule
-      - EVENT_WEBSITE=https://alphnology.com/
+      DB_HOST: db-open-schedule
+      DB_PORT: 5432
+      DB_PASSWORD: postgres
+      DB_NAME: open-schedule
+      EVENT_WEBSITE: https://alphnology.com
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_PUBLIC_ENDPOINT: https://files.alphnology.org
+      STORAGE_ACCESS_KEY: minioadmin
+      STORAGE_SECRET_KEY: minioadmin
+      STORAGE_BUCKET: open-schedule
+      EVENT_SCHEDULE: https://schedule.alphnology.org/
+      GIT_HUB_API_TOKEN: github_pat_xxx
+      GIT_HUB_REPOSITORY_NAME: alphnology/open-schedule
+      APP_LOGO_PATH: /assets/logo.png
+      #BRANDING_EXTERNAL_CSS_PATH: /assets/branding-overrides.css
     volumes:
       - ./assets:/assets
-    networks:
-      - alphnology-traefik
-    healthcheck:
-      # Port 51675 becomes available only after Spring Boot + Flyway complete startup
-      test: ["CMD-SHELL", "timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/51675' || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 12
-      start_period: 90s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.openschedule.rule=Host(`openschedule.alphnology.com`)"
-      - "traefik.http.routers.openschedule.service=openschedule-service"
+      - "traefik.http.routers.openschedule.rule=Host(`schedule.alphnology.org`)"
       - "traefik.http.routers.openschedule.entrypoints=websecure"
-      - "traefik.http.services.openschedule-service.loadbalancer.server.port=51675" # Puerto interno que usa la app
       - "traefik.http.routers.openschedule.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openschedule.service=openschedule-service"
+      - "traefik.http.services.openschedule-service.loadbalancer.server.port=51675"
+      - "traefik.http.routers.openschedule.tls=true"
     depends_on:
-      postgres:
+      db-open-schedule:
         condition: service_healthy
+    networks:
+      - alphnology-traefik
+
+  minio:
+    image: minio/minio:latest
+    container_name: open-schedule-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openschedule-files.rule=Host(`files.alphnology.org`)"
+      - "traefik.http.routers.openschedule-files.entrypoints=websecure"
+      - "traefik.http.routers.openschedule-files.tls=true"
+      - "traefik.http.routers.openschedule-files.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openschedule-files.service=openschedule-files-service"
+      - "traefik.http.services.openschedule-files-service.loadbalancer.server.port=9000"
+    volumes:
+      - ./data_open_schedule/minio:/data
+    networks:
+      - alphnology-traefik
 
 networks:
   alphnology-traefik:
-    driver: bridge
+    external: true

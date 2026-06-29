@@ -57,8 +57,10 @@ See [storage.md](storage.md) for provider-specific examples.
 | `EMAIL_READ_TIMEOUT_MS` | `10000` | Mail read/write timeout in milliseconds |
 | `EMAIL_FROM_ADDRESS` | _(none)_ | Sender email address |
 | `EMAIL_FROM_NAME` | `Open Schedule` | Sender display name |
-| `EMAIL_SETTINGS_MASTER_KEY` | _(none)_ | Master key used to encrypt secrets persisted from the admin UI |
-| `EMAIL_ALLOW_UI_SECRET_PERSISTENCE` | `false` | Enables encrypted secret persistence from the admin UI when a master key is configured |
+| `APP_SECRETS_MASTER_KEY` | _(none)_ | Preferred master key variable used to encrypt secrets persisted from the admin UI |
+| `APP_SECRETS_ALLOW_UI_PERSISTENCE` | `false` | Preferred flag that enables encrypted secret persistence from the admin UI |
+| `EMAIL_SETTINGS_MASTER_KEY` | _(none)_ | Legacy fallback variable for the same master key |
+| `EMAIL_ALLOW_UI_SECRET_PERSISTENCE` | `false` | Legacy fallback flag for the same behavior |
 
 ### SMTP Provider
 
@@ -86,10 +88,47 @@ See [storage.md](storage.md) for provider-specific examples.
 - Route: `Admin → Mail settings`
 - Access: authenticated users with the `ADMIN` role
 - Persists non-sensitive configuration in the database
-- Persists secrets only when `EMAIL_SETTINGS_MASTER_KEY` and `EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true` are configured
+- Persists secrets only when `APP_SECRETS_MASTER_KEY` and `APP_SECRETS_ALLOW_UI_PERSISTENCE=true` are configured
 - Sends test emails from the UI after saving
 
 See [email.md](email.md) for complete provider setup guides.
+
+---
+
+## Workshop Registration
+
+The workshop-registration module is configured primarily from the admin UI.
+
+Admin route:
+
+- `Admin -> Workshop registration`
+
+Public route:
+
+- `/workshop-registration`
+
+The admin stores the following values in the database:
+
+- Module enabled / disabled
+- Public flow active / inactive
+- Alf.io base URL
+- Event slug
+- Public message
+- Workshop-per-ticket limit
+- Alf.io bearer token
+
+### Secret persistence
+
+The alf.io bearer token uses the same encrypted UI secret mechanism as mail settings.
+
+Required environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `APP_SECRETS_MASTER_KEY` | _(none)_ | Master key used to encrypt the stored alf.io token |
+| `APP_SECRETS_ALLOW_UI_PERSISTENCE` | `false` | Must be `true` to persist the alf.io token from the admin UI |
+
+See [workshop-registration.md](workshop-registration.md) for the end-to-end flow and alf.io request contract.
 
 ---
 
@@ -165,7 +204,7 @@ Used by the "Report a Bug" feature in the app. Leave blank to disable it.
 [ ] DB_PASSWORD is a strong, unique password
 [ ] STORAGE_ACCESS_KEY and STORAGE_SECRET_KEY are not default values
 [ ] EMAIL_SMTP_PASSWORD / POSTAL_API_KEY are rotated secrets
-[ ] EMAIL_SETTINGS_MASTER_KEY is set if UI secret persistence is enabled
+[ ] APP_SECRETS_MASTER_KEY is set if UI secret persistence is enabled
 [ ] GIT_HUB_API_TOKEN has minimum required scope
 [ ] APP_URL matches your actual public domain
 [ ] EMAIL_FROM_ADDRESS is a verified sender domain

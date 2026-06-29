@@ -185,6 +185,33 @@
     margin-top: 0 !important;
 }
 
+.public-workshop-page {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.public-workshop-card {
+    background: rgba(255, 255, 255, 0.82) !important;
+}
+
+.public-workshop-grid {
+    width: 100%;
+}
+
+.public-workshop-form-details {
+    width: 100%;
+}
+
+.public-workshop-result-card {
+    background: color-mix(in srgb, var(--os-secondary-soft) 20%, white);
+    border: 1px solid var(--os-border-soft);
+    border-radius: 1rem;
+    padding: 1rem 1.125rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
     .news-image {
@@ -199,5 +226,9 @@
     .news-image-wrap {
         align-self: stretch;
         border-radius: 0.5rem;
+    }
+
+    .public-workshop-card {
+        padding: 1rem !important;
     }
 }

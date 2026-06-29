@@ -538,8 +538,8 @@ public class AdminMailSettingsView extends VerticalLayout {
         }
         if (StringUtils.hasText(effective.secret())) {
             return postal
-                    ? "The active Postal API key is provided by environment variables. UI secret persistence is disabled until EMAIL_SETTINGS_MASTER_KEY and EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true are configured."
-                    : "The active secret is provided by environment variables. UI secret persistence is disabled until EMAIL_SETTINGS_MASTER_KEY and EMAIL_ALLOW_UI_SECRET_PERSISTENCE=true are configured.";
+                    ? "The active Postal API key is provided by environment variables. UI secret persistence is disabled until APP_SECRETS_MASTER_KEY and APP_SECRETS_ALLOW_UI_PERSISTENCE=true are configured."
+                    : "The active secret is provided by environment variables. UI secret persistence is disabled until APP_SECRETS_MASTER_KEY and APP_SECRETS_ALLOW_UI_PERSISTENCE=true are configured.";
         }
         return postal
                 ? "UI secret persistence is disabled. Entered Postal API keys remain only in the current form session. Configure POSTAL_API_KEY from environment variables or enable encrypted UI secret persistence for permanent storage."

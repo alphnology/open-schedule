@@ -34,3 +34,4 @@ speakers-seed.sql
 data-seed.sql
 letsencrypt/
 db_postgres/
+/branding-overrides.css
