@@ -21,6 +21,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.List;
 @PageTitle("Workshop Registration")
 @Route("workshop-registration")
 @AnonymousAllowed
+@Slf4j
 public class PublicWorkshopRegistrationView extends VerticalLayout {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a");
@@ -203,6 +205,7 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
             NotificationUtils.error(ex.getMessage());
         } catch (Exception ex) {
             resetResultState();
+            log.error("Workshop ticket validation failed for reference '{}'", ticketReference.getValue(), ex);
             NotificationUtils.error("We could not validate this ticket right now. Please try again later.");
         }
     }
@@ -240,6 +243,10 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         } catch (WorkshopRegistrationService.WorkshopRegistrationException ex) {
             NotificationUtils.error(ex.getMessage());
         } catch (Exception ex) {
+            log.error("Workshop registration failed for reference '{}' and workshop '{}'",
+                    validatedTicket.ticketReference(),
+                    workshop.getValue() != null ? workshop.getValue().sessionCode() : null,
+                    ex);
             NotificationUtils.error("We could not complete the workshop registration.");
         }
     }

@@ -42,6 +42,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.util.StringUtils;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ import java.util.Objects;
 public class WorkshopRegistrationAdminView extends VerticalLayout {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a");
+    private static final Logger log = LoggerFactory.getLogger(WorkshopRegistrationAdminView.class);
 
     private final WorkshopRegistrationSettingsService settingsService;
     private final WorkshopRegistrationService registrationService;
@@ -358,8 +361,10 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         } catch (ValidationException ex) {
             NotificationUtils.error("Please review the highlighted fields.", ex);
         } catch (IllegalStateException ex) {
+            log.warn("Workshop registration settings rejected: {}", ex.getMessage());
             NotificationUtils.error(ex.getMessage());
         } catch (Exception ex) {
+            log.error("Could not save workshop registration settings from admin view", ex);
             NotificationUtils.error("Could not save the workshop registration settings.");
         }
     }

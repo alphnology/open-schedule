@@ -4,6 +4,8 @@ import com.alphnology.data.WorkshopRegistrationSettings;
 import com.alphnology.data.repository.WorkshopRegistrationSettingsRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -14,6 +16,7 @@ import java.util.Optional;
 public class WorkshopRegistrationSettingsService {
 
     private static final String DEFAULT_KEY = "default";
+    private static final Logger log = LoggerFactory.getLogger(WorkshopRegistrationSettingsService.class);
 
     private final WorkshopRegistrationSettingsRepository repository;
     private final WorkshopRegistrationSecretCodec secretCodec;
@@ -27,6 +30,9 @@ public class WorkshopRegistrationSettingsService {
     @Transactional
     public WorkshopRegistrationSettings save(WorkshopRegistrationSettingsUpdateRequest request) {
         WorkshopRegistrationSettings settings = repository.findBySingletonKey(DEFAULT_KEY).orElseGet(this::newDefaultsEntity);
+        boolean hadStoredToken = StringUtils.hasText(settings.getEncryptedToken());
+        String normalizedToken = trimToNull(request.token());
+        boolean hasNewToken = StringUtils.hasText(normalizedToken);
         settings.setEnabled(request.enabled());
         settings.setActive(request.active());
         settings.setAlfioBaseUrl(trimToNull(request.alfioBaseUrl()));
@@ -36,11 +42,21 @@ public class WorkshopRegistrationSettingsService {
 
         if (request.clearStoredToken()) {
             settings.setEncryptedToken(null);
-        } else if (StringUtils.hasText(request.token())) {
-            settings.setEncryptedToken(secretCodec.encrypt(request.token()));
+        } else if (StringUtils.hasText(normalizedToken)) {
+            settings.setEncryptedToken(secretCodec.encrypt(normalizedToken));
         }
 
-        return repository.save(settings);
+        WorkshopRegistrationSettings saved = repository.save(settings);
+        log.info(
+                "Workshop registration settings saved: enabled={}, active={}, eventSlug='{}', baseUrl='{}', tokenAction={}, tokenPersisted={}",
+                saved.isEnabled(),
+                saved.isActive(),
+                saved.getEventSlug(),
+                saved.getAlfioBaseUrl(),
+                resolveTokenAction(request.clearStoredToken(), hasNewToken, hadStoredToken),
+                StringUtils.hasText(saved.getEncryptedToken())
+        );
+        return saved;
     }
 
     @Transactional
@@ -78,6 +94,16 @@ public class WorkshopRegistrationSettingsService {
 
     private static String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private static String resolveTokenAction(boolean clearStoredToken, boolean hasNewToken, boolean hadStoredToken) {
+        if (clearStoredToken) {
+            return "cleared";
+        }
+        if (hasNewToken) {
+            return hadStoredToken ? "replaced" : "created";
+        }
+        return hadStoredToken ? "retained" : "absent";
     }
 
     public record WorkshopRegistrationSettingsSnapshot(
