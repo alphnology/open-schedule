@@ -110,6 +110,11 @@ application:
     master-key: ${APP_SECRETS_MASTER_KEY:${EMAIL_SETTINGS_MASTER_KEY:}}
     allow-ui-persistence: ${APP_SECRETS_ALLOW_UI_PERSISTENCE:${EMAIL_ALLOW_UI_SECRET_PERSISTENCE:false}}
 
+  workshop-registration:
+    bridge:
+      base-url: ${WORKSHOP_REGISTRATION_BRIDGE_BASE_URL:}
+      api-key: ${WORKSHOP_REGISTRATION_BRIDGE_API_KEY:}
+
 
 storage:
   s3:

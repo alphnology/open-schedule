@@ -199,7 +199,7 @@ What it supports:
 
 Operational notes:
 
-- The attendee must enter the ticket PDF value shown as `Número de referencia`
+- The attendee must enter the ticket PDF value shown as `Info. del pedido`
 - The admin configures the alf.io base URL, event slug, and bearer token from `Admin -> Workshop registration`
 - The alf.io token is encrypted before being stored in the database
 - Encrypted UI secret persistence requires:

@@ -256,7 +256,7 @@ public class WorkshopRegistrationService {
 
     private String normalizeTicketReference(String rawTicketReference) {
         if (!StringUtils.hasText(rawTicketReference)) {
-            throw new WorkshopRegistrationException("Ticket reference is required.");
+            throw new WorkshopRegistrationException("The 'Info. del pedido' code is required.");
         }
         return rawTicketReference.trim();
     }

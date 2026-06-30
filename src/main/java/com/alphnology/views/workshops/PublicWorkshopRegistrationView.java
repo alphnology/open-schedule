@@ -36,14 +36,14 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
 
     private final WorkshopRegistrationService registrationService;
 
-    private final TextField ticketReference = new TextField("Ticket reference");
-    private final Button validateTicket = new Button("Validate ticket");
+    private final TextField ticketReference = new TextField("Info. del pedido");
+    private final Button validateTicket = new Button("Validate code");
     private final Button clear = new Button("Clear");
 
     private final TextField attendeeName = new TextField("Attendee");
     private final EmailField attendeeEmail = new EmailField("Email");
     private final TextField reservationStatus = new TextField("Reservation status");
-    private final TextField reservationShortCode = new TextField("Reservation short code");
+    private final TextField reservationShortCode = new TextField("Info. del pedido");
     private final ComboBox<WorkshopRegistrationService.WorkshopOption> workshop = new ComboBox<>("Available workshops");
     private final Button confirmRegistration = new Button("Confirm workshop registration");
     private VerticalLayout detailsSection;
@@ -71,8 +71,8 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
 
     private void configureFields() {
         ticketReference.setWidthFull();
-        ticketReference.setPlaceholder("Paste the alf.io reference shown as 'Número de referencia'");
-        ticketReference.setHelperText("Enter the UUID reference from your PDF ticket. The backend validates it directly against alf.io.");
+        ticketReference.setPlaceholder("Enter the 8-character code shown in 'Info. del pedido'");
+        ticketReference.setHelperText("Use the code shown as 'Info. del pedido' on your alf.io PDF ticket, for example BDB04C39.");
 
         attendeeName.setWidthFull();
         attendeeName.setReadOnly(true);
@@ -110,7 +110,7 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         title.addClassNames("public-page-header", LumoUtility.Margin.NONE);
 
         Paragraph intro = new Paragraph(
-                "Validate your alf.io ticket reference and reserve your workshop seat without contacting the event team."
+                "Validate your alf.io purchase code and reserve your workshop seat without contacting the event team."
         );
         intro.addClassNames(LumoUtility.Margin.Top.XSMALL, LumoUtility.TextColor.SECONDARY);
 
@@ -157,7 +157,7 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         if (state.isAvailable()) {
             stateMessage.setText(state.publicMessage() != null
                     ? state.publicMessage()
-                    : "Enter your ticket reference to validate your reservation and see the available workshops.");
+                    : "Enter your 'Info. del pedido' code to validate your reservation and see the available workshops.");
             ticketReference.setEnabled(true);
             validateTicket.setEnabled(true);
             return;
@@ -174,10 +174,10 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         try {
             WorkshopRegistrationService.TicketValidationOutcome outcome = registrationService.validateTicket(ticketReference.getValue());
             if (outcome instanceof WorkshopRegistrationService.TicketValidationOutcome.AlreadyRegistered alreadyRegistered) {
-                validatedTicket = null;
-                showExistingRegistration(alreadyRegistered.registration());
-                NotificationUtils.info("This ticket is already registered in a workshop.");
-                return;
+            validatedTicket = null;
+            showExistingRegistration(alreadyRegistered.registration());
+            NotificationUtils.info("This 'Info. del pedido' code is already registered in a workshop.");
+            return;
             }
 
             WorkshopRegistrationService.ValidatedTicketView ticket =
@@ -206,13 +206,13 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         } catch (Exception ex) {
             resetResultState();
             log.error("Workshop ticket validation failed for reference '{}'", ticketReference.getValue(), ex);
-            NotificationUtils.error("We could not validate this ticket right now. Please try again later.");
+            NotificationUtils.error("We could not validate this 'Info. del pedido' code right now. Please try again later.");
         }
     }
 
     private void registerSelectedWorkshop() {
         if (validatedTicket == null) {
-            NotificationUtils.warning("Validate the ticket before selecting a workshop.");
+            NotificationUtils.warning("Validate the 'Info. del pedido' code before selecting a workshop.");
             return;
         }
         if (workshop.getValue() == null) {
@@ -239,7 +239,7 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
             showExistingRegistration(registrationService.getRegistration(ex.getExistingRegistration().getCode())
                     .map(registrationService::toExistingRegistrationForUi)
                     .orElse(null));
-            NotificationUtils.info("This ticket is already registered in a workshop.");
+            NotificationUtils.info("This 'Info. del pedido' code is already registered in a workshop.");
         } catch (WorkshopRegistrationService.WorkshopRegistrationException ex) {
             NotificationUtils.error(ex.getMessage());
         } catch (Exception ex) {

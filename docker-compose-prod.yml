@@ -83,6 +83,29 @@ services:
     networks:
       - alphnology-traefik
 
+  alfio-bridge:
+    image: alphnology/alfio-bridge:latest
+    container_name: alfio-bridge
+    restart: unless-stopped
+    mem_limit: 384m
+    mem_reservation: 192m
+    cpus: "0.35"
+    pids_limit: 200
+    environment:
+      ALFIO_BRIDGE_PORT: 8080
+      ALFIO_BRIDGE_API_KEY: change-me
+      ALFIO_DB_HOST: db-alfio
+      ALFIO_DB_PORT: 5432
+      ALFIO_DB_NAME: alfio
+      ALFIO_DB_USER: alfio
+      ALFIO_DB_PASSWORD: change-me
+      ALFIO_DB_MAX_POOL_SIZE: 4
+      ALFIO_DB_MIN_IDLE: 1
+    expose:
+      - "8080"
+    networks:
+      - alphnology-traefik
+
   minio:
     image: minio/minio:latest
     container_name: open-schedule-minio

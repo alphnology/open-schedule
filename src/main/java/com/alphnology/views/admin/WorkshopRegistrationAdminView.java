@@ -152,7 +152,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         eventSlug.setWidthFull();
         eventSlug.setPlaceholder("jd2026");
-        eventSlug.setHelperText("This must match the alf.io event slug used in /api/v1/admin/event/{slug}/reservation/{reservationId}.");
+        eventSlug.setHelperText("This must match the alf.io event slug. The public page resolves the attendee 'Info. del pedido' code against this event.");
 
         token.setWidthFull();
         token.setRevealButtonVisible(false);
@@ -184,7 +184,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         });
 
         searchField.setWidthFull();
-        searchField.setPlaceholder("Search by attendee, email, reference, or reservation code...");
+        searchField.setPlaceholder("Search by attendee, email, 'Info. del pedido', or reservation code...");
         searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
         searchField.setClearButtonVisible(true);
         searchField.setValueChangeMode(ValueChangeMode.LAZY);
@@ -216,7 +216,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
                 .setHeader("Reservation")
                 .setAutoWidth(true);
         registrationsGrid.addColumn(WorkshopParticipantRegistration::getTicketReference)
-                .setHeader("Ticket reference")
+                .setHeader("Info. del pedido")
                 .setAutoWidth(true);
         registrationsGrid.addColumn(registration -> registration.getSession().getTitle())
                 .setHeader("Workshop")

@@ -41,8 +41,8 @@ public class AlfioTicketValidationService {
         String reservationStatus = firstText(payload, "reservationStatus", "status", "ticketStatus");
         boolean cancelled = firstBoolean(payload, "cancelled", "canceled");
         boolean refunded = firstBoolean(payload, "refunded");
-        String email = firstText(payload, "email", "emailAddress");
-        String fullName = firstText(payload, "fullName", "name");
+        String email = firstText(payload, "attendeeEmail", "email", "emailAddress");
+        String fullName = firstText(payload, "attendeeName", "fullName", "name");
         if (!StringUtils.hasText(fullName)) {
             String firstName = firstText(payload, "firstName", "givenName");
             String lastName = firstText(payload, "lastName", "familyName", "surname");
@@ -50,16 +50,16 @@ public class AlfioTicketValidationService {
             fullName = StringUtils.hasText(combined) ? combined : null;
         }
         String reservationShortCode = firstText(payload,
-                "reservationShortID", "reservationShortId", "reservationShortCode", "shortCode");
+                "reservationCode", "reservationShortID", "reservationShortId", "reservationShortCode", "shortCode");
 
         if (!StringUtils.hasText(reservationStatus) || !VALID_STATUSES.contains(reservationStatus.toUpperCase(Locale.ROOT))) {
-            throw new InvalidTicketException("The ticket is not in a valid alf.io status.");
+            throw new InvalidTicketException("The reservation is not in a valid alf.io status.");
         }
         if (cancelled || refunded) {
-            throw new InvalidTicketException("The ticket is cancelled or refunded.");
+            throw new InvalidTicketException("The reservation is cancelled or refunded.");
         }
         if (!StringUtils.hasText(email) || !StringUtils.hasText(fullName)) {
-            throw new InvalidTicketException("The ticket does not expose the required attendee details.");
+            throw new InvalidTicketException("The reservation does not expose the required attendee details.");
         }
 
         return new AlfioValidatedTicket(
