@@ -17,6 +17,8 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -30,7 +32,7 @@ import java.util.List;
 @Route("workshop-registration")
 @AnonymousAllowed
 @Slf4j
-public class PublicWorkshopRegistrationView extends VerticalLayout {
+public class PublicWorkshopRegistrationView extends VerticalLayout implements BeforeEnterObserver {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a");
 
@@ -46,12 +48,16 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
     private final TextField reservationShortCode = new TextField("Info. del pedido");
     private final ComboBox<WorkshopRegistrationService.WorkshopOption> workshop = new ComboBox<>("Available workshops");
     private final Button confirmRegistration = new Button("Confirm workshop registration");
+    private final Paragraph changePolicyMessage = new Paragraph();
     private VerticalLayout detailsSection;
 
     private final Paragraph stateMessage = new Paragraph();
     private final Div registrationResult = new Div();
 
     private WorkshopRegistrationService.ValidatedTicketView validatedTicket;
+    private WorkshopRegistrationService.ExistingRegistrationView existingRegistration;
+    private WorkshopRegistrationService.PublicModuleState moduleState;
+    private Long preferredWorkshopId;
 
     public PublicWorkshopRegistrationView(WorkshopRegistrationService registrationService) {
         this.registrationService = registrationService;
@@ -86,6 +92,8 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         workshop.setWidthFull();
         workshop.setItemLabelGenerator(WorkshopRegistrationService.WorkshopOption::displayLabel);
         workshop.setHelperText("Only sessions marked as workshops and with remaining capacity are shown.");
+        changePolicyMessage.addClassNames(LumoUtility.Margin.NONE, LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+        changePolicyMessage.setVisible(false);
 
         validateTicket.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         confirmRegistration.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -121,6 +129,7 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         detailsSection = new VerticalLayout(
                 createDetailsGrid(attendeeName, attendeeEmail),
                 createDetailsGrid(reservationStatus, reservationShortCode),
+                changePolicyMessage,
                 workshop,
                 confirmRegistration
         );
@@ -153,10 +162,10 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
     }
 
     private void refreshModuleState() {
-        WorkshopRegistrationService.PublicModuleState state = registrationService.getPublicModuleState();
-        if (state.isAvailable()) {
-            stateMessage.setText(state.publicMessage() != null
-                    ? state.publicMessage()
+        moduleState = registrationService.getPublicModuleState();
+        if (moduleState.isAvailable()) {
+            stateMessage.setText(moduleState.publicMessage() != null
+                    ? moduleState.publicMessage()
                     : "Enter your 'Info. del pedido' code to validate your reservation and see the available workshops.");
             ticketReference.setEnabled(true);
             validateTicket.setEnabled(true);
@@ -165,8 +174,8 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
 
         ticketReference.setEnabled(false);
         validateTicket.setEnabled(false);
-        stateMessage.setText(state.publicMessage() != null
-                ? state.publicMessage()
+        stateMessage.setText(moduleState.publicMessage() != null
+                ? moduleState.publicMessage()
                 : "Workshop registration is currently unavailable. Please contact the event team.");
     }
 
@@ -174,10 +183,10 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         try {
             WorkshopRegistrationService.TicketValidationOutcome outcome = registrationService.validateTicket(ticketReference.getValue());
             if (outcome instanceof WorkshopRegistrationService.TicketValidationOutcome.AlreadyRegistered alreadyRegistered) {
-            validatedTicket = null;
-            showExistingRegistration(alreadyRegistered.registration());
-            NotificationUtils.info("This 'Info. del pedido' code is already registered in a workshop.");
-            return;
+                validatedTicket = null;
+                showExistingRegistration(alreadyRegistered.registration());
+                NotificationUtils.info("This 'Info. del pedido' code is already registered in a workshop.");
+                return;
             }
 
             WorkshopRegistrationService.ValidatedTicketView ticket =
@@ -188,10 +197,13 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
             reservationStatus.setValue(ticket.reservationStatus());
             reservationShortCode.setValue(ticket.reservationShortCode() != null ? ticket.reservationShortCode() : "");
             detailsSection.setVisible(true);
+            existingRegistration = null;
+            changePolicyMessage.setVisible(false);
             workshop.setItems(ticket.availableWorkshops());
-            workshop.clear();
+            applyPreferredWorkshopSelection(ticket.availableWorkshops());
             workshop.setEnabled(!ticket.availableWorkshops().isEmpty());
             confirmRegistration.setEnabled(!ticket.availableWorkshops().isEmpty());
+            confirmRegistration.setText("Confirm workshop registration");
             registrationResult.removeAll();
 
             if (ticket.availableWorkshops().isEmpty()) {
@@ -220,19 +232,20 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
             return;
         }
         try {
-            WorkshopParticipantRegistration registration = registrationService.registerWorkshop(
-                    validatedTicket.ticketReference(),
-                    workshop.getValue().sessionCode()
-            );
+            WorkshopParticipantRegistration registration = existingRegistration != null
+                    ? registrationService.changeWorkshop(existingRegistration.ticketReference(), workshop.getValue().sessionCode())
+                    : registrationService.registerWorkshop(validatedTicket.ticketReference(), workshop.getValue().sessionCode());
             registrationResult.removeAll();
             registrationResult.add(createResultNotice(
-                    "Workshop registration confirmed.",
+                    existingRegistration != null ? "Workshop updated." : "Workshop registration confirmed.",
                     "You are registered in %s on %s.".formatted(
                             registration.getSession().getTitle(),
                             registration.getRegisteredAt().format(DATE_TIME_FORMATTER)
                     )
             ));
-            NotificationUtils.success("Your workshop registration was saved successfully.");
+            NotificationUtils.success(existingRegistration != null
+                    ? "Your workshop selection was updated successfully."
+                    : "Your workshop registration was saved successfully.");
             confirmRegistration.setEnabled(false);
             workshop.setEnabled(false);
         } catch (WorkshopRegistrationService.DuplicateWorkshopRegistrationException ex) {
@@ -256,8 +269,9 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         if (registration == null) {
             return;
         }
+        existingRegistration = registration;
         registrationResult.add(createResultNotice(
-                "This ticket is already registered.",
+                "This code is already registered.",
                 "%s is already assigned to %s in %s."
                         .formatted(registration.attendeeName(), registration.workshop().title(), registration.workshop().roomName())
         ));
@@ -266,6 +280,32 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
         attendeeEmail.setValue(registration.attendeeEmail());
         reservationStatus.setValue(registration.alfioReservationStatus() != null ? registration.alfioReservationStatus() : "");
         reservationShortCode.setValue(registration.reservationShortCode() != null ? registration.reservationShortCode() : "");
+        if (moduleState != null && moduleState.allowAttendeeWorkshopChange()) {
+            List<WorkshopRegistrationService.WorkshopOption> options =
+                    registrationService.listWorkshopOptionsForExistingRegistration(registration.registrationCode());
+            workshop.setItems(options);
+            if (preferredWorkshopId != null) {
+                applyWorkshopSelection(preferredWorkshopId, options);
+                if (workshop.getValue() == null) {
+                    applyWorkshopSelection(registration.workshop().sessionCode(), options);
+                }
+            } else {
+                applyWorkshopSelection(registration.workshop().sessionCode(), options);
+            }
+            workshop.setEnabled(!options.isEmpty());
+            confirmRegistration.setEnabled(!options.isEmpty());
+            confirmRegistration.setText("Change workshop");
+            changePolicyMessage.setText("You may change your workshop while seats remain available.");
+            changePolicyMessage.setVisible(true);
+        } else {
+            workshop.setItems(List.of(registration.workshop()));
+            applyWorkshopSelection(registration.workshop().sessionCode(), List.of(registration.workshop()));
+            workshop.setEnabled(false);
+            confirmRegistration.setEnabled(false);
+            confirmRegistration.setText("Confirm workshop registration");
+            changePolicyMessage.setText("If you need to change workshops, please contact the event organization so they can assist you.");
+            changePolicyMessage.setVisible(true);
+        }
     }
 
     private Component createResultNotice(String title, String description) {
@@ -282,15 +322,51 @@ public class PublicWorkshopRegistrationView extends VerticalLayout {
 
     private void resetResultState() {
         validatedTicket = null;
+        existingRegistration = null;
         attendeeName.clear();
         attendeeEmail.clear();
         reservationStatus.clear();
         reservationShortCode.clear();
+        changePolicyMessage.setText("");
+        changePolicyMessage.setVisible(false);
         workshop.clear();
         workshop.setItems(List.of());
         workshop.setEnabled(false);
         confirmRegistration.setEnabled(false);
+        confirmRegistration.setText("Confirm workshop registration");
         detailsSection.setVisible(false);
         registrationResult.removeAll();
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        preferredWorkshopId = event.getLocation().getQueryParameters().getParameters().getOrDefault("workshop", List.of())
+                .stream()
+                .findFirst()
+                .flatMap(this::parseWorkshopId)
+                .orElse(null);
+    }
+
+    private void applyPreferredWorkshopSelection(List<WorkshopRegistrationService.WorkshopOption> options) {
+        if (preferredWorkshopId != null) {
+            applyWorkshopSelection(preferredWorkshopId, options);
+            return;
+        }
+        workshop.clear();
+    }
+
+    private void applyWorkshopSelection(Long workshopId, List<WorkshopRegistrationService.WorkshopOption> options) {
+        workshop.setValue(options.stream()
+                .filter(option -> option.sessionCode().equals(workshopId))
+                .findFirst()
+                .orElse(null));
+    }
+
+    private java.util.Optional<Long> parseWorkshopId(String value) {
+        try {
+            return java.util.Optional.of(Long.parseLong(value));
+        } catch (NumberFormatException ex) {
+            return java.util.Optional.empty();
+        }
     }
 }

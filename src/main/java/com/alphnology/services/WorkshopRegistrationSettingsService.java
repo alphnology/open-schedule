@@ -38,6 +38,8 @@ public class WorkshopRegistrationSettingsService {
         settings.setAlfioBaseUrl(trimToNull(request.alfioBaseUrl()));
         settings.setEventSlug(trimToNull(request.eventSlug()));
         settings.setPublicMessage(trimToNull(request.publicMessage()));
+        settings.setAllowAttendeeWorkshopChange(request.allowAttendeeWorkshopChange());
+        settings.setShowPublicMenuEntry(request.showPublicMenuEntry());
         settings.setParticipantWorkshopLimit(request.participantWorkshopLimit());
 
         if (request.clearStoredToken()) {
@@ -77,6 +79,8 @@ public class WorkshopRegistrationSettingsService {
                 settings.getEventSlug(),
                 getTokenForRuntime(settings),
                 settings.getPublicMessage(),
+                settings.isAllowAttendeeWorkshopChange(),
+                settings.isShowPublicMenuEntry(),
                 settings.getParticipantWorkshopLimit(),
                 tokenPersisted,
                 secretCodec.canPersistSecrets()
@@ -88,6 +92,8 @@ public class WorkshopRegistrationSettingsService {
         settings.setSingletonKey(DEFAULT_KEY);
         settings.setEnabled(false);
         settings.setActive(true);
+        settings.setAllowAttendeeWorkshopChange(false);
+        settings.setShowPublicMenuEntry(false);
         settings.setParticipantWorkshopLimit(1);
         return settings;
     }
@@ -113,6 +119,8 @@ public class WorkshopRegistrationSettingsService {
             String eventSlug,
             String token,
             String publicMessage,
+            boolean allowAttendeeWorkshopChange,
+            boolean showPublicMenuEntry,
             Integer participantWorkshopLimit,
             boolean tokenPersisted,
             boolean tokenPersistenceEnabled
@@ -132,6 +140,8 @@ public class WorkshopRegistrationSettingsService {
             String token,
             boolean clearStoredToken,
             String publicMessage,
+            boolean allowAttendeeWorkshopChange,
+            boolean showPublicMenuEntry,
             Integer participantWorkshopLimit
     ) {
     }

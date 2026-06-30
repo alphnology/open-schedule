@@ -40,6 +40,12 @@ public class WorkshopRegistrationSettings {
     @Column(columnDefinition = "TEXT")
     private String publicMessage;
 
+    @Column(nullable = false)
+    private boolean allowAttendeeWorkshopChange = false;
+
+    @Column(nullable = false)
+    private boolean showPublicMenuEntry = false;
+
     @Min(1)
     @Column(nullable = false)
     private Integer participantWorkshopLimit = 1;

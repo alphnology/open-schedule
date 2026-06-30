@@ -116,6 +116,36 @@ class WorkshopRegistrationServiceTest {
         assertThat(captor.getValue().getRegisteredAt()).isNotNull();
     }
 
+    @Test
+    void changeWorkshopUpdatesExistingRegistrationWhenSelfServiceIsEnabled() {
+        var settings = new WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot(
+                true,
+                true,
+                "https://tickets.example.org",
+                "jd2026",
+                "token",
+                null,
+                true,
+                false,
+                1,
+                true,
+                true
+        );
+        var existing = existingRegistration();
+        var newWorkshop = workshopSession(12L, 5);
+
+        when(settingsService.getEffectiveSettings()).thenReturn(settings);
+        when(repository.findByEventSlugAndTicketReference("jd2026", "b2b2")).thenReturn(Optional.of(existing));
+        when(sessionService.get(12L)).thenReturn(Optional.of(newWorkshop));
+        when(repository.countBySession_CodeAndStatusAndCodeNot(12L, WorkshopRegistrationStatus.ACTIVE, 100L)).thenReturn(0L);
+        when(repository.save(any(WorkshopParticipantRegistration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var saved = service.changeWorkshop("b2b2", 12L);
+
+        assertThat(saved.getSession().getCode()).isEqualTo(12L);
+        verify(repository).save(existing);
+    }
+
     private WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot configuredSettings() {
         return new WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot(
                 true,
@@ -124,6 +154,8 @@ class WorkshopRegistrationServiceTest {
                 "jd2026",
                 "token",
                 null,
+                false,
+                false,
                 1,
                 true,
                 true

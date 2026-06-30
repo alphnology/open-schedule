@@ -65,6 +65,8 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
     private final Checkbox enabled = new Checkbox("Enable workshop registration");
     private final Checkbox active = new Checkbox("Public flow active");
+    private final Checkbox allowAttendeeWorkshopChange = new Checkbox("Allow attendees to change workshops");
+    private final Checkbox showPublicMenuEntry = new Checkbox("Show workshop registration in the main menu");
     private final TextField alfioBaseUrl = new TextField("Alf.io base URL");
     private final TextField eventSlug = new TextField("Event slug");
     private final PasswordField token = new PasswordField("Alf.io admin token");
@@ -135,6 +137,14 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
     private void configureBinder() {
         binder.forField(enabled).bind(WorkshopRegistrationSettingsFormData::isEnabled, WorkshopRegistrationSettingsFormData::setEnabled);
         binder.forField(active).bind(WorkshopRegistrationSettingsFormData::isActive, WorkshopRegistrationSettingsFormData::setActive);
+        binder.forField(allowAttendeeWorkshopChange).bind(
+                WorkshopRegistrationSettingsFormData::isAllowAttendeeWorkshopChange,
+                WorkshopRegistrationSettingsFormData::setAllowAttendeeWorkshopChange
+        );
+        binder.forField(showPublicMenuEntry).bind(
+                WorkshopRegistrationSettingsFormData::isShowPublicMenuEntry,
+                WorkshopRegistrationSettingsFormData::setShowPublicMenuEntry
+        );
         binder.forField(alfioBaseUrl).bind(WorkshopRegistrationSettingsFormData::getAlfioBaseUrl, WorkshopRegistrationSettingsFormData::setAlfioBaseUrl);
         binder.forField(eventSlug).bind(WorkshopRegistrationSettingsFormData::getEventSlug, WorkshopRegistrationSettingsFormData::setEventSlug);
         binder.forField(token).bind(WorkshopRegistrationSettingsFormData::getToken, WorkshopRegistrationSettingsFormData::setToken);
@@ -159,6 +169,9 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         token.setHelperText("The bearer token is never exposed to the browser. It is encrypted before being stored.");
 
         clearStoredToken.setHelperText("Clears the encrypted token saved in the database. When checked, the token field is ignored on save and the module will stop validating tickets until a new token is stored later.");
+
+        allowAttendeeWorkshopChange.setHelperText("If enabled, attendees who are already registered can move themselves to another available workshop from the public page.");
+        showPublicMenuEntry.setHelperText("If enabled, the public app drawer shows a direct link to the workshop registration page.");
 
         publicMessage.setWidthFull();
         publicMessage.setMinHeight("120px");
@@ -257,7 +270,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         runtimeInfo.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
         tokenState.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
-        HorizontalLayout toggles = new HorizontalLayout(enabled, active);
+        HorizontalLayout toggles = new HorizontalLayout(enabled, active, allowAttendeeWorkshopChange, showPublicMenuEntry);
         toggles.setWidthFull();
         toggles.setWrap(true);
         toggles.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -480,6 +493,8 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
     private String buildRuntimeInfo(WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot effective) {
         return "Module status: " + (effective.enabled() ? "enabled" : "disabled")
                 + " | public flow: " + (effective.active() ? "active" : "inactive")
+                + " | self-service changes: " + (effective.allowAttendeeWorkshopChange() ? "enabled" : "disabled")
+                + " | menu shortcut: " + (effective.showPublicMenuEntry() ? "visible" : "hidden")
                 + " | configuration: " + (effective.isConfigured() ? "ready" : "incomplete");
     }
 
@@ -528,6 +543,8 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         private boolean enabled;
         private boolean active = true;
+        private boolean allowAttendeeWorkshopChange;
+        private boolean showPublicMenuEntry;
 
         @Size(max = 255)
         private String alfioBaseUrl;
@@ -548,6 +565,8 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
             WorkshopRegistrationSettingsFormData data = new WorkshopRegistrationSettingsFormData();
             data.setEnabled(snapshot.enabled());
             data.setActive(snapshot.active());
+            data.setAllowAttendeeWorkshopChange(snapshot.allowAttendeeWorkshopChange());
+            data.setShowPublicMenuEntry(snapshot.showPublicMenuEntry());
             data.setAlfioBaseUrl(snapshot.alfioBaseUrl());
             data.setEventSlug(snapshot.eventSlug());
             data.setPublicMessage(snapshot.publicMessage());
@@ -564,6 +583,8 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
                     token,
                     clearStoredToken,
                     publicMessage,
+                    allowAttendeeWorkshopChange,
+                    showPublicMenuEntry,
                     participantWorkshopLimit
             );
         }
@@ -586,6 +607,22 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         public String getAlfioBaseUrl() {
             return alfioBaseUrl;
+        }
+
+        public boolean isAllowAttendeeWorkshopChange() {
+            return allowAttendeeWorkshopChange;
+        }
+
+        public void setAllowAttendeeWorkshopChange(boolean allowAttendeeWorkshopChange) {
+            this.allowAttendeeWorkshopChange = allowAttendeeWorkshopChange;
+        }
+
+        public boolean isShowPublicMenuEntry() {
+            return showPublicMenuEntry;
+        }
+
+        public void setShowPublicMenuEntry(boolean showPublicMenuEntry) {
+            this.showPublicMenuEntry = showPublicMenuEntry;
         }
 
         public void setAlfioBaseUrl(String alfioBaseUrl) {

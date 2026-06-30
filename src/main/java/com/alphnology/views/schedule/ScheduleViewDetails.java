@@ -3,10 +3,12 @@ package com.alphnology.views.schedule;
 import com.alphnology.data.Event;
 import com.alphnology.data.Session;
 import com.alphnology.data.User;
+import com.alphnology.data.enums.SessionType;
 import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.services.SessionRatingService;
 import com.alphnology.services.SessionService;
 import com.alphnology.services.UserService;
+import com.alphnology.services.WorkshopRegistrationService;
 import com.alphnology.utils.CommonUtils;
 import com.alphnology.utils.DateTimeFormatterUtils;
 import com.alphnology.utils.NotificationUtils;
@@ -43,6 +45,7 @@ public class ScheduleViewDetails extends Div {
     private final transient SessionRatingService sessionRatingService;
     private final transient UserService userService;
     private final transient ObjectStorageService storageService;
+    private final transient WorkshopRegistrationService workshopRegistrationService;
 
     private final transient ObjectProvider<SpeakersViewDetails> speakersViewDetailsProvider;
 
@@ -54,11 +57,13 @@ public class ScheduleViewDetails extends Div {
             SessionRatingService sessionRatingService,
             UserService userService,
             ObjectStorageService storageService,
+            WorkshopRegistrationService workshopRegistrationService,
             ObjectProvider<SpeakersViewDetails> speakersViewDetailsProvider) {
         this.sessionService = sessionService;
         this.sessionRatingService = sessionRatingService;
         this.userService = userService;
         this.storageService = storageService;
+        this.workshopRegistrationService = workshopRegistrationService;
         this.speakersViewDetailsProvider = speakersViewDetailsProvider;
     }
 
@@ -163,7 +168,23 @@ public class ScheduleViewDetails extends Div {
             showShareDialog(message, sessionName);
         });
 
-        Div footerLayout = new Div(attendingButton, favorite, rate, close);
+        Button workshopRegistrationButton = null;
+        var workshopState = workshopRegistrationService.getPublicModuleState();
+        if (session.getType() == SessionType.W && workshopState.isAvailable()) {
+            workshopRegistrationButton = new Button("Register in Workshop", VaadinIcon.TICKET.create());
+            workshopRegistrationButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
+            workshopRegistrationButton.setTooltipText("Open the workshop registration page for this workshop");
+            workshopRegistrationButton.addClickListener(clickEvent -> {
+                dialog.close();
+                UI.getCurrent().navigate("workshop-registration", com.vaadin.flow.router.QueryParameters.simple(
+                        java.util.Map.of("workshop", String.valueOf(session.getCode()))
+                ));
+            });
+        }
+
+        Div footerLayout = workshopRegistrationButton != null
+                ? new Div(attendingButton, workshopRegistrationButton, favorite, rate, close)
+                : new Div(attendingButton, favorite, rate, close);
         footerLayout.setWidthFull();
         footerLayout.addClassNames(
                 LumoUtility.Display.FLEX,

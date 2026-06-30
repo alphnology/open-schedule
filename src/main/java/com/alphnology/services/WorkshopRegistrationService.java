@@ -34,7 +34,14 @@ public class WorkshopRegistrationService {
     @Transactional
     public PublicModuleState getPublicModuleState() {
         var settings = settingsService.getEffectiveSettings();
-        return new PublicModuleState(settings.enabled(), settings.active(), settings.publicMessage(), settings.isConfigured());
+        return new PublicModuleState(
+                settings.enabled(),
+                settings.active(),
+                settings.publicMessage(),
+                settings.isConfigured(),
+                settings.allowAttendeeWorkshopChange(),
+                settings.showPublicMenuEntry()
+        );
     }
 
     @Transactional
@@ -98,6 +105,27 @@ public class WorkshopRegistrationService {
     }
 
     @Transactional
+    public WorkshopParticipantRegistration changeWorkshop(String rawTicketReference, Long workshopId) {
+        String ticketReference = normalizeTicketReference(rawTicketReference);
+        var settings = settingsService.getEffectiveSettings();
+        if (!settings.enabled() || !settings.active()) {
+            throw new WorkshopRegistrationException("Workshop registration is currently unavailable.");
+        }
+        if (!settings.allowAttendeeWorkshopChange()) {
+            throw new WorkshopRegistrationException("To change workshops, please contact the event organization.");
+        }
+
+        WorkshopParticipantRegistration existingRegistration = repository.findByEventSlugAndTicketReference(settings.eventSlug(), ticketReference)
+                .orElseThrow(() -> new WorkshopRegistrationException("No workshop registration was found for this code."));
+
+        Session workshop = getWorkshopSession(workshopId);
+        ensureCapacity(workshop, existingRegistration.getCode());
+        existingRegistration.setSession(workshop);
+        existingRegistration.setStatus(WorkshopRegistrationStatus.ACTIVE);
+        return repository.save(existingRegistration);
+    }
+
+    @Transactional
     public WorkshopParticipantRegistration moveRegistration(Long registrationId, Long workshopId) {
         WorkshopParticipantRegistration registration = repository.findById(registrationId)
                 .orElseThrow(() -> new EntityNotFoundException("Workshop registration not found."));
@@ -134,6 +162,18 @@ public class WorkshopRegistrationService {
     public List<WorkshopOption> listAvailableWorkshopOptions() {
         return listWorkshopSessions().stream()
                 .filter(this::isWorkshopAvailableForRegistration)
+                .map(this::toWorkshopOption)
+                .toList();
+    }
+
+    @Transactional
+    public List<WorkshopOption> listWorkshopOptionsForExistingRegistration(Long registrationId) {
+        WorkshopParticipantRegistration registration = repository.findById(registrationId)
+                .orElseThrow(() -> new EntityNotFoundException("Workshop registration not found."));
+
+        return listWorkshopSessions().stream()
+                .filter(session -> isWorkshopAvailableForRegistration(session)
+                        || registration.getSession().getCode().equals(session.getCode()))
                 .map(this::toWorkshopOption)
                 .toList();
     }
@@ -261,7 +301,14 @@ public class WorkshopRegistrationService {
         return rawTicketReference.trim();
     }
 
-    public record PublicModuleState(boolean enabled, boolean active, String publicMessage, boolean configured) {
+    public record PublicModuleState(
+            boolean enabled,
+            boolean active,
+            String publicMessage,
+            boolean configured,
+            boolean allowAttendeeWorkshopChange,
+            boolean showPublicMenuEntry
+    ) {
         public boolean isAvailable() {
             return enabled && active && configured;
         }

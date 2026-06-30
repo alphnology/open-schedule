@@ -34,6 +34,8 @@ class AlfioTicketValidationServiceTest {
                 "jd2026",
                 "token",
                 null,
+                false,
+                false,
                 1,
                 true,
                 true
@@ -75,6 +77,8 @@ class AlfioTicketValidationServiceTest {
                 "jd2026",
                 "token",
                 null,
+                false,
+                false,
                 1,
                 true,
                 true
@@ -115,6 +119,8 @@ class AlfioTicketValidationServiceTest {
                 "jd2026",
                 "token",
                 null,
+                false,
+                false,
                 1,
                 true,
                 true

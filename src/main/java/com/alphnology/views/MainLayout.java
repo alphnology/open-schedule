@@ -5,6 +5,7 @@ import com.alphnology.infrastructure.storage.ObjectStorageService;
 import com.alphnology.data.User;
 import com.alphnology.security.AuthenticatedUser;
 import com.alphnology.services.EventService;
+import com.alphnology.services.WorkshopRegistrationService;
 import com.alphnology.utils.ImageUtils;
 import com.alphnology.views.login.ChangePasswordView;
 import com.alphnology.views.login.LogoutView;
@@ -67,6 +68,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
     private transient AuthenticatedUser authenticatedUser;
     private final transient EventService eventService;
     private final transient ObjectStorageService storageService;
+    private final transient WorkshopRegistrationService workshopRegistrationService;
 
     private final String eventWebsite;
     private final String appVersion;
@@ -75,12 +77,14 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             AuthenticatedUser authenticatedUser,
             EventService eventService,
             ObjectStorageService storageService,
+            WorkshopRegistrationService workshopRegistrationService,
             @Value("${event.website}") String eventWebsite,
             @Value("${application.version}") String appVersion
     ) {
         this.authenticatedUser = authenticatedUser;
         this.eventService = eventService;
         this.storageService = storageService;
+        this.workshopRegistrationService = workshopRegistrationService;
         this.eventWebsite = eventWebsite;
         this.appVersion = appVersion;
 
@@ -209,6 +213,15 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         contribute.setOpenInNewBrowserTab(true);
         contribute.addClassName("external");
         nav.addItem(contribute);
+
+        var workshopState = workshopRegistrationService.getPublicModuleState();
+        if (workshopState.isAvailable() && workshopState.showPublicMenuEntry()) {
+            nav.addItem(new SideNavItem(
+                    "Workshop registration",
+                    "workshop-registration",
+                    LineAwesomeIcon.TICKET_ALT_SOLID.create()
+            ));
+        }
 
         return nav;
     }
