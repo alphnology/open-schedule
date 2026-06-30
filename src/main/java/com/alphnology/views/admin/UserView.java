@@ -1,6 +1,7 @@
 package com.alphnology.views.admin;
 
 import com.alphnology.components.ConfirmationDialog;
+import com.alphnology.components.ConfirmationDialogBuilder;
 import com.alphnology.components.EmptyStateComponent;
 import com.alphnology.data.User;
 import com.alphnology.data.enums.Role;
@@ -11,6 +12,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -38,6 +41,7 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
@@ -46,6 +50,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.alphnology.utils.PredicateUtils.predicateUnaccentLike;
+import static com.alphnology.utils.RegexGenerator.generateMatchingString;
 import static com.alphnology.utils.ViewHelper.*;
 
 @Slf4j
@@ -71,14 +76,17 @@ public class UserView extends VerticalLayout {
     private final Checkbox locked = new Checkbox("Locked");
 
     private final Button save = new Button("Save", VaadinIcon.HARDDRIVE_O.create());
+    private final Button resetPassword = new Button("Reset password", VaadinIcon.KEY.create());
 
     private final transient UserService service;
+    private final transient PasswordEncoder passwordEncoder;
     private User element;
 
     private final Binder<User> binder = new BeanValidationBinder<>(User.class);
 
-    public UserView(UserService service) {
+    public UserView(UserService service, PasswordEncoder passwordEncoder) {
         this.service = service;
+        this.passwordEncoder = passwordEncoder;
 
         roles.setItems(Role.values());
         roles.setPlaceholder("Choose a rol");
@@ -133,6 +141,9 @@ public class UserView extends VerticalLayout {
 
         save.addClickListener(this::saveOrUpdate);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
+
+        resetPassword.addClickListener(this::confirmResetPassword);
+        resetPassword.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
     }
 
     private Specification<User> createFilterSpecification() {
@@ -255,12 +266,80 @@ public class UserView extends VerticalLayout {
     }
 
     private HorizontalLayout createFooter() {
-        HorizontalLayout buttonLayout = new HorizontalLayout(save);
+        HorizontalLayout buttonLayout = new HorizontalLayout(resetPassword, save);
         buttonLayout.setFlexGrow(1, save);
         buttonLayout.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.Padding.MEDIUM,
                 LumoUtility.Background.CONTRAST_10);
         buttonLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
         return buttonLayout;
+    }
+
+    private void confirmResetPassword(ClickEvent<Button> event) {
+        if (element == null) return;
+
+        ConfirmDialog dialog = new ConfirmationDialogBuilder()
+                .withHeader("Reset Password")
+                .withText("This will generate a new temporary password for \"%s\" and require them to change it at their next login. Continue?"
+                        .formatted(StringUtils.hasText(element.getName()) ? element.getName() : element.getUsername()))
+                .withConfirmText("Reset password")
+                .withCancelText("Cancel")
+                .withIcon(VaadinIcon.KEY)
+                .onConfirm(confirmEvent -> resetUserPassword())
+                .build();
+        dialog.open();
+    }
+
+    private void resetUserPassword() {
+        String temporaryPassword = generateMatchingString(10);
+        element.setPassword(passwordEncoder.encode(temporaryPassword));
+        element.setOneLogPwd(true);
+
+        User saved = service.save(element);
+        populateForm(saved);
+        refreshList();
+
+        showTemporaryPassword(temporaryPassword);
+    }
+
+    private void showTemporaryPassword(String temporaryPassword) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Temporary password generated");
+        dialog.setCloseOnEsc(false);
+        dialog.setCloseOnOutsideClick(false);
+
+        Span info = new Span("Share this password with the user. It will not be shown again, " +
+                "and they will be required to set a new password at their next login.");
+        info.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
+
+        TextField passwordField = new TextField();
+        passwordField.setValue(temporaryPassword);
+        passwordField.setReadOnly(true);
+        passwordField.setWidthFull();
+
+        Button copyButton = new Button(VaadinIcon.COPY_O.create());
+        copyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        copyButton.getElement().setAttribute("aria-label", "Copy password");
+        copyButton.addClickListener(e -> {
+            e.getSource().getUI().ifPresent(ui -> ui.getPage()
+                    .executeJs("navigator.clipboard.writeText($0)", temporaryPassword));
+            NotificationUtils.success("Password copied to clipboard.");
+        });
+
+        HorizontalLayout fieldLayout = new HorizontalLayout(passwordField, copyButton);
+        fieldLayout.setWidthFull();
+        fieldLayout.setAlignItems(FlexComponent.Alignment.END);
+        fieldLayout.setFlexGrow(1, passwordField);
+
+        VerticalLayout layout = new VerticalLayout(info, fieldLayout);
+        layout.setPadding(false);
+        layout.setWidth("400px");
+        dialog.add(layout);
+
+        Button closeButton = new Button("Close", e -> dialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getFooter().add(closeButton);
+
+        dialog.open();
     }
 
     private void clearForm() {
@@ -272,5 +351,6 @@ public class UserView extends VerticalLayout {
         this.selectedItem = value;
         binder.readBean(this.element);
         save.setEnabled(element != null);
+        resetPassword.setEnabled(element != null);
     }
 }
