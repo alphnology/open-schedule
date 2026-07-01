@@ -25,6 +25,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.Optional;
+
 import static com.alphnology.utils.SessionHelper.tagSession;
 import static com.alphnology.utils.SpeakerHelper.getSocialLinks;
 
@@ -128,8 +130,7 @@ public class SpeakersViewDetails extends Div {
     }
 
     private Div container(Speaker speaker) {
-        String photoUrl = org.springframework.util.StringUtils.hasText(speaker.getPhotoKey())
-                ? storageService.getSignedUrl(speaker.getPhotoKey()) : null;
+        String photoUrl = resolveSignedUrl(speaker.getPhotoKey()).orElse(null);
         Image image = SpeakerHelper.getImage(speaker, photoUrl);
         image.addClassNames("flex-wrap-image-speaker");
 
@@ -208,6 +209,18 @@ public class SpeakersViewDetails extends Div {
 
         return container;
 
+    }
+
+    private Optional<String> resolveSignedUrl(String photoKey) {
+        if (!StringUtils.hasText(photoKey) || !storageService.exists(photoKey)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(storageService.getSignedUrl(photoKey));
+        } catch (RuntimeException ex) {
+            return Optional.empty();
+        }
     }
 
 }

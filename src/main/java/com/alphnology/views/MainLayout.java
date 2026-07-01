@@ -138,17 +138,21 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
     }
 
     private Image createDrawerImage() {
-        Optional<Event> currentEvent = eventService.findCurrentEvent();
-        if (currentEvent.isPresent()) {
-            String photoKey = currentEvent.get().getPhotoKey();
-            if (photoKey != null && !photoKey.isBlank()) {
-                try {
-                    return new Image(storageService.getSignedUrl(photoKey), currentEvent.get().getName());
-                } catch (Exception e) {
-                    log.warn("Could not load event image from storage: {}", photoKey, e);
+        try {
+            Optional<Event> currentEvent = eventService.findCurrentEvent();
+            if (currentEvent.isPresent()) {
+                String photoKey = currentEvent.get().getPhotoKey();
+                if (photoKey != null && !photoKey.isBlank()) {
+                    if (storageService.exists(photoKey)) {
+                        return new Image(storageService.getSignedUrl(photoKey), currentEvent.get().getName());
+                    }
+                    log.info("Event image not found in storage. Falling back to default logo: {}", photoKey);
                 }
             }
+        } catch (Exception e) {
+            log.warn("Could not resolve event image for the drawer. Falling back to default logo.", e);
         }
+
         return ImageUtils.getDefaultMainImage();
     }
 

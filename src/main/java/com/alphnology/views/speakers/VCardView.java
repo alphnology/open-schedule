@@ -110,8 +110,13 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
                 .withPosition(Tooltip.TooltipPosition.BOTTOM_END);
 
         if (StringUtils.hasText(contactable.photoKey())) {
-            image.setSrc(storageService.getSignedUrl(contactable.photoKey()));
-            image.setAlt(contactable.fullName());
+            Optional<String> imageUrl = resolveSignedUrl(contactable.photoKey());
+            if (imageUrl.isPresent()) {
+                image.setSrc(imageUrl.get());
+                image.setAlt(contactable.fullName());
+            } else {
+                image.setVisible(false);
+            }
         } else {
             image.setVisible(false);
         }
@@ -139,6 +144,18 @@ public class VCardView extends VerticalLayout implements BeforeEnterObserver {
         if (!company.getText().isEmpty()) card.add(company);
         card.add(buttonLayout);
         add(card);
+    }
+
+    private Optional<String> resolveSignedUrl(String photoKey) {
+        if (!StringUtils.hasText(photoKey) || !storageService.exists(photoKey)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(storageService.getSignedUrl(photoKey));
+        } catch (RuntimeException ex) {
+            return Optional.empty();
+        }
     }
 
     private Anchor createDownloadButton(Contactable contactable) {

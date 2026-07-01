@@ -276,8 +276,9 @@ public class SpeakerView extends VerticalLayout {
 
         Div iconDiv = new Div();
         iconDiv.addClassName("admin-item-icon");
-        if (StringUtils.hasText(speaker.getPhotoKey())) {
-            Image img = new Image(storageService.getSignedUrl(speaker.getPhotoKey()), speaker.getName());
+        Optional<String> speakerPhotoUrl = resolveSignedUrl(speaker.getPhotoKey());
+        if (speakerPhotoUrl.isPresent()) {
+            Image img = new Image(speakerPhotoUrl.get(), speaker.getName());
             iconDiv.add(img);
         } else {
             Icon icon = VaadinIcon.USER.create();
@@ -367,9 +368,7 @@ public class SpeakerView extends VerticalLayout {
             String contentType = meta.contentType() != null ? meta.contentType() : "image/jpeg";
             storageService.upload(key, new ByteArrayInputStream(bytes), bytes.length, contentType);
             element.setPhotoKey(key);
-            image.setVisible(true);
-            image.setSrc(storageService.getSignedUrl(key));
-            removeImageButton.setVisible(true);
+            showSpeakerImage(key, element.getName());
         }));
         imageUpload = new Upload(handler);
         imageUpload.setAcceptedFileTypes("image/*");
@@ -485,10 +484,7 @@ public class SpeakerView extends VerticalLayout {
         if (value != null) {
             value.getNetworking().forEach(this::addSocialLinkField);
             if (StringUtils.hasText(value.getPhotoKey())) {
-                image.setSrc(storageService.getSignedUrl(value.getPhotoKey()));
-                image.setAlt(value.getName());
-                image.setVisible(true);
-                removeImageButton.setVisible(true);
+                showSpeakerImage(value.getPhotoKey(), value.getName());
             } else {
                 image.setVisible(false);
                 removeImageButton.setVisible(false);
@@ -501,5 +497,32 @@ public class SpeakerView extends VerticalLayout {
             removeImageButton.setVisible(false);
         }
         delete.setEnabled(element != null);
+    }
+
+    private void showSpeakerImage(String photoKey, String altText) {
+        Optional<String> signedUrl = resolveSignedUrl(photoKey);
+        if (signedUrl.isPresent()) {
+            image.setSrc(signedUrl.get());
+            image.setAlt(altText);
+            image.setVisible(true);
+            removeImageButton.setVisible(true);
+            return;
+        }
+
+        image.setVisible(false);
+        removeImageButton.setVisible(false);
+    }
+
+    private Optional<String> resolveSignedUrl(String photoKey) {
+        if (!StringUtils.hasText(photoKey) || !storageService.exists(photoKey)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(storageService.getSignedUrl(photoKey));
+        } catch (RuntimeException ex) {
+            log.warn("Speaker photo is unavailable. Falling back to placeholder: {}", photoKey);
+            return Optional.empty();
+        }
     }
 }

@@ -221,13 +221,24 @@ public class SpeakersView extends VerticalLayout {
         Page<Speaker> speakerPage = speakerService.list(pageable, createFilterSpecification());
 
         speakerPage.getContent().forEach(s -> {
-            String photoUrl = org.springframework.util.StringUtils.hasText(s.getPhotoKey())
-                    ? storageService.getSignedUrl(s.getPhotoKey()) : null;
+            String photoUrl = resolveSignedUrl(s.getPhotoKey()).orElse(null);
             imageContainer.add(new SpeakersViewCard(s, photoUrl, speakersViewDetails::showSpeaker));
         });
 
         loadMoreButton.setVisible(speakerPage.hasNext());
 
         currentPage++;
+    }
+
+    private Optional<String> resolveSignedUrl(String photoKey) {
+        if (!org.springframework.util.StringUtils.hasText(photoKey) || !storageService.exists(photoKey)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(storageService.getSignedUrl(photoKey));
+        } catch (RuntimeException ex) {
+            return Optional.empty();
+        }
     }
 }

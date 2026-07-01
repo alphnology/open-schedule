@@ -48,6 +48,9 @@ public class SessionService {
     }
 
     public List<Session> findAll(@Nullable Specification<Session> spec) {
+        if (spec == null) {
+            return repository.findAll(Specification.unrestricted());
+        }
         return repository.findAll(spec);
     }
 

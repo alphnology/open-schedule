@@ -28,6 +28,8 @@ import com.vaadin.flow.component.shared.HasClearButton;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
@@ -74,6 +76,7 @@ public class SessionView extends VerticalLayout {
     );
     private final Span countBadge = new Span("0");
     private Session selectedItem;
+    private SessionPlanner planner;
 
     private final TextField title = new TextField("Title");
     private final TextArea description = new TextArea("Description");
@@ -209,7 +212,44 @@ public class SessionView extends VerticalLayout {
         splitLayout.addToPrimary(sidebar);
         splitLayout.addToSecondary(form);
 
-        add(splitLayout);
+        Tab managementTab = new Tab("Sessions");
+        Tab plannerTab = new Tab("Planner");
+        Tabs tabs = new Tabs(managementTab, plannerTab);
+        tabs.setWidthFull();
+
+        VerticalLayout managementView = new VerticalLayout(splitLayout);
+        managementView.setSizeFull();
+        managementView.setMinHeight("0");
+        managementView.setMinWidth("0");
+        managementView.setPadding(false);
+        managementView.setMargin(false);
+        managementView.setSpacing(false);
+
+        planner = new SessionPlanner(
+                service,
+                roomService,
+                event,
+                session -> {
+                    tabs.setSelectedTab(managementTab);
+                    selectItem(session);
+                },
+                this::refreshList
+        );
+        planner.setVisible(false);
+        planner.setMinHeight("0");
+        planner.setMinWidth("0");
+
+        tabs.addSelectedChangeListener(eventChange -> {
+            boolean showPlanner = eventChange.getSelectedTab() == plannerTab;
+            managementView.setVisible(!showPlanner);
+            planner.setVisible(showPlanner);
+            if (showPlanner) {
+                planner.refresh();
+            }
+        });
+
+        add(tabs, managementView, planner);
+        setFlexGrow(1, managementView, planner);
         setSizeFull();
         setPadding(false);
         setMargin(false);
@@ -348,6 +388,7 @@ public class SessionView extends VerticalLayout {
                     service.save(element);
                     populateForm(element);
                     refreshList();
+                    planner.refresh();
                     NotificationUtils.success();
                 } catch (InvalidDataAccessApiUsageException ex) {
                     log.error(ex.getMessage());
@@ -371,6 +412,7 @@ public class SessionView extends VerticalLayout {
                 service.delete(element.getCode());
                 clearForm();
                 refreshList();
+                planner.refresh();
             });
         } catch (ObjectOptimisticLockingFailureException ex) {
             log.error(ex.getLocalizedMessage());

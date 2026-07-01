@@ -14,6 +14,7 @@
     <properties>
         <java.version>25</java.version>
         <vaadin.version>25.1.6</vaadin.version>
+        <fullcalendar.version>7.2.1</fullcalendar.version>
     </properties>
 
     <parent>
@@ -178,6 +179,18 @@
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-testbench-junit5</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.vaadin.stefan</groupId>
+            <artifactId>fullcalendar2</artifactId>
+            <version>${fullcalendar.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.vaadin.stefan</groupId>
+            <artifactId>fullcalendar2-scheduler</artifactId>
+            <version>${fullcalendar.version}</version>
         </dependency>
     </dependencies>
 

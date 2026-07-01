@@ -4,6 +4,7 @@ import com.alphnology.data.WorkshopRegistrationSettings;
 import com.alphnology.data.repository.WorkshopRegistrationSettingsRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -66,8 +67,13 @@ public class WorkshopRegistrationSettingsService {
         return repository.findBySingletonKey(DEFAULT_KEY);
     }
 
-    public String getTokenForRuntime(WorkshopRegistrationSettings settings) {
-        return secretCodec.decrypt(settings.getEncryptedToken());
+    public @Nullable String getTokenForRuntime(WorkshopRegistrationSettings settings) {
+        try {
+            return secretCodec.decrypt(settings.getEncryptedToken());
+        } catch (IllegalStateException ex) {
+            log.warn("Workshop registration token could not be loaded for runtime. Falling back to an unconfigured state: {}", ex.getMessage());
+            return null;
+        }
     }
 
     private WorkshopRegistrationSettingsSnapshot toSnapshot(WorkshopRegistrationSettings settings) {
