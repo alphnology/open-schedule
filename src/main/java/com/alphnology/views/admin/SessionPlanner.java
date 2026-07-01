@@ -54,6 +54,7 @@ public class SessionPlanner extends VerticalLayout {
     private final Consumer<Session> sessionSelectionCallback;
     private final Runnable mutationCallback;
     private final ZoneId zoneId;
+    private final Timezone eventTimezone;
 
     private final FullCalendarScheduler calendar;
     private final DatePicker selectedDate = new DatePicker("Planner date");
@@ -71,6 +72,7 @@ public class SessionPlanner extends VerticalLayout {
         this.sessionSelectionCallback = sessionSelectionCallback;
         this.mutationCallback = mutationCallback;
         this.zoneId = resolveZoneId(event.getTimeZone());
+        this.eventTimezone = new Timezone(zoneId);
         this.calendar = new FullCalendarScheduler();
 
         configureLayout();
@@ -124,13 +126,12 @@ public class SessionPlanner extends VerticalLayout {
         calendar.setOption(FullCalendarScheduler.SchedulerOption.RESOURCE_AREA_HEADER_CONTENT, "Rooms");
         calendar.setOption(FullCalendarScheduler.SchedulerOption.SLOT_MIN_WIDTH, "60");
         calendar.setOption(FullCalendarScheduler.SchedulerOption.ENTRY_RESOURCES_EDITABLE, true);
-        // Sessions are persisted as LocalDateTime in event-local wall clock time.
-        // Rendering them in the browser's local calendar timezone preserves the exact
-        // hour configured in the admin form instead of applying a second conversion.
-        calendar.setOption("timeZone", "local");
-        calendar.getElement().executeJs(
-                "return Intl.DateTimeFormat().resolvedOptions().timeZone;"
-        ).then(String.class, timezone -> calendar.setTimezone(new Timezone(ZoneId.of(timezone))));
+        // Sessions are persisted as LocalDateTime in event-local wall clock time, but the
+        // FullCalendar Entry API always treats Entry.start/end as UTC (see Entry#setStart).
+        // toEntry()/persistCalendarChange() convert event-local <-> that UTC representation
+        // using eventTimezone. Displaying with the event's own zone (instead of the browser's)
+        // means every admin sees the same wall-clock hour regardless of their own machine's zone.
+        calendar.setTimezone(eventTimezone);
 
         calendar.setEntryDidMountCallback(
                 """
@@ -215,8 +216,8 @@ public class SessionPlanner extends VerticalLayout {
         }
 
         Session session = optionalSession.get();
-        session.setStartTime(changedEntry.getStart());
-        session.setEndTime(changedEntry.getEnd());
+        session.setStartTime(eventTimezone.applyTimezoneOffset(changedEntry.getStart()));
+        session.setEndTime(eventTimezone.applyTimezoneOffset(changedEntry.getEnd()));
         session.setRoom(Objects.requireNonNull(resolveRoom(selectedResource, session.getRoom())));
 
         try {
@@ -274,8 +275,8 @@ public class SessionPlanner extends VerticalLayout {
     private ResourceEntry toEntry(Session session, Map<String, Resource> resourcesById) {
         ResourceEntry entry = new ResourceEntry(String.valueOf(session.getCode()));
         entry.setTitle(session.getTitle());
-        entry.setStart(session.getStartTime());
-        entry.setEnd(session.getEndTime());
+        entry.setStart(eventTimezone.removeTimezoneOffset(session.getStartTime()));
+        entry.setEnd(eventTimezone.removeTimezoneOffset(session.getEndTime()));
         entry.setEditable(true);
         entry.setStartEditable(true);
         entry.setDurationEditable(true);

@@ -3,6 +3,7 @@ package com.alphnology.infrastructure.storage;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,18 @@ public class S3ObjectStorageService implements ObjectStorageService {
         this.s3Client = s3Client;
         this.publicS3Client = publicS3Client;
         this.props = props;
+    }
+
+    @PostConstruct
+    void ensureBucketExists() {
+        try {
+            if (!s3Client.bucketExists(BucketExistsArgs.builder().bucket(props.getBucket()).build())) {
+                createBucket();
+                log.info("Created missing bucket {} on startup", props.getBucket());
+            }
+        } catch (Exception e) {
+            log.warn("Could not verify/create bucket {} on startup: {}", props.getBucket(), e.getMessage());
+        }
     }
 
     @Override

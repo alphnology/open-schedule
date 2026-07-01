@@ -9,6 +9,10 @@
       "args": [
         "@playwright/mcp@latest"
       ]
+    },
+    "fullcalendar": {
+      "type": "http",
+      "url": "https://v-herd.eu/vaadin-fullcalendar-mcp/mcp"
     }
   }
 }
