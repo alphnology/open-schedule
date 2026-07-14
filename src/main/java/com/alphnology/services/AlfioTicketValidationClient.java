@@ -34,6 +34,13 @@ public class AlfioTicketValidationClient {
         return fetchReservationDirectly(baseUrl, eventSlug, referenceValue, bearerToken);
     }
 
+    public JsonNode fetchOrder(String baseUrl, String eventSlug, String orderReference, String bearerToken) {
+        if (!bridgeProperties.isConfigured()) {
+            throw new AlfioClientException("Workshop order validation requires the alfio bridge to be configured.");
+        }
+        return fetchOrderViaBridge(eventSlug, orderReference);
+    }
+
     private JsonNode fetchReservationDirectly(String baseUrl, String eventSlug, String reservationId, String bearerToken) {
         try {
             String normalizedToken = StringUtils.hasText(bearerToken) ? bearerToken.trim() : null;
@@ -119,6 +126,51 @@ public class AlfioTicketValidationClient {
         }
     }
 
+    private JsonNode fetchOrderViaBridge(String eventSlug, String orderReference) {
+        try {
+            String baseUrl = bridgeProperties.getBaseUrl().trim();
+            String apiKey = bridgeProperties.getApiKey().trim();
+            String normalizedOrderReference = orderReference.trim().toUpperCase();
+
+            log.info(
+                    "Resolving workshop order via bridge. bridgeBaseUrl='{}', eventSlug='{}', orderReference='{}', apiKeyPresent={}, apiKeyLength={}, apiKeyFingerprint={}",
+                    baseUrl,
+                    eventSlug,
+                    normalizedOrderReference,
+                    StringUtils.hasText(apiKey),
+                    apiKey.length(),
+                    fingerprint(apiKey)
+            );
+
+            String body = RestClient.builder()
+                    .baseUrl(baseUrl)
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .defaultHeader(BRIDGE_API_KEY_HEADER, apiKey)
+                    .build()
+                    .post()
+                    .uri("/api/v1/orders/resolve")
+                    .body(new BridgeOrderResolveRequest(eventSlug, normalizedOrderReference))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, response) -> {
+                        throw new AlfioClientException("Workshop bridge returned HTTP " + response.getStatusCode().value());
+                    })
+                    .body(String.class);
+            return objectMapper.readTree(body);
+        } catch (RestClientResponseException ex) {
+            log.warn("Workshop bridge returned HTTP {} while resolving order for eventSlug='{}', orderReference='{}'",
+                    ex.getStatusCode().value(), eventSlug, orderReference, ex);
+            throw new AlfioClientException("Workshop bridge failed with HTTP " + ex.getStatusCode().value(), ex);
+        } catch (AlfioClientException ex) {
+            log.warn("Workshop bridge order resolution failed for eventSlug='{}', orderReference='{}': {}",
+                    eventSlug, orderReference, ex.getMessage(), ex);
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error resolving workshop order via bridge for eventSlug='{}', orderReference='{}'",
+                    eventSlug, orderReference, ex);
+            throw new AlfioClientException("Unable to resolve workshop order via bridge", ex);
+        }
+    }
+
     private static String resolveReferenceType(String referenceValue) {
         String normalizedValue = StringUtils.hasText(referenceValue) ? referenceValue.trim() : "";
         if (normalizedValue.matches("^[A-Za-z0-9]{8}$")) {
@@ -160,6 +212,12 @@ public class AlfioTicketValidationClient {
             String eventSlug,
             String referenceType,
             String referenceValue
+    ) {
+    }
+
+    private record BridgeOrderResolveRequest(
+            String eventSlug,
+            String orderCode
     ) {
     }
 }

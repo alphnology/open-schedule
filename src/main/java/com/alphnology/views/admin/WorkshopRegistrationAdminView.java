@@ -72,7 +72,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
     private final PasswordField token = new PasswordField("Alf.io admin token");
     private final Checkbox clearStoredToken = new Checkbox("Remove stored token");
     private final TextArea publicMessage = new TextArea("Public message");
-    private final IntegerField participantWorkshopLimit = new IntegerField("Workshops per ticket");
+    private final IntegerField participantWorkshopLimit = new IntegerField("Workshops per attendee");
 
     private final Button reloadSettings = new Button("Reload", VaadinIcon.REFRESH.create());
     private final Button saveSettings = new Button("Save settings", VaadinIcon.CHECK.create());
@@ -110,7 +110,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         Header header = ViewHelper.getSecondaryHeader(
                 "Workshop registration",
-                "Configure external alf.io ticket validation and manage workshop registrations without exposing secrets to the public flow."
+                "Configure external alf.io order validation and manage workshop registrations without exposing secrets to the public flow."
         );
 
         VerticalLayout content = new VerticalLayout(
@@ -168,7 +168,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         token.setRevealButtonVisible(false);
         token.setHelperText("The bearer token is never exposed to the browser. It is encrypted before being stored.");
 
-        clearStoredToken.setHelperText("Clears the encrypted token saved in the database. When checked, the token field is ignored on save and the module will stop validating tickets until a new token is stored later.");
+        clearStoredToken.setHelperText("Clears the encrypted token saved in the database. When checked, the token field is ignored on save and the module will stop validating order codes until a new token is stored later.");
 
         allowAttendeeWorkshopChange.setHelperText("If enabled, attendees who are already registered can move themselves to another available workshop from the public page.");
         showPublicMenuEntry.setHelperText("If enabled, the public app drawer shows a direct link to the workshop registration page.");
@@ -182,7 +182,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         participantWorkshopLimit.setMin(1);
         participantWorkshopLimit.setMax(1);
         participantWorkshopLimit.setStepButtonsVisible(true);
-        participantWorkshopLimit.setHelperText("The current contract is one active workshop per ticket. This field is fixed at 1 for now.");
+        participantWorkshopLimit.setHelperText("The current contract is one active workshop per attendee ticket. This field is fixed at 1 for now.");
 
         openPublicPage.setTarget("_blank");
         openPublicPage.getElement().setAttribute("theme", "primary");
@@ -197,7 +197,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         });
 
         searchField.setWidthFull();
-        searchField.setPlaceholder("Search by attendee, email, 'Info. del pedido', or reservation code...");
+        searchField.setPlaceholder("Search by attendee, email, order code, ticket public ID, or reservation code...");
         searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
         searchField.setClearButtonVisible(true);
         searchField.setValueChangeMode(ValueChangeMode.LAZY);
@@ -210,7 +210,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         moveTarget.setWidthFull();
         moveTarget.setItemLabelGenerator(WorkshopRegistrationService.WorkshopOption::displayLabel);
-        moveTarget.setHelperText("Choose another workshop to reassign the selected ticket.");
+        moveTarget.setHelperText("Choose another workshop to reassign the selected attendee ticket.");
     }
 
     private void configureGrid() {
@@ -228,8 +228,11 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         registrationsGrid.addColumn(WorkshopParticipantRegistration::getReservationShortCode)
                 .setHeader("Reservation")
                 .setAutoWidth(true);
-        registrationsGrid.addColumn(WorkshopParticipantRegistration::getTicketReference)
+        registrationsGrid.addColumn(WorkshopParticipantRegistration::getOrderReference)
                 .setHeader("Info. del pedido")
+                .setAutoWidth(true);
+        registrationsGrid.addColumn(WorkshopParticipantRegistration::getTicketPublicId)
+                .setHeader("Ticket public ID")
                 .setAutoWidth(true);
         registrationsGrid.addColumn(registration -> registration.getSession().getTitle())
                 .setHeader("Workshop")
@@ -297,7 +300,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         Div card = createCard(
                 "External validation settings",
-                "This module validates alf.io reservation references on the backend and then binds the ticket to one workshop in Open Schedule."
+                "This module validates alf.io order codes on the backend and then binds each attendee ticket to one workshop in Open Schedule."
         );
         card.add(content);
         return card;
@@ -320,7 +323,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         Div card = createCard(
                 "Participant registrations",
-                "Search registrations, review the workshop currently assigned to a ticket, and filter the grid by workshop."
+                "Search registrations, review the workshop currently assigned to each attendee ticket, and filter the grid by workshop."
         );
         card.add(content);
         return card;
@@ -340,7 +343,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
 
         Div card = createCard(
                 "Selected registration",
-                "Move the selected attendee to another workshop or delete the registration so the ticket can register again."
+                "Move the selected attendee to another workshop or delete the registration so that participant can register again."
         );
         card.add(content);
         return card;
@@ -385,7 +388,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
     private List<String> validateForm(WorkshopRegistrationSettingsFormData formData) {
         List<String> issues = new ArrayList<>();
         if (formData.getParticipantWorkshopLimit() == null || formData.getParticipantWorkshopLimit() != 1) {
-            issues.add("The current module supports exactly one active workshop per ticket, so the limit must remain at 1.");
+            issues.add("The current module supports exactly one active workshop per attendee ticket, so the limit must remain at 1.");
         }
         if (!formData.isEnabled()) {
             return issues;
@@ -447,7 +450,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
         selectedRegistrationSummary.setText(
                 "%s · %s · currently assigned to %s".formatted(
                         selectedRegistration.getAttendeeName(),
-                        selectedRegistration.getTicketReference(),
+                        selectedRegistration.getOrderReference(),
                         selectedRegistration.getSession().getTitle()
                 )
         );
@@ -487,7 +490,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
             NotificationUtils.success("Workshop registration deleted.");
             selectedRegistration = null;
             refreshRegistrations();
-        }, new Text("This will allow the ticket to register again."));
+        }, new Text("This will allow this attendee ticket to register again."));
     }
 
     private String buildRuntimeInfo(WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot effective) {
@@ -503,7 +506,7 @@ public class WorkshopRegistrationAdminView extends VerticalLayout {
             return "An encrypted alf.io token is stored in the database.";
         }
         if (effective.tokenPersistenceEnabled()) {
-            return "No token is currently stored. Save one to activate the public validation flow.";
+            return "No token is currently stored. Save one to activate the public order-validation flow.";
         }
         return "Encrypted UI secret persistence is disabled. Configure application.secrets.master-key and allow-ui-persistence=true before storing the alf.io token from the admin UI.";
     }

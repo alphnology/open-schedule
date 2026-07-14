@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReservationResolveController {
 
     private final ReservationLookupService reservationLookupService;
-
     public ReservationResolveController(ReservationLookupService reservationLookupService) {
         this.reservationLookupService = reservationLookupService;
     }

@@ -26,50 +26,7 @@ class AlfioTicketValidationServiceTest {
     }
 
     @Test
-    void validateExtractsNestedAttendeeDataFromAlfioPayload() throws Exception {
-        var settings = new WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot(
-                true,
-                true,
-                "https://tickets.example.org",
-                "jd2026",
-                "token",
-                null,
-                false,
-                false,
-                1,
-                true,
-                true
-        );
-        var payload = objectMapper.readTree("""
-                {
-                  "status": "COMPLETE",
-                  "reservationShortID": "BDB04C39",
-                  "tickets": [
-                    {
-                      "owner": {
-                        "firstName": "Fred",
-                        "lastName": "Peña",
-                        "emailAddress": "fred@example.org"
-                      }
-                    }
-                  ]
-                }
-                """);
-        when(client.fetchReservation("https://tickets.example.org", "jd2026", "b2b2", "token"))
-                .thenReturn(payload);
-
-        var result = service.validate("b2b2", settings);
-
-        assertThat(result.ticketReference()).isEqualTo("b2b2");
-        assertThat(result.reservationShortCode()).isEqualTo("BDB04C39");
-        assertThat(result.attendeeName()).isEqualTo("Fred Peña");
-        assertThat(result.attendeeEmail()).isEqualTo("fred@example.org");
-        assertThat(result.reservationStatus()).isEqualTo("COMPLETE");
-        assertThat(result.payloadJson()).contains("fred@example.org");
-    }
-
-    @Test
-    void validateExtractsAttendeeDataFromBridgePayload() throws Exception {
+    void validateOrderExtractsParticipantsFromBridgePayload() throws Exception {
         var settings = new WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot(
                 true,
                 true,
@@ -89,29 +46,41 @@ class AlfioTicketValidationServiceTest {
                   "eventSlug": "jd2026",
                   "reservationId": "bdb04c39-a8fd-4991-b721-75e099de1544",
                   "reservationCode": "BDB04C39",
-                  "ticketId": "a494e570-8c78-4f8e-b03f-4a286921e341",
-                  "ticketPublicId": "b2b2b49e-881e-40f9-895f-52a995e84bfd",
                   "reservationStatus": "COMPLETE",
-                  "ticketStatus": "ACQUIRED",
-                  "attendeeName": "Fred Peña",
-                  "attendeeEmail": "freddy.pena@alphnology.com",
-                  "source": "database"
+                  "source": "database",
+                  "participants": [
+                    {
+                      "ticketId": "a494e570-8c78-4f8e-b03f-4a286921e341",
+                      "ticketPublicId": "b2b2b49e-881e-40f9-895f-52a995e84bfd",
+                      "ticketStatus": "ACQUIRED",
+                      "attendeeName": "Fred Peña",
+                      "attendeeEmail": "freddy.pena@alphnology.com"
+                    },
+                    {
+                      "ticketId": "b494e570-8c78-4f8e-b03f-4a286921e342",
+                      "ticketPublicId": "c2b2b49e-881e-40f9-895f-52a995e84bfd",
+                      "ticketStatus": "ACQUIRED",
+                      "attendeeName": "Jane Roe",
+                      "attendeeEmail": "jane@example.org"
+                    }
+                  ]
                 }
                 """);
-        when(client.fetchReservation("https://tickets.example.org", "jd2026", "BDB04C39", "token"))
+        when(client.fetchOrder("https://tickets.example.org", "jd2026", "BDB04C39", "token"))
                 .thenReturn(payload);
 
-        var result = service.validate("BDB04C39", settings);
+        var result = service.validateOrder("BDB04C39", settings);
 
-        assertThat(result.ticketReference()).isEqualTo("BDB04C39");
+        assertThat(result.orderReference()).isEqualTo("BDB04C39");
         assertThat(result.reservationShortCode()).isEqualTo("BDB04C39");
-        assertThat(result.attendeeName()).isEqualTo("Fred Peña");
-        assertThat(result.attendeeEmail()).isEqualTo("freddy.pena@alphnology.com");
         assertThat(result.reservationStatus()).isEqualTo("COMPLETE");
+        assertThat(result.participants()).hasSize(2);
+        assertThat(result.participants().getFirst().attendeeName()).isEqualTo("Fred Peña");
+        assertThat(result.participants().get(1).ticketPublicId()).isEqualTo("c2b2b49e-881e-40f9-895f-52a995e84bfd");
     }
 
     @Test
-    void validateRejectsCancelledOrInvalidReservations() throws Exception {
+    void validateOrderRejectsCancelledOrInvalidReservations() throws Exception {
         var settings = new WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot(
                 true,
                 true,
@@ -127,16 +96,21 @@ class AlfioTicketValidationServiceTest {
         );
         var payload = objectMapper.readTree("""
                 {
-                  "status": "PENDING",
+                  "reservationStatus": "PENDING",
                   "cancelled": true,
-                  "email": "fred@example.org",
-                  "fullName": "Fred Peña"
+                  "participants": [
+                    {
+                      "ticketPublicId": "b2b2b49e-881e-40f9-895f-52a995e84bfd",
+                      "attendeeName": "Fred Peña",
+                      "attendeeEmail": "fred@example.org"
+                    }
+                  ]
                 }
                 """);
-        when(client.fetchReservation("https://tickets.example.org", "jd2026", "bad-ref", "token"))
+        when(client.fetchOrder("https://tickets.example.org", "jd2026", "BADREF01", "token"))
                 .thenReturn(payload);
 
-        assertThatThrownBy(() -> service.validate("bad-ref", settings))
+        assertThatThrownBy(() -> service.validateOrder("BADREF01", settings))
                 .isInstanceOf(AlfioTicketValidationService.InvalidTicketException.class);
     }
 }

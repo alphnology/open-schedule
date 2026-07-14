@@ -8,7 +8,9 @@ import org.springframework.util.StringUtils;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -89,6 +91,46 @@ public class AlfioJdbcReservationLookupService implements ReservationLookupServi
         );
     }
 
+    public OrderLookupResult resolveOrder(OrderResolveRequest request) {
+        String eventSlug = normalizeText(request.eventSlug());
+        String orderCode = normalizeText(request.orderCode()).toUpperCase();
+        validateOrderCode(orderCode);
+
+        log.info("Resolving alf.io order. eventSlug='{}', orderCode='{}'", eventSlug, orderCode);
+
+        List<Map<String, Object>> rows = jdbcClient.sql(BASE_SELECT + " and upper(substring(btrim(tr.id), 1, 8)) = :referenceValue")
+                .param("eventSlug", eventSlug)
+                .param("referenceValue", orderCode)
+                .query(this::mapRow)
+                .list();
+
+        if (rows.isEmpty()) {
+            throw new ReferenceNotFoundException("No alf.io reservation matches the supplied order code.");
+        }
+
+        Map<String, Object> first = rows.getFirst();
+        List<OrderParticipantLookupResult> participants = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            participants.add(new OrderParticipantLookupResult(
+                    asString(row.get("ticket_id")),
+                    asString(row.get("ticket_public_id")),
+                    asString(row.get("ticket_status")),
+                    asString(row.get("attendee_name")),
+                    asString(row.get("attendee_email"))
+            ));
+        }
+
+        return new OrderLookupResult(
+                true,
+                asString(first.get("event_slug")),
+                asString(first.get("reservation_id")),
+                asString(first.get("reservation_code")),
+                asString(first.get("reservation_status")),
+                "database",
+                participants
+        );
+    }
+
     private static String normalizeQueryValue(ReferenceType referenceType, String referenceValue) {
         return referenceType == ReferenceType.ORDER_CODE
                 ? referenceValue.toUpperCase()
@@ -97,15 +139,19 @@ public class AlfioJdbcReservationLookupService implements ReservationLookupServi
 
     private static void validateReferenceValue(ReferenceType referenceType, String referenceValue) {
         if (referenceType == ReferenceType.ORDER_CODE) {
-            if (referenceValue.length() != 8) {
-                throw new IllegalArgumentException("Order codes must contain exactly 8 characters.");
-            }
+            validateOrderCode(referenceValue);
             return;
         }
         try {
             UUID.fromString(referenceValue);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(referenceType.getValue() + " must be a valid UUID.");
+        }
+    }
+
+    private static void validateOrderCode(String orderCode) {
+        if (orderCode.length() != 8) {
+            throw new IllegalArgumentException("Order codes must contain exactly 8 characters.");
         }
     }
 

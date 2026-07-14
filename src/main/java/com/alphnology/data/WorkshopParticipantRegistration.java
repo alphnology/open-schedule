@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "workshop_participant_registration",
-        uniqueConstraints = @UniqueConstraint(name = "uk_workshop_registration_ticket", columnNames = {"eventSlug", "ticketReference"}),
+        uniqueConstraints = @UniqueConstraint(name = "uk_workshop_registration_ticket", columnNames = {"eventSlug", "ticketPublicId"}),
         indexes = {
                 @Index(name = "idx_workshop_registration_session_code", columnList = "session_code"),
                 @Index(name = "idx_workshop_registration_email", columnList = "attendeeEmail"),
@@ -31,7 +31,16 @@ public class WorkshopParticipantRegistration {
 
     @NotBlank
     @Column(nullable = false, length = 128)
-    private String ticketReference;
+    private String orderReference;
+
+    @Column(length = 128)
+    private String reservationId;
+
+    @Column(length = 128)
+    private String ticketId;
+
+    @Column(length = 128)
+    private String ticketPublicId;
 
     @Column(length = 64)
     private String reservationShortCode;
@@ -83,5 +92,15 @@ public class WorkshopParticipantRegistration {
     @PreUpdate
     void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Deprecated(forRemoval = false)
+    public String getTicketReference() {
+        return orderReference;
+    }
+
+    @Deprecated(forRemoval = false)
+    public void setTicketReference(String ticketReference) {
+        this.orderReference = ticketReference;
     }
 }

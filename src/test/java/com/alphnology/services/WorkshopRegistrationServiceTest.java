@@ -5,6 +5,7 @@ import com.alphnology.data.Session;
 import com.alphnology.data.WorkshopParticipantRegistration;
 import com.alphnology.data.enums.SessionType;
 import com.alphnology.data.enums.WorkshopRegistrationStatus;
+import com.alphnology.data.repository.SessionRepository;
 import com.alphnology.data.repository.WorkshopParticipantRegistrationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +32,8 @@ class WorkshopRegistrationServiceTest {
     private WorkshopParticipantRegistrationRepository repository;
     @Mock
     private SessionService sessionService;
+    @Mock
+    private SessionRepository sessionRepository;
     @Mock
     private EventService eventService;
     @Mock
@@ -51,18 +55,29 @@ class WorkshopRegistrationServiceTest {
     }
 
     @Test
-    void validateTicketReturnsExistingRegistrationWithoutCallingAlfio() {
+    void validateOrderReturnsAllParticipantsWithExistingRegistrationState() {
         var settings = configuredSettings();
+        var validatedOrder = validatedOrder();
         var registration = existingRegistration();
 
         when(settingsService.getEffectiveSettings()).thenReturn(settings);
-        when(repository.findByEventSlugAndTicketReference("jd2026", "b2b2")).thenReturn(Optional.of(registration));
+        when(alfioTicketValidationService.validateOrder("BDB04C39", settings)).thenReturn(validatedOrder);
+        when(repository.findByEventSlugAndTicketPublicId("jd2026", "ticket-public-1")).thenReturn(Optional.of(registration));
+        when(repository.findByEventSlugAndTicketPublicId("jd2026", "ticket-public-2")).thenReturn(Optional.empty());
+        when(sessionService.getRepository()).thenReturn(sessionRepository);
+        when(sessionRepository.findByTypeOrderByStartTimeAsc(SessionType.W)).thenReturn(List.of(
+                registration.getSession(),
+                workshopSession(88L, 15)
+        ));
         when(repository.countBySession_CodeAndStatus(77L, WorkshopRegistrationStatus.ACTIVE)).thenReturn(1L);
+        when(repository.countBySession_CodeAndStatus(88L, WorkshopRegistrationStatus.ACTIVE)).thenReturn(0L);
 
-        var outcome = service.validateTicket("b2b2");
+        var outcome = service.validateOrder("BDB04C39");
 
-        assertThat(outcome).isInstanceOf(WorkshopRegistrationService.TicketValidationOutcome.AlreadyRegistered.class);
-        verify(alfioTicketValidationService, never()).validate(any(), any());
+        assertThat(outcome.orderReference()).isEqualTo("BDB04C39");
+        assertThat(outcome.participants()).hasSize(2);
+        assertThat(outcome.participants().getFirst().isRegistered()).isTrue();
+        assertThat(outcome.participants().get(1).isRegistered()).isFalse();
     }
 
     @Test
@@ -71,11 +86,12 @@ class WorkshopRegistrationServiceTest {
         var workshop = workshopSession(12L, 1);
 
         when(settingsService.getEffectiveSettings()).thenReturn(settings);
-        when(repository.findByEventSlugAndTicketReference("jd2026", "b2b2")).thenReturn(Optional.empty());
+        when(alfioTicketValidationService.validateOrder("BDB04C39", settings)).thenReturn(validatedOrder());
+        when(repository.findByEventSlugAndTicketPublicId("jd2026", "ticket-public-1")).thenReturn(Optional.empty());
         when(sessionService.get(12L)).thenReturn(Optional.of(workshop));
         when(repository.countBySession_CodeAndStatus(12L, WorkshopRegistrationStatus.ACTIVE)).thenReturn(1L);
 
-        assertThatThrownBy(() -> service.registerWorkshop("b2b2", 12L))
+        assertThatThrownBy(() -> service.registerWorkshop("BDB04C39", "ticket-public-1", 12L))
                 .isInstanceOf(WorkshopRegistrationService.WorkshopFullException.class)
                 .hasMessageContaining("capacity");
 
@@ -83,30 +99,25 @@ class WorkshopRegistrationServiceTest {
     }
 
     @Test
-    void registerWorkshopPersistsValidatedTicketAgainstSelectedWorkshop() {
+    void registerWorkshopPersistsValidatedParticipantAgainstSelectedWorkshop() {
         var settings = configuredSettings();
         var workshop = workshopSession(12L, 0);
-        var validatedTicket = new AlfioTicketValidationService.AlfioValidatedTicket(
-                "b2b2",
-                "BDB04C39",
-                "Fred Pena",
-                "fred@example.org",
-                "COMPLETE",
-                "{\"status\":\"COMPLETE\"}"
-        );
 
         when(settingsService.getEffectiveSettings()).thenReturn(settings);
-        when(repository.findByEventSlugAndTicketReference("jd2026", "b2b2")).thenReturn(Optional.empty());
+        when(alfioTicketValidationService.validateOrder("BDB04C39", settings)).thenReturn(validatedOrder());
+        when(repository.findByEventSlugAndTicketPublicId("jd2026", "ticket-public-1")).thenReturn(Optional.empty());
         when(sessionService.get(12L)).thenReturn(Optional.of(workshop));
-        when(alfioTicketValidationService.validate("b2b2", settings)).thenReturn(validatedTicket);
         when(repository.save(any(WorkshopParticipantRegistration.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var saved = service.registerWorkshop("b2b2", 12L);
+        var saved = service.registerWorkshop("BDB04C39", "ticket-public-1", 12L);
 
         ArgumentCaptor<WorkshopParticipantRegistration> captor = ArgumentCaptor.forClass(WorkshopParticipantRegistration.class);
         verify(repository).save(captor.capture());
 
-        assertThat(saved.getTicketReference()).isEqualTo("b2b2");
+        assertThat(saved.getOrderReference()).isEqualTo("BDB04C39");
+        assertThat(saved.getReservationId()).isEqualTo("reservation-1");
+        assertThat(saved.getTicketId()).isEqualTo("ticket-1");
+        assertThat(saved.getTicketPublicId()).isEqualTo("ticket-public-1");
         assertThat(saved.getReservationShortCode()).isEqualTo("BDB04C39");
         assertThat(saved.getAttendeeName()).isEqualTo("Fred Pena");
         assertThat(saved.getAttendeeEmail()).isEqualTo("fred@example.org");
@@ -135,12 +146,13 @@ class WorkshopRegistrationServiceTest {
         var newWorkshop = workshopSession(12L, 5);
 
         when(settingsService.getEffectiveSettings()).thenReturn(settings);
-        when(repository.findByEventSlugAndTicketReference("jd2026", "b2b2")).thenReturn(Optional.of(existing));
+        when(alfioTicketValidationService.validateOrder("BDB04C39", settings)).thenReturn(validatedOrder());
+        when(repository.findByEventSlugAndTicketPublicId("jd2026", "ticket-public-1")).thenReturn(Optional.of(existing));
         when(sessionService.get(12L)).thenReturn(Optional.of(newWorkshop));
         when(repository.countBySession_CodeAndStatusAndCodeNot(12L, WorkshopRegistrationStatus.ACTIVE, 100L)).thenReturn(0L);
         when(repository.save(any(WorkshopParticipantRegistration.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var saved = service.changeWorkshop("b2b2", 12L);
+        var saved = service.changeWorkshop("BDB04C39", "ticket-public-1", 12L);
 
         assertThat(saved.getSession().getCode()).isEqualTo(12L);
         verify(repository).save(existing);
@@ -162,11 +174,40 @@ class WorkshopRegistrationServiceTest {
         );
     }
 
+    private AlfioTicketValidationService.AlfioValidatedOrder validatedOrder() {
+        return new AlfioTicketValidationService.AlfioValidatedOrder(
+                "BDB04C39",
+                "reservation-1",
+                "BDB04C39",
+                "COMPLETE",
+                List.of(
+                        new AlfioTicketValidationService.ValidatedParticipant(
+                                "ticket-1",
+                                "ticket-public-1",
+                                "ACQUIRED",
+                                "Fred Pena",
+                                "fred@example.org"
+                        ),
+                        new AlfioTicketValidationService.ValidatedParticipant(
+                                "ticket-2",
+                                "ticket-public-2",
+                                "ACQUIRED",
+                                "Jane Roe",
+                                "jane@example.org"
+                        )
+                ),
+                "{\"status\":\"COMPLETE\"}"
+        );
+    }
+
     private WorkshopParticipantRegistration existingRegistration() {
         WorkshopParticipantRegistration registration = new WorkshopParticipantRegistration();
         registration.setCode(100L);
         registration.setEventSlug("jd2026");
-        registration.setTicketReference("b2b2");
+        registration.setOrderReference("BDB04C39");
+        registration.setReservationId("reservation-1");
+        registration.setTicketId("ticket-1");
+        registration.setTicketPublicId("ticket-public-1");
         registration.setReservationShortCode("BDB04C39");
         registration.setAttendeeName("Fred Pena");
         registration.setAttendeeEmail("fred@example.org");

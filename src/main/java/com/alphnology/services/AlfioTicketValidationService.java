@@ -7,8 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -25,30 +26,23 @@ public class AlfioTicketValidationService {
         this.client = client;
     }
 
-    public AlfioValidatedTicket validate(String ticketReference,
-                                         WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot settings) {
+    public AlfioValidatedOrder validateOrder(String orderReference,
+                                             WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot settings) {
         if (!settings.isConfigured()) {
             throw new InvalidTicketException("Workshop registration is not configured.");
         }
 
-        JsonNode payload = client.fetchReservation(
+        JsonNode payload = client.fetchOrder(
                 settings.alfioBaseUrl(),
                 settings.eventSlug(),
-                ticketReference,
+                orderReference,
                 settings.token()
         );
 
-        String reservationStatus = firstText(payload, "reservationStatus", "status", "ticketStatus");
+        String reservationStatus = firstText(payload, "reservationStatus", "status");
         boolean cancelled = firstBoolean(payload, "cancelled", "canceled");
         boolean refunded = firstBoolean(payload, "refunded");
-        String email = firstText(payload, "attendeeEmail", "email", "emailAddress");
-        String fullName = firstText(payload, "attendeeName", "fullName", "name");
-        if (!StringUtils.hasText(fullName)) {
-            String firstName = firstText(payload, "firstName", "givenName");
-            String lastName = firstText(payload, "lastName", "familyName", "surname");
-            String combined = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
-            fullName = StringUtils.hasText(combined) ? combined : null;
-        }
+        String reservationId = firstText(payload, "reservationId");
         String reservationShortCode = firstText(payload,
                 "reservationCode", "reservationShortID", "reservationShortId", "reservationShortCode", "shortCode");
 
@@ -58,18 +52,55 @@ public class AlfioTicketValidationService {
         if (cancelled || refunded) {
             throw new InvalidTicketException("The reservation is cancelled or refunded.");
         }
-        if (!StringUtils.hasText(email) || !StringUtils.hasText(fullName)) {
-            throw new InvalidTicketException("The reservation does not expose the required attendee details.");
+
+        List<ValidatedParticipant> participants = extractParticipants(payload);
+        if (participants.isEmpty()) {
+            throw new InvalidTicketException("The order does not expose any attendee tickets.");
         }
 
-        return new AlfioValidatedTicket(
-                ticketReference,
+        return new AlfioValidatedOrder(
+                normalizeOrderReference(orderReference),
+                reservationId,
                 reservationShortCode,
-                fullName,
-                email,
                 reservationStatus,
+                participants,
                 toJson(payload)
         );
+    }
+
+    private List<ValidatedParticipant> extractParticipants(JsonNode payload) {
+        JsonNode participantsNode = payload.path("participants");
+        if (!participantsNode.isArray()) {
+            throw new InvalidTicketException("The workshop bridge did not return participant data.");
+        }
+
+        List<ValidatedParticipant> participants = new ArrayList<>();
+        for (JsonNode participantNode : participantsNode) {
+            String ticketId = firstText(participantNode, "ticketId");
+            String ticketPublicId = firstText(participantNode, "ticketPublicId");
+            String ticketStatus = firstText(participantNode, "ticketStatus", "status");
+            String email = firstText(participantNode, "attendeeEmail", "email", "emailAddress");
+            String fullName = firstText(participantNode, "attendeeName", "fullName", "name");
+            if (!StringUtils.hasText(fullName)) {
+                String firstName = firstText(participantNode, "firstName", "givenName");
+                String lastName = firstText(participantNode, "lastName", "familyName", "surname");
+                String combined = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+                fullName = StringUtils.hasText(combined) ? combined : null;
+            }
+
+            if (!StringUtils.hasText(ticketPublicId) || !StringUtils.hasText(email) || !StringUtils.hasText(fullName)) {
+                throw new InvalidTicketException("One or more attendee tickets are missing required data.");
+            }
+
+            participants.add(new ValidatedParticipant(
+                    ticketId,
+                    ticketPublicId,
+                    ticketStatus,
+                    fullName,
+                    email
+            ));
+        }
+        return participants;
     }
 
     private String toJson(JsonNode payload) {
@@ -78,6 +109,10 @@ public class AlfioTicketValidationService {
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("Unable to serialize alf.io payload", ex);
         }
+    }
+
+    private static String normalizeOrderReference(String orderReference) {
+        return orderReference != null ? orderReference.trim().toUpperCase(Locale.ROOT) : null;
     }
 
     private String firstText(JsonNode node, String... fieldNames) {
@@ -155,13 +190,22 @@ public class AlfioTicketValidationService {
         return null;
     }
 
-    public record AlfioValidatedTicket(
-            String ticketReference,
+    public record AlfioValidatedOrder(
+            String orderReference,
+            String reservationId,
             String reservationShortCode,
-            String attendeeName,
-            String attendeeEmail,
             String reservationStatus,
+            List<ValidatedParticipant> participants,
             String payloadJson
+    ) {
+    }
+
+    public record ValidatedParticipant(
+            String ticketId,
+            String ticketPublicId,
+            String ticketStatus,
+            String attendeeName,
+            String attendeeEmail
     ) {
     }
 

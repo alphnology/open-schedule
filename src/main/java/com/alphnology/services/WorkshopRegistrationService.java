@@ -18,6 +18,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -45,83 +47,89 @@ public class WorkshopRegistrationService {
     }
 
     @Transactional
-    public TicketValidationOutcome validateTicket(String rawTicketReference) {
-        String ticketReference = normalizeTicketReference(rawTicketReference);
-        var settings = settingsService.getEffectiveSettings();
-        if (!settings.enabled() || !settings.active()) {
-            throw new WorkshopRegistrationException("Workshop registration is currently unavailable.");
-        }
+    public ValidatedOrderView validateOrder(String rawOrderReference) {
+        String orderReference = normalizeOrderReference(rawOrderReference);
+        var settings = getActiveSettings();
+        var validatedOrder = alfioTicketValidationService.validateOrder(orderReference, settings);
 
-        Optional<WorkshopParticipantRegistration> existingRegistration =
-                repository.findByEventSlugAndTicketReference(settings.eventSlug(), ticketReference);
-        if (existingRegistration.isPresent()) {
-            return TicketValidationOutcome.alreadyRegistered(toExistingRegistration(existingRegistration.get()));
-        }
+        List<ParticipantRegistrationView> participants = validatedOrder.participants().stream()
+                .sorted(Comparator.comparing(AlfioTicketValidationService.ValidatedParticipant::attendeeName, String.CASE_INSENSITIVE_ORDER))
+                .map(participant -> toParticipantRegistrationView(settings.eventSlug(), validatedOrder, participant))
+                .toList();
 
-        var validatedTicket = alfioTicketValidationService.validate(ticketReference, settings);
-        List<WorkshopOption> workshops = listAvailableWorkshopOptions();
-        return TicketValidationOutcome.validated(new ValidatedTicketView(
-                validatedTicket.ticketReference(),
-                validatedTicket.reservationShortCode(),
-                validatedTicket.attendeeName(),
-                validatedTicket.attendeeEmail(),
-                validatedTicket.reservationStatus(),
-                workshops
-        ));
+        return new ValidatedOrderView(
+                validatedOrder.orderReference(),
+                validatedOrder.reservationId(),
+                validatedOrder.reservationShortCode(),
+                validatedOrder.reservationStatus(),
+                participants
+        );
     }
 
     @Transactional
-    public WorkshopParticipantRegistration registerWorkshop(String rawTicketReference, Long workshopId) {
-        String ticketReference = normalizeTicketReference(rawTicketReference);
-        var settings = settingsService.getEffectiveSettings();
-        if (!settings.enabled() || !settings.active()) {
-            throw new WorkshopRegistrationException("Workshop registration is currently unavailable.");
-        }
+    public WorkshopParticipantRegistration registerWorkshop(String rawOrderReference, String ticketPublicId, Long workshopId) {
+        String orderReference = normalizeOrderReference(rawOrderReference);
+        var settings = getActiveSettings();
 
-        repository.findByEventSlugAndTicketReference(settings.eventSlug(), ticketReference)
+        var validatedOrder = alfioTicketValidationService.validateOrder(orderReference, settings);
+        var participant = findParticipant(validatedOrder, ticketPublicId);
+
+        repository.findByEventSlugAndTicketPublicId(settings.eventSlug(), participant.ticketPublicId())
                 .ifPresent(existing -> {
                     throw new DuplicateWorkshopRegistrationException(
-                            "This ticket is already registered in workshop " + existing.getSession().getTitle(), existing);
+                            "This attendee is already registered in workshop " + existing.getSession().getTitle(), existing);
                 });
 
         Session workshop = getWorkshopSession(workshopId);
         ensureCapacity(workshop, null);
 
-        var validatedTicket = alfioTicketValidationService.validate(ticketReference, settings);
-
         WorkshopParticipantRegistration registration = new WorkshopParticipantRegistration();
         registration.setEventSlug(settings.eventSlug());
-        registration.setTicketReference(validatedTicket.ticketReference());
-        registration.setReservationShortCode(validatedTicket.reservationShortCode());
-        registration.setAttendeeName(validatedTicket.attendeeName());
-        registration.setAttendeeEmail(validatedTicket.attendeeEmail());
+        registration.setOrderReference(validatedOrder.orderReference());
+        registration.setReservationId(validatedOrder.reservationId());
+        registration.setTicketId(participant.ticketId());
+        registration.setTicketPublicId(participant.ticketPublicId());
+        registration.setReservationShortCode(validatedOrder.reservationShortCode());
+        registration.setAttendeeName(participant.attendeeName());
+        registration.setAttendeeEmail(participant.attendeeEmail());
         registration.setSession(workshop);
         registration.setStatus(WorkshopRegistrationStatus.ACTIVE);
-        registration.setAlfioReservationStatus(validatedTicket.reservationStatus());
-        registration.setAlfioPayloadJson(validatedTicket.payloadJson());
+        registration.setAlfioReservationStatus(validatedOrder.reservationStatus());
+        registration.setAlfioPayloadJson(validatedOrder.payloadJson());
         registration.setValidatedAt(LocalDateTime.now());
         registration.setRegisteredAt(LocalDateTime.now());
         return repository.save(registration);
     }
 
     @Transactional
-    public WorkshopParticipantRegistration changeWorkshop(String rawTicketReference, Long workshopId) {
-        String ticketReference = normalizeTicketReference(rawTicketReference);
-        var settings = settingsService.getEffectiveSettings();
-        if (!settings.enabled() || !settings.active()) {
-            throw new WorkshopRegistrationException("Workshop registration is currently unavailable.");
-        }
+    public WorkshopParticipantRegistration changeWorkshop(String rawOrderReference, String ticketPublicId, Long workshopId) {
+        String orderReference = normalizeOrderReference(rawOrderReference);
+        var settings = getActiveSettings();
         if (!settings.allowAttendeeWorkshopChange()) {
             throw new WorkshopRegistrationException("To change workshops, please contact the event organization.");
         }
 
-        WorkshopParticipantRegistration existingRegistration = repository.findByEventSlugAndTicketReference(settings.eventSlug(), ticketReference)
-                .orElseThrow(() -> new WorkshopRegistrationException("No workshop registration was found for this code."));
+        var validatedOrder = alfioTicketValidationService.validateOrder(orderReference, settings);
+        var participant = findParticipant(validatedOrder, ticketPublicId);
+
+        WorkshopParticipantRegistration existingRegistration = repository
+                .findByEventSlugAndTicketPublicId(settings.eventSlug(), participant.ticketPublicId())
+                .orElseThrow(() -> new WorkshopRegistrationException("No workshop registration was found for this attendee."));
 
         Session workshop = getWorkshopSession(workshopId);
         ensureCapacity(workshop, existingRegistration.getCode());
         existingRegistration.setSession(workshop);
         existingRegistration.setStatus(WorkshopRegistrationStatus.ACTIVE);
+        existingRegistration.setOrderReference(validatedOrder.orderReference());
+        existingRegistration.setReservationId(validatedOrder.reservationId());
+        existingRegistration.setTicketId(participant.ticketId());
+        existingRegistration.setTicketPublicId(participant.ticketPublicId());
+        existingRegistration.setReservationShortCode(validatedOrder.reservationShortCode());
+        existingRegistration.setAttendeeName(participant.attendeeName());
+        existingRegistration.setAttendeeEmail(participant.attendeeEmail());
+        existingRegistration.setAlfioReservationStatus(validatedOrder.reservationStatus());
+        existingRegistration.setAlfioPayloadJson(validatedOrder.payloadJson());
+        existingRegistration.setValidatedAt(LocalDateTime.now());
         return repository.save(existingRegistration);
     }
 
@@ -170,7 +178,15 @@ public class WorkshopRegistrationService {
     public List<WorkshopOption> listWorkshopOptionsForExistingRegistration(Long registrationId) {
         WorkshopParticipantRegistration registration = repository.findById(registrationId)
                 .orElseThrow(() -> new EntityNotFoundException("Workshop registration not found."));
+        return listWorkshopOptionsForExistingRegistration(registration);
+    }
 
+    @Transactional
+    public List<WorkshopOption> listAllWorkshopOptions() {
+        return listWorkshopSessions().stream().map(this::toWorkshopOption).toList();
+    }
+
+    private List<WorkshopOption> listWorkshopOptionsForExistingRegistration(WorkshopParticipantRegistration registration) {
         return listWorkshopSessions().stream()
                 .filter(session -> isWorkshopAvailableForRegistration(session)
                         || registration.getSession().getCode().equals(session.getCode()))
@@ -178,9 +194,48 @@ public class WorkshopRegistrationService {
                 .toList();
     }
 
-    @Transactional
-    public List<WorkshopOption> listAllWorkshopOptions() {
-        return listWorkshopSessions().stream().map(this::toWorkshopOption).toList();
+    private ParticipantRegistrationView toParticipantRegistrationView(
+            String eventSlug,
+            AlfioTicketValidationService.AlfioValidatedOrder validatedOrder,
+            AlfioTicketValidationService.ValidatedParticipant participant
+    ) {
+        WorkshopParticipantRegistration existingRegistration = repository
+                .findByEventSlugAndTicketPublicId(eventSlug, participant.ticketPublicId())
+                .orElse(null);
+
+        List<WorkshopOption> options = existingRegistration != null
+                ? listWorkshopOptionsForExistingRegistration(existingRegistration)
+                : listAvailableWorkshopOptions();
+
+        return new ParticipantRegistrationView(
+                participant.ticketId(),
+                participant.ticketPublicId(),
+                participant.ticketStatus(),
+                participant.attendeeName(),
+                participant.attendeeEmail(),
+                validatedOrder.reservationShortCode(),
+                existingRegistration != null ? toExistingRegistration(existingRegistration) : null,
+                options
+        );
+    }
+
+    private AlfioTicketValidationService.ValidatedParticipant findParticipant(
+            AlfioTicketValidationService.AlfioValidatedOrder validatedOrder,
+            String rawTicketPublicId
+    ) {
+        String ticketPublicId = normalizeTicketPublicId(rawTicketPublicId);
+        return validatedOrder.participants().stream()
+                .filter(participant -> ticketPublicId.equalsIgnoreCase(participant.ticketPublicId()))
+                .findFirst()
+                .orElseThrow(() -> new WorkshopRegistrationException("The selected attendee does not belong to this order."));
+    }
+
+    private WorkshopRegistrationSettingsService.WorkshopRegistrationSettingsSnapshot getActiveSettings() {
+        var settings = settingsService.getEffectiveSettings();
+        if (!settings.enabled() || !settings.active()) {
+            throw new WorkshopRegistrationException("Workshop registration is currently unavailable.");
+        }
+        return settings;
     }
 
     private Session getWorkshopSession(Long workshopId) {
@@ -207,10 +262,10 @@ public class WorkshopRegistrationService {
         long activeRegistrations = excludeRegistrationId == null
                 ? repository.countBySession_CodeAndStatus(workshop.getCode(), WorkshopRegistrationStatus.ACTIVE)
                 : repository.countBySession_CodeAndStatusAndCodeNot(
-                        workshop.getCode(),
-                        WorkshopRegistrationStatus.ACTIVE,
-                        excludeRegistrationId
-                );
+                workshop.getCode(),
+                WorkshopRegistrationStatus.ACTIVE,
+                excludeRegistrationId
+        );
         if (activeRegistrations >= capacity) {
             throw new WorkshopFullException("This workshop has reached its room capacity.");
         }
@@ -261,7 +316,8 @@ public class WorkshopRegistrationService {
         WorkshopOption workshop = toWorkshopOption(registration.getSession());
         return new ExistingRegistrationView(
                 registration.getCode(),
-                registration.getTicketReference(),
+                registration.getOrderReference(),
+                registration.getTicketPublicId(),
                 registration.getReservationShortCode(),
                 registration.getAttendeeName(),
                 registration.getAttendeeEmail(),
@@ -284,21 +340,29 @@ public class WorkshopRegistrationService {
             if (!StringUtils.hasText(searchTerm)) {
                 return predicate;
             }
-            String like = "%" + searchTerm.trim().toLowerCase() + "%";
+            String like = "%" + searchTerm.trim().toLowerCase(Locale.ROOT) + "%";
             return builder.and(predicate, builder.or(
                     builder.like(builder.lower(root.get("attendeeName")), like),
                     builder.like(builder.lower(root.get("attendeeEmail")), like),
-                    builder.like(builder.lower(root.get("ticketReference")), like),
+                    builder.like(builder.lower(root.get("orderReference")), like),
+                    builder.like(builder.lower(root.get("ticketPublicId")), like),
                     builder.like(builder.lower(root.get("reservationShortCode")), like)
             ));
         };
     }
 
-    private String normalizeTicketReference(String rawTicketReference) {
-        if (!StringUtils.hasText(rawTicketReference)) {
+    private String normalizeOrderReference(String rawOrderReference) {
+        if (!StringUtils.hasText(rawOrderReference)) {
             throw new WorkshopRegistrationException("The 'Info. del pedido' code is required.");
         }
-        return rawTicketReference.trim();
+        return rawOrderReference.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeTicketPublicId(String rawTicketPublicId) {
+        if (!StringUtils.hasText(rawTicketPublicId)) {
+            throw new WorkshopRegistrationException("A participant ticket is required.");
+        }
+        return rawTicketPublicId.trim();
     }
 
     public record PublicModuleState(
@@ -330,7 +394,8 @@ public class WorkshopRegistrationService {
 
     public record ExistingRegistrationView(
             Long registrationCode,
-            String ticketReference,
+            String orderReference,
+            String ticketPublicId,
             String reservationShortCode,
             String attendeeName,
             String attendeeEmail,
@@ -340,28 +405,28 @@ public class WorkshopRegistrationService {
     ) {
     }
 
-    public record ValidatedTicketView(
-            String ticketReference,
-            String reservationShortCode,
+    public record ParticipantRegistrationView(
+            String ticketId,
+            String ticketPublicId,
+            String ticketStatus,
             String attendeeName,
             String attendeeEmail,
-            String reservationStatus,
+            String reservationShortCode,
+            ExistingRegistrationView existingRegistration,
             List<WorkshopOption> availableWorkshops
     ) {
+        public boolean isRegistered() {
+            return existingRegistration != null;
+        }
     }
 
-    public sealed interface TicketValidationOutcome permits TicketValidationOutcome.AlreadyRegistered, TicketValidationOutcome.Validated {
-        static TicketValidationOutcome alreadyRegistered(ExistingRegistrationView registration) {
-            return new AlreadyRegistered(registration);
-        }
-
-        static TicketValidationOutcome validated(ValidatedTicketView validatedTicket) {
-            return new Validated(validatedTicket);
-        }
-
-        record AlreadyRegistered(ExistingRegistrationView registration) implements TicketValidationOutcome {}
-
-        record Validated(ValidatedTicketView ticket) implements TicketValidationOutcome {}
+    public record ValidatedOrderView(
+            String orderReference,
+            String reservationId,
+            String reservationShortCode,
+            String reservationStatus,
+            List<ParticipantRegistrationView> participants
+    ) {
     }
 
     public static class WorkshopRegistrationException extends RuntimeException {
